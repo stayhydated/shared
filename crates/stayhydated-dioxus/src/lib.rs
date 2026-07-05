@@ -10,11 +10,11 @@ pub use header::{
     stayhydated_header_labels, stayhydated_header_labels_with,
 };
 pub use projects::{
-    PROJECT_FLUENT_URL, Project, ProjectFluentTextLink, ProjectFooterCratesSection,
-    ProjectFooterPanel, ProjectFooterPanelForProject, ProjectMessage, ProjectPackage,
-    ProjectPackageFooterLink, ProjectPackageTextLink, ProjectSourceTextLink, ProjectSupportLink,
-    ProjectSupportTextLink, ProjectSwitcher, StayhydatedProjectPageMetadata,
-    stayhydated_project_options, stayhydated_project_options_with,
+    PROJECT_FLUENT_URL, Project, ProjectFluentTextLink, ProjectFooterPanel,
+    ProjectFooterPanelForProject, ProjectFooterSkillsSection, ProjectMessage, ProjectPackage,
+    ProjectPackageTextLink, ProjectSourceTextLink, ProjectSupportLink, ProjectSupportTextLink,
+    ProjectSwitcher, StayhydatedProjectPageMetadata, stayhydated_project_options,
+    stayhydated_project_options_with,
 };
 pub use stayhydated_dioxus_core::{
     BackLink, BrandLockup, BrandMark, ButtonLink, ButtonRouteLink, ButtonVariant, CodeBlock,
@@ -27,9 +27,9 @@ pub use stayhydated_dioxus_core::{
     PageShell, PageTitleBand, Panel, PanelKind, ProjectHeader, ProjectHero, ProjectHeroActions,
     ProjectHomeShell, ProjectId as CoreProjectId, ProjectLockup, ProjectMark, ProjectNav,
     ProjectNavConfig, ProjectNavHeader, ProjectNavItem, ProjectNavLabels, ProjectNavigationHeader,
-    ProjectOption, ProjectPageMetadata, ProjectPageShell, ProjectSelect, ProjectSiteHeader,
-    ProjectSurfaceSection, RouteCardLink, RouteLink, SectionHeader, ShaderBackground, SharedStyles,
-    TabContent, TabList, TabTrigger, Tabs, TabsOrientation, contribute_reveal_style,
-    feature_card_reveal_style, hero_reveal_style, page_entry_reveal_style, project_document_title,
-    select, surface_reveal_style, use_reveal_style,
+    ProjectOption, ProjectPageMetadata, ProjectPageShell, ProjectSiteHeader, ProjectSurfaceSection,
+    RouteCardLink, RouteLink, SectionHeader, ShaderBackground, SharedStyles, TabContent, TabList,
+    TabTrigger, Tabs, TabsOrientation, contribute_reveal_style, feature_card_reveal_style,
+    hero_reveal_style, page_entry_reveal_style, project_document_title, select,
+    surface_reveal_style, use_reveal_style,
 };

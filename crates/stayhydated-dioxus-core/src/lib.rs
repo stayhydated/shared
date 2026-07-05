@@ -33,9 +33,7 @@ pub use motion::{
     MotionReveal, contribute_reveal_style, feature_card_reveal_style, hero_reveal_style,
     page_entry_reveal_style, surface_reveal_style, use_reveal_style,
 };
-pub use projects::{
-    ProjectId, ProjectLockup, ProjectMark, ProjectOption, ProjectSelect, ProjectSwitcher,
-};
+pub use projects::{ProjectId, ProjectLockup, ProjectMark, ProjectOption, ProjectSwitcher};
 pub use shader_background::{DEFAULT_SHADER_BACKGROUND_CANVAS_ID, ShaderBackground};
 pub use styles::{
     DX_COMPONENTS_THEME_CSS, DX_COMPONENTS_THEME_FILE_NAME, DioxusComponentsTheme, SharedStyles,

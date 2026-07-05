@@ -12,8 +12,13 @@ readme = "README.md"
 [dependencies]
 derive_more = { features = [ "display" ], workspace = true }
 dioxus = { features = [ "lib", "router" ], workspace = true }
+dioxus-free-icons = { features = [ "lucide" ], workspace = true }
+dioxus-primitives = { workspace = true }
 stayhydated-dioxus-core = { workspace = true }
 strum = { features = [ "derive" ], workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { features = [ "Clipboard", "Navigator", "Window" ], workspace = true }
 
 [lints]
 workspace = true

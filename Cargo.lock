@@ -3490,8 +3490,11 @@ version = "0.1.0"
 dependencies = [
  "derive_more",
  "dioxus",
+ "dioxus-free-icons",
+ "dioxus-primitives",
  "stayhydated-dioxus-core",
  "strum",
+ "web-sys",
 ]
 
 [[package]]

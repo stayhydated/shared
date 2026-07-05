@@ -1,5 +1,13 @@
 use derive_more::Display;
 use dioxus::prelude::*;
+use dioxus_free_icons::{
+    Icon,
+    icons::ld_icons::{LdCopy, LdCopyCheck},
+};
+use dioxus_primitives::{
+    ContentSide,
+    tooltip::{Tooltip, TooltipContent, TooltipTrigger},
+};
 use stayhydated_dioxus_core::{
     CssClass, DisplayText, ExternalTextLink, FooterPanel, Href, OptionalDisplayText,
     ProjectId as CoreProjectId, ProjectMark, ProjectOption, ProjectPageMetadata,
@@ -37,7 +45,9 @@ struct ProjectMetadata {
     description: &'static str,
     href: &'static str,
     site_url: &'static str,
+    rustdoc_href: &'static str,
     source_href: &'static str,
+    skill_command: &'static str,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -110,7 +120,6 @@ static ES_FLUENT_PACKAGES: [ProjectPackage; 2] = [
     ProjectPackage::ES_FLUENT,
     ProjectPackage::ES_FLUENT_MANAGER_DIOXUS,
 ];
-static ES_FLUENT_FOOTER_PACKAGES: [ProjectPackage; 1] = [ProjectPackage::ES_FLUENT];
 static KORUMA_COLLECTION_SUPPORT_LINKS: [ProjectSupportLink; 1] =
     [ProjectSupportLink::KORUMA_COLLECTION_CROWDIN];
 static KORUMA_SUPPORT_LINKS: [ProjectSupportLink; 1] =
@@ -126,14 +135,18 @@ impl Project {
                 description: "Rust validation",
                 href: "/koruma/",
                 site_url: "https://stayhydated.github.io/koruma/",
+                rustdoc_href: "https://docs.rs/koruma/",
                 source_href: "https://github.com/stayhydated/koruma",
+                skill_command: "npx skills add stayhydated/koruma",
             },
             Self::EsFluent => ProjectMetadata {
                 mark: "EF",
                 description: "Rust localization",
                 href: "/es-fluent/",
                 site_url: "https://stayhydated.github.io/es-fluent/",
+                rustdoc_href: "https://docs.rs/es-fluent/",
                 source_href: "https://github.com/stayhydated/es-fluent",
+                skill_command: "npx skills add stayhydated/es-fluent",
             },
         }
     }
@@ -153,8 +166,28 @@ impl Project {
         self.metadata().source_href
     }
 
+    pub const fn rustdoc_href(self) -> &'static str {
+        self.metadata().rustdoc_href
+    }
+
     pub const fn site_url(self) -> &'static str {
         self.metadata().site_url
+    }
+
+    pub const fn skill_command(self) -> &'static str {
+        self.metadata().skill_command
+    }
+
+    pub fn llms_href(self) -> Href {
+        self.project_file_href("llms.txt")
+    }
+
+    pub fn llms_full_href(self) -> Href {
+        self.project_file_href("llms-full.txt")
+    }
+
+    fn project_file_href(self, file_name: &str) -> Href {
+        Href::new(format!("{}{file_name}", self.href()))
     }
 
     pub const fn primary_package(self) -> ProjectPackage {
@@ -169,21 +202,6 @@ impl Project {
             Self::Koruma => &KORUMA_PACKAGES,
             Self::EsFluent => &ES_FLUENT_PACKAGES,
         }
-    }
-
-    pub const fn footer_packages(self) -> &'static [ProjectPackage] {
-        match self {
-            Self::Koruma => &KORUMA_PACKAGES,
-            Self::EsFluent => &ES_FLUENT_FOOTER_PACKAGES,
-        }
-    }
-
-    pub fn package_footer_links(self) -> Vec<ProjectPackageFooterLink> {
-        self.footer_packages()
-            .iter()
-            .copied()
-            .map(ProjectPackageFooterLink::from)
-            .collect()
     }
 
     pub const fn support_links(self) -> &'static [ProjectSupportLink] {
@@ -278,39 +296,6 @@ pub fn stayhydated_project_options_with(
             project.option_with_message_href(href, &mut message_text)
         })
         .collect()
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ProjectPackageFooterLink {
-    pub package: ProjectPackage,
-    pub label: OptionalDisplayText,
-    pub class: CssClass,
-}
-
-impl ProjectPackageFooterLink {
-    pub fn new(package: ProjectPackage) -> Self {
-        Self {
-            package,
-            label: OptionalDisplayText::default(),
-            class: CssClass::default(),
-        }
-    }
-
-    pub fn with_label(mut self, label: impl Into<OptionalDisplayText>) -> Self {
-        self.label = label.into();
-        self
-    }
-
-    pub fn with_class(mut self, class: impl Into<CssClass>) -> Self {
-        self.class = class.into();
-        self
-    }
-}
-
-impl From<ProjectPackage> for ProjectPackageFooterLink {
-    fn from(package: ProjectPackage) -> Self {
-        Self::new(package)
-    }
 }
 
 #[component]
@@ -423,17 +408,85 @@ pub fn ProjectPackageTextLink(
 }
 
 #[component]
-pub fn ProjectFooterCratesSection(packages: Vec<ProjectPackageFooterLink>) -> Element {
+pub fn ProjectFooterSkillsSection(project: Project) -> Element {
+    let command = project.skill_command();
+    let llms_href = project.llms_href();
+    let llms_full_href = project.llms_full_href();
+    let mut copied = use_signal(|| false);
+    let copy_label = if copied() {
+        "Copied"
+    } else {
+        "Copy skills command"
+    };
+
     rsx! {
-        section { class: "footer-section footer-crates-section",
-            h2 { class: "footer-section-title", "Crates" }
-            ul { class: "footer-link-list",
-                for (index, package) in packages.into_iter().enumerate() {
-                    li { key: "{index}",
-                        ProjectPackageTextLink {
-                            package: package.package,
-                            label: package.label,
-                            class: package.class,
+        section { class: "footer-section footer-resources-section",
+            h2 { class: "footer-section-title", "Resources" }
+            ul { class: "footer-resource-list",
+                li {
+                    div { class: "footer-resource-row footer-skill-resource",
+                        span { class: "footer-link footer-skills-link", "Skills" }
+                        Tooltip {
+                            class: "footer-copy-tooltip",
+                            TooltipTrigger {
+                                as: move |trigger_attrs: Vec<Attribute>| {
+                                    rsx! {
+                                        button {
+                                            class: if copied() {
+                                                "footer-copy-button is-copied"
+                                            } else {
+                                                "footer-copy-button"
+                                            },
+                                            r#type: "button",
+                                            "aria-label": copy_label,
+                                            onclick: move |_| {
+                                                copy_text_to_clipboard(command);
+                                                copied.set(true);
+                                            },
+                                            ..trigger_attrs,
+                                            if copied() {
+                                                Icon {
+                                                    class: "footer-copy-icon".to_string(),
+                                                    width: 16,
+                                                    height: 16,
+                                                    icon: LdCopyCheck,
+                                                }
+                                            } else {
+                                                Icon {
+                                                    class: "footer-copy-icon".to_string(),
+                                                    width: 16,
+                                                    height: 16,
+                                                    icon: LdCopy,
+                                                }
+                                            }
+                                            span { class: "footer-copy-status", "{copy_label}" }
+                                        }
+                                    }
+                                }
+                            }
+                            TooltipContent {
+                                side: ContentSide::Top,
+                                class: "footer-command-tooltip",
+                                code { "{command}" }
+                            }
+                        }
+                    }
+                }
+                li {
+                    div { class: "footer-resource-row",
+                        a {
+                            class: "footer-link",
+                            href: llms_href.as_str(),
+                            "llms.txt"
+                        }
+                    }
+                }
+                li {
+                    div { class: "footer-resource-row",
+                        a {
+                            class: "footer-link",
+                            href: llms_full_href.as_str(),
+                            "llms-full.txt"
                         }
                     }
                 }
@@ -442,11 +495,23 @@ pub fn ProjectFooterCratesSection(packages: Vec<ProjectPackageFooterLink>) -> El
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+fn copy_text_to_clipboard(value: &str) {
+    if let Some(window) = web_sys::window() {
+        let _ = window.navigator().clipboard().write_text(value);
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn copy_text_to_clipboard(_value: &str) {}
+
 #[component]
-pub fn ProjectFooterPanel(packages: Vec<ProjectPackageFooterLink>) -> Element {
+pub fn ProjectFooterPanel(project: Project) -> Element {
     rsx! {
         FooterPanel {
-            ProjectFooterCratesSection { packages }
+            ProjectFooterSkillsSection {
+                project,
+            }
         }
     }
 }
@@ -455,7 +520,7 @@ pub fn ProjectFooterPanel(packages: Vec<ProjectPackageFooterLink>) -> Element {
 pub fn ProjectFooterPanelForProject(project: Project) -> Element {
     rsx! {
         ProjectFooterPanel {
-            packages: project.package_footer_links(),
+            project,
         }
     }
 }
@@ -506,6 +571,20 @@ mod tests {
             Project::EsFluent.primary_package(),
             ProjectPackage::ES_FLUENT
         );
+        assert_eq!(Project::Koruma.rustdoc_href(), "https://docs.rs/koruma/");
+        assert_eq!(
+            Project::EsFluent.rustdoc_href(),
+            "https://docs.rs/es-fluent/"
+        );
+        assert_eq!(Project::Koruma.llms_href().as_str(), "/koruma/llms.txt");
+        assert_eq!(
+            Project::EsFluent.llms_full_href().as_str(),
+            "/es-fluent/llms-full.txt"
+        );
+        assert_eq!(
+            Project::Koruma.skill_command(),
+            "npx skills add stayhydated/koruma"
+        );
         assert_eq!(
             ProjectPackage::KORUMA_COLLECTION.crates_href(),
             "https://crates.io/crates/koruma-collection"
@@ -524,26 +603,6 @@ mod tests {
                 ProjectPackage::ES_FLUENT,
                 ProjectPackage::ES_FLUENT_MANAGER_DIOXUS,
             ]
-        );
-    }
-
-    #[test]
-    fn project_package_footer_links_use_footer_packages() {
-        assert_eq!(
-            Project::Koruma
-                .package_footer_links()
-                .into_iter()
-                .map(|link| link.package)
-                .collect::<Vec<_>>(),
-            vec![ProjectPackage::KORUMA, ProjectPackage::KORUMA_COLLECTION]
-        );
-        assert_eq!(
-            Project::EsFluent
-                .package_footer_links()
-                .into_iter()
-                .map(|link| link.package)
-                .collect::<Vec<_>>(),
-            vec![ProjectPackage::ES_FLUENT]
         );
     }
 
@@ -571,19 +630,5 @@ mod tests {
             Project::Koruma.source_href(),
             "https://github.com/stayhydated/koruma"
         );
-    }
-
-    #[test]
-    fn package_footer_link_supports_custom_label_and_class() {
-        let link = ProjectPackageFooterLink::new(ProjectPackage::ES_FLUENT_MANAGER_DIOXUS)
-            .with_label("Dioxus manager")
-            .with_class("footer-link");
-
-        assert_eq!(link.package, ProjectPackage::ES_FLUENT_MANAGER_DIOXUS);
-        assert_eq!(
-            link.label.into_option().map(|label| label.into_string()),
-            Some("Dioxus manager".to_string())
-        );
-        assert_eq!(link.class.as_str(), "footer-link");
     }
 }

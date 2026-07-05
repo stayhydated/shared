@@ -7,7 +7,7 @@ use crate::{
     cards::SectionHeader,
     classes,
     links::{BackLink, LinkTarget},
-    projects::{ProjectLockup, ProjectOption, ProjectSelect},
+    projects::{ProjectOption, ProjectSwitcher},
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -162,24 +162,16 @@ pub fn ProjectHeader(
     #[props(default = DisplayText::new("Project selector"), into)] project_label: DisplayText,
     #[props(default = DisplayText::new("Projects"), into)] project_list_label: DisplayText,
 ) -> Element {
-    let static_project_label = project_label.as_str().to_string();
+    let _ = project_options;
+    let _ = project_list_label;
 
     rsx! {
         ProjectSiteHeader {
             project_lockup: rsx! {
-                if project_options.is_empty() {
-                    div {
-                        class: "project-switcher",
-                        "aria-label": static_project_label,
-                        ProjectLockup { project }
-                    }
-                } else {
-                    ProjectSelect {
-                        selected: project,
-                        projects: project_options,
-                        label: project_label,
-                        list_label: project_list_label,
-                    }
+                ProjectSwitcher {
+                    selected: project,
+                    projects: Vec::new(),
+                    label: project_label,
                 }
             },
             {children}

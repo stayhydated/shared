@@ -15,6 +15,8 @@ pub enum HeaderMessage {
     NavDemos,
     #[strum(to_string = "Book")]
     NavBook,
+    #[strum(to_string = "Docs")]
+    NavDocs,
     #[strum(to_string = "Source")]
     NavSource,
     #[strum(to_string = "Project selector")]
@@ -31,6 +33,7 @@ impl HeaderMessage {
             Self::NavHome => "Home",
             Self::NavDemos => "Demos",
             Self::NavBook => "Book",
+            Self::NavDocs => "Docs",
             Self::NavSource => "Source",
             Self::ProjectSelector => "Project selector",
             Self::Projects => "Projects",
@@ -50,6 +53,7 @@ pub fn stayhydated_header_labels_with(
         label_for(HeaderMessage::NavHome),
         label_for(HeaderMessage::NavDemos),
         label_for(HeaderMessage::NavBook),
+        label_for(HeaderMessage::NavDocs),
         label_for(HeaderMessage::NavSource),
     )
 }
@@ -63,6 +67,7 @@ pub struct StayhydatedProjectHeaderConfig<R> {
     pub home: LinkTarget<R>,
     pub demos: LinkTarget<R>,
     pub book: Href,
+    pub docs: Href,
     pub source: Href,
     pub labels: ProjectNavLabels,
     pub active: ProjectNavItem,
@@ -86,6 +91,7 @@ impl<R> StayhydatedProjectHeaderConfig<R> {
             home,
             demos,
             book: book.into(),
+            docs: Href::new(project.rustdoc_href()),
             source: Href::new(project.source_href()),
             labels,
             active,
@@ -99,6 +105,11 @@ impl<R> StayhydatedProjectHeaderConfig<R> {
 
     pub fn with_source(mut self, source: impl Into<Href>) -> Self {
         self.source = source.into();
+        self
+    }
+
+    pub fn with_docs(mut self, docs: impl Into<Href>) -> Self {
+        self.docs = docs.into();
         self
     }
 
@@ -128,6 +139,7 @@ impl<R> StayhydatedProjectHeaderConfig<R> {
             self.home,
             self.demos,
             self.book,
+            self.docs,
             self.source,
             self.labels,
             self.active,
@@ -162,12 +174,14 @@ mod tests {
         assert_eq!(labels.home.as_str(), "NavHome");
         assert_eq!(labels.demos.as_str(), "NavDemos");
         assert_eq!(labels.book.as_str(), "NavBook");
+        assert_eq!(labels.docs.as_str(), "NavDocs");
         assert_eq!(labels.source.as_str(), "NavSource");
     }
 
     #[test]
     fn header_message_display_is_english() {
         assert_eq!(HeaderMessage::NavHome.to_string(), "Home");
+        assert_eq!(HeaderMessage::NavDocs.to_string(), "Docs");
         assert_eq!(
             HeaderMessage::ProjectSelector.to_string(),
             "Project selector"
@@ -196,10 +210,13 @@ mod tests {
         assert_eq!(config.project_label.as_str(), "Project selector");
         assert_eq!(config.project_list_label.as_str(), "Projects");
         assert_eq!(config.source.as_str(), Project::Koruma.source_href());
+        assert_eq!(config.docs.as_str(), Project::Koruma.rustdoc_href());
         assert_eq!(config.labels.book.as_str(), "NavBook");
+        assert_eq!(config.labels.docs.as_str(), "NavDocs");
 
         let nav = config.into_nav_config();
         assert_eq!(nav.book.as_str(), "/book/");
+        assert_eq!(nav.docs.as_str(), Project::Koruma.rustdoc_href());
         assert_eq!(nav.project_label.as_str(), "Project selector");
         assert_eq!(nav.project_list_label.as_str(), "Projects");
         assert_eq!(nav.active, ProjectNavItem::Home);

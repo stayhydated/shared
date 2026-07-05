@@ -143,6 +143,7 @@ pub struct ProjectNavLabels {
     pub home: DisplayText,
     pub demos: DisplayText,
     pub book: DisplayText,
+    pub docs: DisplayText,
     pub source: DisplayText,
 }
 
@@ -151,12 +152,14 @@ impl ProjectNavLabels {
         home: impl Into<DisplayText>,
         demos: impl Into<DisplayText>,
         book: impl Into<DisplayText>,
+        docs: impl Into<DisplayText>,
         source: impl Into<DisplayText>,
     ) -> Self {
         Self {
             home: home.into(),
             demos: demos.into(),
             book: book.into(),
+            docs: docs.into(),
             source: source.into(),
         }
     }
@@ -171,6 +174,7 @@ pub struct ProjectNavConfig<R> {
     pub home: LinkTarget<R>,
     pub demos: LinkTarget<R>,
     pub book: Href,
+    pub docs: Href,
     pub source: Href,
     pub labels: ProjectNavLabels,
     pub active: ProjectNavItem,
@@ -182,6 +186,7 @@ impl<R> ProjectNavConfig<R> {
         home: LinkTarget<R>,
         demos: LinkTarget<R>,
         book: impl Into<Href>,
+        docs: impl Into<Href>,
         source: impl Into<Href>,
         labels: ProjectNavLabels,
         active: ProjectNavItem,
@@ -194,6 +199,7 @@ impl<R> ProjectNavConfig<R> {
             home,
             demos,
             book: book.into(),
+            docs: docs.into(),
             source: source.into(),
             labels,
             active,
@@ -231,6 +237,7 @@ pub fn ProjectNav<R: Routable + Clone + PartialEq + 'static>(
     home: LinkTarget<R>,
     demos: LinkTarget<R>,
     #[props(into)] book: Href,
+    #[props(into)] docs: Href,
     #[props(into)] source: Href,
     labels: ProjectNavLabels,
     active: ProjectNavItem,
@@ -250,6 +257,10 @@ pub fn ProjectNav<R: Routable + Clone + PartialEq + 'static>(
             NavLink::<R> {
                 target: LinkTarget::href(book),
                 label: labels.book,
+            }
+            ExternalNavLink {
+                href: docs,
+                label: labels.docs,
             }
             ExternalNavLink {
                 href: source,
@@ -273,6 +284,7 @@ pub fn ProjectNavigationHeader<R: Routable + Clone + PartialEq + 'static>(
             home: nav.home,
             demos: nav.demos,
             book: nav.book,
+            docs: nav.docs,
             source: nav.source,
             labels: nav.labels,
             active: nav.active,
@@ -290,6 +302,7 @@ pub fn ProjectNavHeader<R: Routable + Clone + PartialEq + 'static>(
     home: LinkTarget<R>,
     demos: LinkTarget<R>,
     #[props(into)] book: Href,
+    #[props(into)] docs: Href,
     #[props(into)] source: Href,
     labels: ProjectNavLabels,
     active: ProjectNavItem,
@@ -305,6 +318,7 @@ pub fn ProjectNavHeader<R: Routable + Clone + PartialEq + 'static>(
                 home,
                 demos,
                 book,
+                docs,
                 source,
                 labels,
                 active,
@@ -348,18 +362,25 @@ pub fn ButtonRouteLink<R: Routable + Clone + PartialEq + 'static>(
 #[component]
 pub fn ProjectHeroActions<R: Routable + Clone + PartialEq + 'static>(
     #[props(into)] book: Href,
+    #[props(into)] docs: Href,
     demos: LinkTarget<R>,
-    #[props(into)] primary_label: DisplayText,
-    #[props(into)] secondary_label: DisplayText,
+    #[props(default = DisplayText::new("Read the book"), into)] book_label: DisplayText,
+    #[props(default = DisplayText::new("Read the docs"), into)] docs_label: DisplayText,
+    #[props(default = DisplayText::new("View demos"), into)] demos_label: DisplayText,
 ) -> Element {
     rsx! {
         ButtonLink {
             href: book,
-            label: primary_label,
+            label: book_label,
+        }
+        ButtonLink {
+            href: docs,
+            label: docs_label,
+            variant: ButtonVariant::Secondary,
         }
         ButtonRouteLink::<R> {
             target: demos,
-            label: secondary_label,
+            label: demos_label,
             variant: ButtonVariant::Secondary,
         }
     }

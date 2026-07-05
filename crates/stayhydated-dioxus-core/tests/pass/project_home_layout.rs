@@ -97,8 +97,9 @@ fn project_nav_app() -> Element {
             home: LinkTarget::route(AppRoute::Home {}),
             demos: LinkTarget::route(AppRoute::Demos {}),
             book: "/project/book/",
+            docs: "https://docs.rs/example-project/",
             source: "https://github.com/stayhydated/example-project",
-            labels: ProjectNavLabels::new("Home", "Demos", "Book", "Source"),
+            labels: ProjectNavLabels::new("Home", "Demos", "Book", "Docs", "Source"),
             active: ProjectNavItem::Home,
         }
     }
@@ -110,8 +111,9 @@ fn project_navigation_header_app() -> Element {
         LinkTarget::route(AppRoute::Home {}),
         LinkTarget::route(AppRoute::Demos {}),
         "/project/book/",
+        "https://docs.rs/example-project/",
         "https://github.com/stayhydated/example-project",
-        ProjectNavLabels::new("Home", "Demos", "Book", "Source"),
+        ProjectNavLabels::new("Home", "Demos", "Book", "Docs", "Source"),
         ProjectNavItem::Demos,
     );
 
