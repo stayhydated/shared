@@ -1,0 +1,19 @@
+[package]
+name = "stayhydated-dioxus"
+description = "Dioxus project-site wrapper and stayhydated project inventory"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[dependencies]
+derive_more = { features = [ "display" ], workspace = true }
+dioxus = { features = [ "lib", "router" ], workspace = true }
+stayhydated-dioxus-core = { workspace = true }
+strum = { features = [ "derive" ], workspace = true }
+
+[lints]
+workspace = true

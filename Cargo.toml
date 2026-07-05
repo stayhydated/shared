@@ -1,0 +1,67 @@
+[workspace]
+members = [
+  "crates/stayhydated-dioxus",
+  "crates/stayhydated-dioxus-core",
+  "crates/stayhydated-site",
+  "crates/stayhydated-xtask",
+]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+readme = "README.md"
+repository = "https://github.com/stayhydated/shared"
+rust-version = "1.96"
+version = "0.1.0"
+
+[workspace.dependencies]
+anyhow = "1.0"
+bon = "3.9.1"
+cargo_metadata = "0.23"
+clap = { features = [ "derive" ], version = "4.5" }
+derive_more = "2.1"
+dioxus = { default-features = false, version = "0.7" }
+dioxus-free-icons = { default-features = false, version = "0.10.0" }
+dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
+mdbook-driver = "0.5"
+path-slash = "0.2"
+stayhydated-dioxus-core = { path = "crates/stayhydated-dioxus-core", version = "0.1.0" }
+stayhydated-site = { path = "crates/stayhydated-site", version = "0.1.0" }
+strum = "0.28"
+tempfile = "3"
+trybuild = "1.0"
+walkdir = "2.5"
+web-sys = "0.3"
+
+[profile.dev]
+codegen-units = 16
+debug = "limited"
+opt-level = 1
+split-debuginfo = "unpacked"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "deny" }
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+derive_partial_eq_without_eq = "deny"
+err_expect = "deny"
+incompatible_msrv = "deny"
+iter_on_single_items = "deny"
+needless_bool = "deny"
+redundant_clone = "deny"
+todo = "deny"
+type_complexity = "allow"
+uninlined_format_args = "allow"
+unused_trait_names = "deny"
+useless_conversion = "deny"

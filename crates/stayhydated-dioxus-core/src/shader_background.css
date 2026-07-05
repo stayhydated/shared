@@ -1,0 +1,45 @@
+body {
+  position: relative;
+}
+
+.shader-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(38, 124, 222, 0.55) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(38, 124, 222, 0.55) 1px, transparent 1px),
+    linear-gradient(rgba(38, 124, 222, 0.24) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(38, 124, 222, 0.24) 1px, transparent 1px), #000;
+  background-position: center;
+  background-size:
+    96px 96px,
+    96px 96px,
+    24px 24px,
+    24px 24px;
+}
+
+:root[data-shader-background="ready"] .shader-background {
+  background: none;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.72));
+}
+
+:root[data-shader-background="ready"] body::before {
+  content: none;
+}
+
+.page-shell {
+  position: relative;
+  z-index: 2;
+}
