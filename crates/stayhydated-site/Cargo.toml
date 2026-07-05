@@ -11,12 +11,11 @@ readme = "README.md"
 
 [features]
 default = [ "web" ]
-web = [ "dep:dioxus", "dep:web-sys", "dioxus/launch", "dioxus/web" ]
+web = [ "dep:dioxus", "dioxus/launch", "dioxus/web" ]
 
 [dependencies]
 bon = { workspace = true }
 dioxus = { optional = true, workspace = true }
-web-sys = { features = [ "Location" ], optional = true, workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

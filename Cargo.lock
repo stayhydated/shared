@@ -3517,7 +3517,6 @@ dependencies = [
  "bon",
  "dioxus",
  "tempfile",
- "web-sys",
 ]
 
 [[package]]
