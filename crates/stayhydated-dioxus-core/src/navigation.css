@@ -4,9 +4,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--chrome-gap);
   margin-bottom: 1rem;
-  padding: 0.75rem;
+  padding: var(--chrome-padding);
   background: var(--panel-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -16,7 +16,8 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: var(--chrome-lockup-gap);
+  min-height: var(--chrome-control-height);
   min-width: 0;
   color: var(--text);
   text-decoration: none;
@@ -25,8 +26,8 @@
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--chrome-mark-size);
+  height: var(--chrome-mark-size);
   flex: 0 0 auto;
   border: 1px solid rgba(182, 255, 0, 0.72);
   border-radius: var(--radius);
@@ -41,7 +42,7 @@
 
 .brand-copy {
   display: grid;
-  gap: 0.1rem;
+  gap: var(--chrome-lockup-copy-gap);
   min-width: 0;
 }
 
@@ -53,6 +54,7 @@
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.75rem;
   letter-spacing: 0;
+  line-height: 1.1;
   text-transform: uppercase;
   text-shadow: var(--glow-amber);
 }
@@ -60,58 +62,33 @@
 .brand-title {
   font-size: 1.1rem;
   font-weight: 800;
+  line-height: 1.1;
 }
 
 .project-switcher {
   display: inline-flex;
+  align-items: center;
+  min-height: var(--chrome-control-height);
   min-width: 0;
-}
-
-.project-switcher .dx-select {
-  min-width: 0;
-}
-
-.project-switcher .dx-select-trigger {
-  min-width: min(16rem, 48vw);
-  min-height: 3.25rem;
-  justify-content: space-between;
-  gap: 0.8rem;
-  border-color: transparent;
-  padding: 0.35rem 0.55rem;
-  background: transparent;
-  box-shadow: none;
-  text-align: left;
-}
-
-.project-switcher .dx-select-trigger:hover:not(:disabled),
-.project-switcher .dx-select-trigger:focus-visible,
-.project-switcher .dx-select[data-state="open"] .dx-select-trigger {
-  border-color: rgba(0, 246, 255, 0.7);
-  background: var(--panel-bg-hover);
-  box-shadow: var(--glow-cyan);
-}
-
-.project-switcher .dx-select-list {
-  z-index: 10000;
-  min-width: min(20rem, calc(100vw - 2rem));
 }
 
 .project-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: var(--chrome-lockup-gap);
+  min-height: var(--chrome-control-height);
   min-width: 0;
   color: var(--text);
 }
 
 .project-lockup.is-compact {
   width: 100%;
-  gap: 0.65rem;
+  gap: var(--chrome-lockup-gap-compact);
 }
 
 .project-lockup.is-compact .project-mark {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: var(--chrome-mark-size-compact);
+  height: var(--chrome-mark-size-compact);
   font-size: 0.95rem;
 }
 
@@ -126,37 +103,19 @@
   white-space: nowrap;
 }
 
-.project-select-option {
-  min-width: 17rem;
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: 0.55rem 0.6rem;
-}
-
-.project-select-option.is-active {
-  color: var(--text);
-  background: rgba(0, 246, 255, 0.16);
-  text-shadow: 0 0 12px rgba(0, 246, 255, 0.46);
-}
-
 .header-cluster {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--chrome-gap);
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 .header-nav-links {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.header-nav-links {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.35rem;
+  gap: var(--chrome-nav-gap);
   flex-wrap: wrap;
 }
 
@@ -166,7 +125,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.5rem;
+  min-height: var(--chrome-control-height);
   border: 1px solid transparent;
   border-radius: var(--radius);
   color: var(--text-muted);
@@ -180,9 +139,9 @@
 }
 
 .header-nav-item {
-  min-width: 5.5rem;
-  padding: 0.55rem 0.85rem;
-  font-size: 0.94rem;
+  min-width: var(--chrome-control-min-width);
+  padding: var(--chrome-control-padding-y) var(--chrome-control-padding-x);
+  font-size: var(--chrome-nav-font-size);
 }
 
 .header-nav-item:hover,
@@ -195,7 +154,7 @@
 
 .button-link,
 .back-pill {
-  padding: 0.75rem 1rem;
+  padding: var(--button-padding-y) var(--button-padding-x);
   background: #000;
   font-weight: 700;
 }

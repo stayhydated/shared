@@ -134,18 +134,18 @@ impl<R> StayhydatedProjectHeaderConfig<R> {
     }
 
     pub fn into_nav_config(self) -> ProjectNavConfig<R> {
-        ProjectNavConfig::new(
-            self.project,
-            self.home,
-            self.demos,
-            self.book,
-            self.docs,
-            self.source,
-            self.labels,
-            self.active,
-        )
-        .with_project_options(self.project_options)
-        .with_project_labels(self.project_label, self.project_list_label)
+        ProjectNavConfig::builder()
+            .project(self.project)
+            .home(self.home)
+            .demos(self.demos)
+            .book(self.book)
+            .docs(self.docs)
+            .source(self.source)
+            .labels(self.labels)
+            .active(self.active)
+            .build()
+            .with_project_options(self.project_options)
+            .with_project_labels(self.project_label, self.project_list_label)
     }
 }
 

@@ -1,3 +1,4 @@
+use bon::Builder;
 use dioxus::prelude::*;
 
 use crate::{
@@ -165,11 +166,14 @@ impl ProjectNavLabels {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Builder, Clone, Debug, Eq, PartialEq)]
 pub struct ProjectNavConfig<R> {
     pub project: ProjectOption,
+    #[builder(default)]
     pub project_options: Vec<ProjectOption>,
+    #[builder(default = DisplayText::new("Project selector"))]
     pub project_label: DisplayText,
+    #[builder(default = DisplayText::new("Projects"))]
     pub project_list_label: DisplayText,
     pub home: LinkTarget<R>,
     pub demos: LinkTarget<R>,
@@ -181,31 +185,6 @@ pub struct ProjectNavConfig<R> {
 }
 
 impl<R> ProjectNavConfig<R> {
-    pub fn new(
-        project: ProjectOption,
-        home: LinkTarget<R>,
-        demos: LinkTarget<R>,
-        book: impl Into<Href>,
-        docs: impl Into<Href>,
-        source: impl Into<Href>,
-        labels: ProjectNavLabels,
-        active: ProjectNavItem,
-    ) -> Self {
-        Self {
-            project,
-            project_options: Vec::new(),
-            project_label: DisplayText::new("Project selector"),
-            project_list_label: DisplayText::new("Projects"),
-            home,
-            demos,
-            book: book.into(),
-            docs: docs.into(),
-            source: source.into(),
-            labels,
-            active,
-        }
-    }
-
     pub fn with_labels(mut self, labels: ProjectNavLabels) -> Self {
         self.labels = labels;
         self

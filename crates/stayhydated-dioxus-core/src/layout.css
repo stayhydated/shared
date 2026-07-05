@@ -1,5 +1,5 @@
 .page-shell {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(var(--site-shell-width), calc(100% - var(--site-shell-gutter)));
   margin: 0 auto;
   padding: 1rem 0 4rem;
 }
@@ -408,6 +408,8 @@
 }
 
 .contribute-panel {
+  box-sizing: border-box;
+  width: 100%;
   margin: 0 auto 1rem;
   padding: 1rem;
 }
@@ -442,7 +444,7 @@
 
 @media (max-width: 720px) {
   .page-shell {
-    width: min(100% - 1rem, 1120px);
+    width: min(100% - var(--site-shell-gutter-compact), var(--site-shell-width));
     padding-top: 0.75rem;
   }
 
@@ -455,7 +457,7 @@
     width: 100%;
     align-items: stretch;
     justify-content: flex-start;
-    gap: 0.65rem;
+    gap: var(--chrome-gap-compact);
   }
 
   .header-nav-links {

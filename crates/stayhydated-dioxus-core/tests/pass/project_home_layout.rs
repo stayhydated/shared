@@ -106,16 +106,18 @@ fn project_nav_app() -> Element {
 }
 
 fn project_navigation_header_app() -> Element {
-    let nav = ProjectNavConfig::new(
-        example_project(),
-        LinkTarget::route(AppRoute::Home {}),
-        LinkTarget::route(AppRoute::Demos {}),
-        "/project/book/",
-        "https://docs.rs/example-project/",
-        "https://github.com/stayhydated/example-project",
-        ProjectNavLabels::new("Home", "Demos", "Book", "Docs", "Source"),
-        ProjectNavItem::Demos,
-    );
+    let nav = ProjectNavConfig::builder()
+        .project(example_project())
+        .home(LinkTarget::route(AppRoute::Home {}))
+        .demos(LinkTarget::route(AppRoute::Demos {}))
+        .book(Href::new("/project/book/"))
+        .docs(Href::new("https://docs.rs/example-project/"))
+        .source(Href::new("https://github.com/stayhydated/example-project"))
+        .labels(ProjectNavLabels::new(
+            "Home", "Demos", "Book", "Docs", "Source",
+        ))
+        .active(ProjectNavItem::Demos)
+        .build();
 
     rsx! {
         ProjectNavigationHeader::<AppRoute> { nav }
