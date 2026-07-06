@@ -11,20 +11,6 @@ env:
   RUSTC_WRAPPER: sccache
 
 jobs:
-  es-fluent-local-cli:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.10
-
-      - name: Setup mold
-        uses: rui314/setup-mold@v1
-
   test:
     name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
