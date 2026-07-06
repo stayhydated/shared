@@ -28,7 +28,7 @@ web-sys = { features = [
   "HtmlCanvasElement",
   "Window",
 ], version = "0.3.99" }
-wgpu = { default-features = false, features = [ "std", "webgpu", "wgsl" ], version = "29.0.3" }
+wgpu = { default-features = false, features = [ "std", "webgpu", "wgsl" ], version = "30.0.0" }
 
 [dev-dependencies]
 trybuild = { workspace = true }
