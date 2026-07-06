@@ -16,8 +16,7 @@ where
     let paths = route_paths
         .into_iter()
         .map(|path| Href::new(path.as_ref()))
-        .chain(project_static_paths())
-        .collect::<Vec<_>>();
+        .chain(project_static_paths());
 
     render(site_url, paths)
 }

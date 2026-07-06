@@ -3,11 +3,12 @@ use stayhydated_dioxus_core::{
     DisplayText, Href, LinkTarget, ProjectNavConfig, ProjectNavItem, ProjectNavLabels,
     ProjectNavigationHeader, ProjectOption,
 };
-use strum::Display;
+use strum::{Display, IntoStaticStr};
 
 use crate::{Project, stayhydated_project_options};
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, IntoStaticStr, PartialEq)]
+#[strum(const_into_str)]
 pub enum HeaderMessage {
     #[strum(to_string = "Home")]
     NavHome,
@@ -29,16 +30,7 @@ pub enum HeaderMessage {
 
 impl HeaderMessage {
     pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::NavHome => "Home",
-            Self::NavDemos => "Demos",
-            Self::NavBook => "Book",
-            Self::NavDocs => "Docs",
-            Self::NavSource => "Source",
-            Self::ProjectSelector => "Project selector",
-            Self::Projects => "Projects",
-            Self::Language => "Language",
-        }
+        self.into_str()
     }
 }
 

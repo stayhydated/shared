@@ -1,4 +1,3 @@
-use derive_more::Display;
 use dioxus::prelude::*;
 use dioxus_free_icons::{
     Icon,
@@ -12,17 +11,17 @@ use stayhydated_dioxus_core::{
     CssClass, DisplayText, ExternalTextLink, FooterPanel, Href, OptionalDisplayText,
     ProjectId as CoreProjectId, ProjectMark, ProjectOption, ProjectPageMetadata,
 };
-use strum::Display as StrumDisplay;
+use strum::{Display, IntoStaticStr};
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, IntoStaticStr, PartialEq)]
+#[strum(const_into_str, serialize_all = "kebab-case")]
 pub enum Project {
-    #[display("koruma")]
     Koruma,
-    #[display("es-fluent")]
     EsFluent,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, StrumDisplay)]
+#[derive(Clone, Copy, Debug, Display, Eq, IntoStaticStr, PartialEq)]
+#[strum(const_into_str)]
 pub enum ProjectMessage {
     #[strum(to_string = "Rust validation")]
     KorumaDescription,
@@ -32,10 +31,7 @@ pub enum ProjectMessage {
 
 impl ProjectMessage {
     pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::KorumaDescription => "Rust validation",
-            Self::EsFluentDescription => "Rust localization",
-        }
+        self.into_str()
     }
 }
 
@@ -152,10 +148,7 @@ impl Project {
     }
 
     pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Koruma => "koruma",
-            Self::EsFluent => "es-fluent",
-        }
+        self.into_str()
     }
 
     pub const fn href(self) -> &'static str {

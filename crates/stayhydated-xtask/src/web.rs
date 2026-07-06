@@ -4,6 +4,7 @@ use std::process::Command;
 
 use anyhow::{Context as _, bail};
 use bon::Builder;
+use strum::IntoStaticStr;
 use walkdir::WalkDir;
 
 pub const DX_COMPONENTS_THEME_FILE_NAME: &str = "dx-components-theme.css";
@@ -76,16 +77,15 @@ impl DioxusBuildCommand {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
+#[strum(const_into_str, serialize_all = "kebab-case")]
 enum DioxusPlatform {
     Web,
 }
 
 impl DioxusPlatform {
     fn as_arg(self) -> &'static str {
-        match self {
-            Self::Web => "web",
-        }
+        self.into_str()
     }
 }
 
@@ -335,87 +335,6 @@ pub fn build(config: WebBuildConfig) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn dioxus_web_static_site_command_renders_expected_argv() {
-        let command = DioxusBuildCommand::web_static_site(Some(PackageName::new("web")));
-
-        assert_eq!(
-            command.argv(),
-            [
-                "build",
-                "--package",
-                "web",
-                "--platform",
-                "web",
-                "--ssg",
-                "--release",
-                "--debug-symbols",
-                "false",
-                "--force-sequential",
-                "true",
-            ]
-        );
-    }
-
-    #[test]
-    fn github_pages_config_uses_typed_dioxus_command() {
-        let config = WebBuildConfig::github_pages("/workspace")
-            .package("web")
-            .build();
-
-        assert_eq!(
-            config.dioxus_command.argv(),
-            DioxusBuildCommand::web_static_site(Some(PackageName::new("web"))).argv()
-        );
-    }
-
-    #[test]
-    fn github_pages_config_writes_shared_dx_components_theme() {
-        let config = WebBuildConfig::github_pages("/workspace")
-            .package("web")
-            .build();
-        let theme = config
-            .write_files
-            .iter()
-            .find(|file| file.destination.ends_with(DX_COMPONENTS_THEME_FILE_NAME))
-            .expect("shared theme should be written");
-
-        assert_eq!(
-            theme.destination,
-            PathBuf::from("/workspace/web/dist").join(DX_COMPONENTS_THEME_FILE_NAME)
-        );
-        assert!(theme.contents.contains("--primary-color"));
-    }
-
-    #[test]
-    fn github_pages_config_tracks_route_fallback_paths() {
-        let config = WebBuildConfig::github_pages("/workspace")
-            .route_fallback_paths(["/", "/demos/", "/zh/demos/"])
-            .build();
-
-        assert_eq!(config.route_fallback_paths, ["/", "/demos/", "/zh/demos/"]);
-    }
-
-    #[test]
-    fn route_fallback_path_uses_route_index_files() {
-        assert_eq!(route_fallback_path("/"), None);
-        assert_eq!(
-            route_fallback_path("/zh/demos/").as_deref(),
-            Some(std::path::Path::new("zh/demos/index.html"))
-        );
-    }
-
-    #[test]
-    fn route_fallback_path_rejects_escaping_segments() {
-        assert!(route_fallback_path("../secret").is_none());
-        assert!(route_fallback_path("/zh/../secret/").is_none());
-    }
-}
-
 fn write_route_fallbacks(dist_dir: &std::path::Path, paths: &[String]) -> anyhow::Result<()> {
     if paths.is_empty() {
         return Ok(());
@@ -539,4 +458,85 @@ fn copy_directory(source: &std::path::Path, destination: &std::path::Path) -> an
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dioxus_web_static_site_command_renders_expected_argv() {
+        let command = DioxusBuildCommand::web_static_site(Some(PackageName::new("web")));
+
+        assert_eq!(
+            command.argv(),
+            [
+                "build",
+                "--package",
+                "web",
+                "--platform",
+                "web",
+                "--ssg",
+                "--release",
+                "--debug-symbols",
+                "false",
+                "--force-sequential",
+                "true",
+            ]
+        );
+    }
+
+    #[test]
+    fn github_pages_config_uses_typed_dioxus_command() {
+        let config = WebBuildConfig::github_pages("/workspace")
+            .package("web")
+            .build();
+
+        assert_eq!(
+            config.dioxus_command.argv(),
+            DioxusBuildCommand::web_static_site(Some(PackageName::new("web"))).argv()
+        );
+    }
+
+    #[test]
+    fn github_pages_config_writes_shared_dx_components_theme() {
+        let config = WebBuildConfig::github_pages("/workspace")
+            .package("web")
+            .build();
+        let theme = config
+            .write_files
+            .iter()
+            .find(|file| file.destination.ends_with(DX_COMPONENTS_THEME_FILE_NAME))
+            .expect("shared theme should be written");
+
+        assert_eq!(
+            theme.destination,
+            PathBuf::from("/workspace/web/dist").join(DX_COMPONENTS_THEME_FILE_NAME)
+        );
+        assert!(theme.contents.contains("--primary-color"));
+    }
+
+    #[test]
+    fn github_pages_config_tracks_route_fallback_paths() {
+        let config = WebBuildConfig::github_pages("/workspace")
+            .route_fallback_paths(["/", "/demos/", "/zh/demos/"])
+            .build();
+
+        assert_eq!(config.route_fallback_paths, ["/", "/demos/", "/zh/demos/"]);
+    }
+
+    #[test]
+    fn route_fallback_path_uses_route_index_files() {
+        assert_eq!(route_fallback_path("/"), None);
+        assert_eq!(
+            route_fallback_path("/zh/demos/").as_deref(),
+            Some(std::path::Path::new("zh/demos/index.html"))
+        );
+    }
+
+    #[test]
+    fn route_fallback_path_rejects_escaping_segments() {
+        assert!(route_fallback_path("../secret").is_none());
+        assert!(route_fallback_path("/zh/../secret/").is_none());
+    }
 }

@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 use dioxus_primitives::navbar::{self, NavbarProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
+use strum::IntoStaticStr;
 
 use crate::{
     CssClass, DisplayText, Href, InlineStyle, OptionalDisplayText,
@@ -10,24 +11,24 @@ use crate::{
     projects::{ProjectOption, ProjectSwitcher},
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
+#[strum(const_into_str)]
 pub enum PanelKind {
+    #[strum(to_string = "hero")]
     Hero,
+    #[strum(to_string = "section-band")]
     Section,
+    #[strum(to_string = "code-band")]
     Code,
+    #[strum(to_string = "page-title-band")]
     PageTitle,
+    #[strum(to_string = "contribute-panel")]
     Contribute,
 }
 
 impl PanelKind {
     fn class(self) -> &'static str {
-        match self {
-            Self::Hero => "hero",
-            Self::Section => "section-band",
-            Self::Code => "code-band",
-            Self::PageTitle => "page-title-band",
-            Self::Contribute => "contribute-panel",
-        }
+        self.into_str()
     }
 }
 
@@ -223,7 +224,8 @@ pub fn BrandLockup(
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, IntoStaticStr, PartialEq)]
+#[strum(const_into_str, serialize_all = "kebab-case")]
 pub enum ButtonVariant {
     #[default]
     Primary,
@@ -232,10 +234,7 @@ pub enum ButtonVariant {
 
 impl ButtonVariant {
     pub(crate) fn class(self) -> &'static str {
-        match self {
-            Self::Primary => "primary",
-            Self::Secondary => "secondary",
-        }
+        self.into_str()
     }
 }
 
@@ -529,5 +528,13 @@ mod tests {
     fn hero_panel_list_kind_reports_ordered_state() {
         assert!(!HeroPanelListKind::Unordered.is_ordered());
         assert!(HeroPanelListKind::Ordered.is_ordered());
+    }
+
+    #[test]
+    fn panel_and_button_variants_use_static_class_labels() {
+        assert_eq!(PanelKind::Hero.class(), "hero");
+        assert_eq!(PanelKind::PageTitle.class(), "page-title-band");
+        assert_eq!(ButtonVariant::Primary.class(), "primary");
+        assert_eq!(ButtonVariant::Secondary.class(), "secondary");
     }
 }
