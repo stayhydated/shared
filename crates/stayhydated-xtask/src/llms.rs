@@ -14,14 +14,12 @@ pub struct LlmsConfig<'a> {
     pub llms_full_path: &'a Path,
     pub llms_markdown_dir: &'a Path,
     pub base_url: &'a str,
-    pub header: &'a str,
     pub markdown_dir_name: &'a str,
 }
 
 pub fn build_workspace_llms(
     workspace_root: &Path,
     base_url: &str,
-    header: &str,
     markdown_dir_name: Option<&str>,
 ) -> anyhow::Result<()> {
     let markdown_dir_name = markdown_dir_name.unwrap_or("llms");
@@ -38,7 +36,6 @@ pub fn build_workspace_llms(
             .llms_full_path(&llms_full_path)
             .llms_markdown_dir(&llms_markdown_dir)
             .base_url(base_url)
-            .header(header)
             .markdown_dir_name(markdown_dir_name)
             .build(),
     )
@@ -84,13 +81,8 @@ pub fn build(config: LlmsConfig<'_>) -> anyhow::Result<()> {
         })
         .collect::<anyhow::Result<_>>()?;
 
-    let llms_txt = build_llms_txt(
-        &chapters,
-        config.header,
-        config.base_url,
-        config.markdown_dir_name,
-    );
-    let llms_full_txt = build_llms_full_txt(&chapters, config.header);
+    let llms_txt = build_llms_txt(&chapters, config.base_url, config.markdown_dir_name);
+    let llms_full_txt = build_llms_full_txt(&chapters);
 
     ensure_parent_dir(config.llms_path)?;
     ensure_parent_dir(config.llms_full_path)?;
@@ -154,15 +146,9 @@ fn write_llms_markdown_files(
     Ok(())
 }
 
-fn build_llms_txt(
-    chapters: &[ChapterInfo],
-    header: &str,
-    base_url: &str,
-    markdown_dir_name: &str,
-) -> String {
+fn build_llms_txt(chapters: &[ChapterInfo], base_url: &str, markdown_dir_name: &str) -> String {
     let mut output = String::new();
-    output.push_str(header);
-    output.push_str("\n## Docs\n\n");
+    output.push_str("## Docs\n\n");
 
     for chapter in chapters {
         let url = format!("{}/{}/{}", base_url, markdown_dir_name, chapter.path);
@@ -172,10 +158,9 @@ fn build_llms_txt(
     output
 }
 
-fn build_llms_full_txt(chapters: &[ChapterInfo], header: &str) -> String {
+fn build_llms_full_txt(chapters: &[ChapterInfo]) -> String {
     let mut output = String::new();
-    output.push_str(header);
-    output.push_str("\n## Docs\n\n");
+    output.push_str("## Docs\n\n");
 
     for chapter in chapters {
         output.push_str(&chapter.content);
@@ -183,4 +168,63 @@ fn build_llms_full_txt(chapters: &[ChapterInfo], header: &str) -> String {
     }
 
     output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn chapter(name: &str, path: &str, content: &str) -> ChapterInfo {
+        ChapterInfo {
+            name: name.to_owned(),
+            path: path.to_owned(),
+            content: content.to_owned(),
+        }
+    }
+
+    #[test]
+    fn llms_txt_lists_docs_without_extra_header() {
+        let chapters = [
+            chapter("Introduction", "introduction.md", "# Introduction"),
+            chapter("Getting Started", "getting_started.md", "# Getting Started"),
+        ];
+
+        let output = build_llms_txt(&chapters, "https://example.com/project", "llms");
+
+        assert_eq!(
+            output,
+            "\
+## Docs
+
+- [Introduction](https://example.com/project/llms/introduction.md)
+- [Getting Started](https://example.com/project/llms/getting_started.md)
+"
+        );
+    }
+
+    #[test]
+    fn llms_full_txt_uses_chapter_content_as_docs_body() {
+        let chapters = [
+            chapter("Introduction", "introduction.md", "# Introduction"),
+            chapter("Getting Started", "getting_started.md", "# Getting Started"),
+        ];
+
+        let output = build_llms_full_txt(&chapters);
+
+        assert_eq!(
+            output,
+            "\
+## Docs
+
+# Introduction
+
+---
+
+# Getting Started
+
+---
+
+"
+        );
+    }
 }

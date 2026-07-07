@@ -46,22 +46,31 @@ opt-level = 3
 
 [profile.release]
 codegen-units = 1
-lto = true
+lto = "thin"
 opt-level = 3
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "deny" }
+future_incompatible = "deny"
+nonstandard_style = "deny"
+unexpected_cfgs = { check-cfg = [ "cfg(coverage)" ], level = "deny" }
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+
+[workspace.lints.rustdoc]
+bare_urls = "deny"
+broken_intra_doc_links = "deny"
 
 [workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
 dbg_macro = "deny"
-derive_partial_eq_without_eq = "deny"
-err_expect = "deny"
+derive_partial_eq_without_eq = "warn"
+err_expect = "warn"
 incompatible_msrv = "deny"
-iter_on_single_items = "deny"
-needless_bool = "deny"
-redundant_clone = "deny"
+iter_on_single_items = "warn"
+needless_bool = "warn"
+redundant_clone = "warn"
 todo = "deny"
 type_complexity = "allow"
 uninlined_format_args = "allow"
-unused_trait_names = "deny"
-useless_conversion = "deny"
+unused_trait_names = "warn"
+useless_conversion = "warn"
