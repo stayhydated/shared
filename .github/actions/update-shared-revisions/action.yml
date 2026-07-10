@@ -1,0 +1,31 @@
+name: update shared Cargo revisions
+description: Update pinned Cargo dependencies sourced from stayhydated/shared
+
+outputs:
+  changed:
+    description: Whether any Cargo manifest changed
+    value: ${{ steps.update.outputs.changed }}
+  source_sha:
+    description: Resolved source commit
+    value: ${{ steps.update.outputs.source_sha }}
+  source_short_sha:
+    description: Abbreviated resolved source commit
+    value: ${{ steps.update.outputs.source_short_sha }}
+
+runs:
+  using: composite
+  steps:
+    - name: Update Cargo manifests
+      id: update
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        CARGO_TERM_COLOR: always
+      shell: bash
+      run: |
+        cargo run \
+          --locked \
+          --manifest-path "$ACTION_PATH/../../../Cargo.toml" \
+          --package xtask \
+          -- \
+          update-shared-revisions \
+          --workspace-root "$GITHUB_WORKSPACE"

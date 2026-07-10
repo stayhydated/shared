@@ -247,4 +247,35 @@ mod tests {
             ["other", "zh", "demos"]
         );
     }
+
+    #[test]
+    fn routing_newtypes_expose_owned_borrowed_and_display_forms() {
+        let base_path = BasePath::new("/repo/");
+        assert_eq!(base_path.as_str(), "repo");
+
+        let base_href = BaseHref::from_base_path(Some(&base_path));
+        assert_eq!(base_href.to_string(), "/repo/");
+
+        let route = RoutePath::new("/guide/");
+        assert_eq!(route.as_str(), "guide");
+        assert!(!route.is_root());
+        assert_eq!(route.to_output_dir().as_str(), "guide");
+
+        let output = OutputDir::new("/guide/");
+        assert_eq!(output.as_ref(), "guide");
+        assert!(!output.is_empty());
+
+        let href = Href::new("/repo/guide/");
+        assert_eq!(href.as_ref(), "/repo/guide/");
+        assert_eq!(href.to_string(), "/repo/guide/");
+        assert_eq!(href.into_string(), "/repo/guide/");
+
+        let site = SiteUrl::new("https://example.com/repo");
+        assert_eq!(site.as_str(), "https://example.com/repo/");
+        assert_eq!(site.to_string(), "https://example.com/repo/");
+        assert_eq!(
+            SiteUrl::new("https://example.com/").as_str(),
+            "https://example.com/"
+        );
+    }
 }

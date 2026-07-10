@@ -1,0 +1,30 @@
+[package]
+name = "web-dummy"
+description = "Professional Dioxus and Ratzilla demo site for the sum-numbers-ai API"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[features]
+default = [ "web" ]
+web = [ "dioxus/web", "stayhydated-site/web" ]
+
+[dependencies]
+clap = { features = [ "derive" ], workspace = true }
+dioxus = { features = [ "launch", "lib", "router" ], workspace = true }
+dioxus-free-icons = { features = [ "lucide" ], workspace = true }
+dioxus-primitives = { workspace = true }
+stayhydated-dioxus = { workspace = true }
+stayhydated-site = { workspace = true }
+sum-numbers-ai-dummy = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+critical-section = { features = [ "std" ], workspace = true }
+ratzilla = { workspace = true }
+web-sys = { features = [ "console", "Document", "Element", "Window" ], workspace = true }
+
+[lints]
+workspace = true

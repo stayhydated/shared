@@ -174,6 +174,30 @@ fn build_llms_full_txt(chapters: &[ChapterInfo]) -> String {
 mod tests {
     use super::*;
 
+    fn write_book(book_dir: &Path) {
+        fs::create_dir_all(book_dir.join("src/guide")).expect("book source should be created");
+        fs::write(
+            book_dir.join("book.toml"),
+            "[book]\ntitle = \"Test book\"\n",
+        )
+        .expect("book config should be written");
+        fs::write(
+            book_dir.join("src/SUMMARY.md"),
+            "# Summary\n\n- [Introduction](introduction.md)\n- [Setup](guide/setup.md)\n",
+        )
+        .expect("summary should be written");
+        fs::write(
+            book_dir.join("src/introduction.md"),
+            "# Introduction\n\nHello.\n",
+        )
+        .expect("introduction should be written");
+        fs::write(
+            book_dir.join("src/guide/setup.md"),
+            "# Setup\n\nInstall it.\n",
+        )
+        .expect("nested chapter should be written");
+    }
+
     fn chapter(name: &str, path: &str, content: &str) -> ChapterInfo {
         ChapterInfo {
             name: name.to_owned(),
@@ -226,5 +250,34 @@ mod tests {
 
 "
         );
+    }
+
+    #[test]
+    fn builds_workspace_llms_indexes_and_markdown_mirror() {
+        let temp = tempfile::tempdir().expect("temporary directory should be created");
+        write_book(&temp.path().join("book"));
+        let stale_dir = temp.path().join("web/public/llms");
+        fs::create_dir_all(&stale_dir).expect("stale output should be created");
+        fs::write(stale_dir.join("stale.md"), "stale").expect("stale output should be written");
+
+        build_workspace_llms(temp.path(), "https://example.com/project", None)
+            .expect("workspace llms output should build");
+
+        let public = temp.path().join("web/public");
+        let index =
+            fs::read_to_string(public.join("llms.txt")).expect("llms index should be readable");
+        assert!(index.contains("https://example.com/project/llms/guide/setup.md"));
+        assert!(public.join("llms/introduction.md").is_file());
+        assert!(public.join("llms/guide/setup.md").is_file());
+        assert!(!public.join("llms/stale.md").exists());
+        assert!(
+            fs::read_to_string(public.join("llms-full.txt"))
+                .expect("full llms output should be readable")
+                .contains("# Setup")
+        );
+
+        build_workspace_llms(temp.path(), "https://example.com/project", Some("markdown"))
+            .expect("custom markdown directory should build");
+        assert!(public.join("markdown/guide/setup.md").is_file());
     }
 }

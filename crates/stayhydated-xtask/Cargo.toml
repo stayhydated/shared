@@ -18,5 +18,8 @@ path-slash = { workspace = true }
 strum = { features = [ "derive" ], workspace = true }
 walkdir = { workspace = true }
 
+[dev-dependencies]
+tempfile = { workspace = true }
+
 [lints]
 workspace = true

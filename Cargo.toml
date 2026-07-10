@@ -1,9 +1,13 @@
 [workspace]
 members = [
+  "dummy/sum-numbers-ai-dummy",
+  "dummy/web-dummy",
+  "dummy/xtask-dummy",
   "crates/stayhydated-dioxus",
   "crates/stayhydated-dioxus-core",
   "crates/stayhydated-site",
   "crates/stayhydated-xtask",
+  "xtask",
 ]
 resolver = "3"
 
@@ -18,21 +22,30 @@ version = "0.1.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
-bon = "3.9.1"
+bon = "3.9.3"
 cargo_metadata = "0.23"
-clap = { features = [ "derive" ], version = "4.5" }
+clap = { features = [ "derive" ], version = "4.6" }
+critical-section = "1.2"
 derive_more = "2.1"
 dioxus = { default-features = false, version = "0.7" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
+js-sys = "0.3"
 mdbook-driver = "0.5"
 path-slash = "0.2"
+ratzilla = "0.3.1"
+stayhydated-dioxus = { path = "crates/stayhydated-dioxus", version = "0.1.0" }
 stayhydated-dioxus-core = { path = "crates/stayhydated-dioxus-core", version = "0.1.0" }
 stayhydated-site = { path = "crates/stayhydated-site", version = "0.1.0" }
+stayhydated-xtask = { path = "crates/stayhydated-xtask", version = "0.1.0" }
 strum = "0.28"
+sum-numbers-ai-dummy = { path = "dummy/sum-numbers-ai-dummy", version = "0.1.0" }
 tempfile = "3"
+toml_edit = "0.25"
+tracing = "0.1"
 trybuild = "1.0"
 walkdir = "2.5"
+web-dummy = { path = "dummy/web-dummy", version = "0.1.0" }
 web-sys = "0.3"
 
 [profile.dev]

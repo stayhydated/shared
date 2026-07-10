@@ -7,12 +7,17 @@ struct Uniforms {
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 
-const MARCH_STEPS: i32 = 69;
+const MARCH_STEPS: i32 = 40;
 const RAY_DEPTH: f32 = 2.0;
-const LAYER_SPACING: f32 = 0.42;
+const LAYER_SPACING: f32 = 0.72;
+const LAYER_WEIGHT: f32 = 1.72;
 const WARP_SCALE: f32 = 1.36;
 const PATH_SCALE: f32 = 19.0;
 const MIN_CLOUD_ASPECT: f32 = 0.95;
+const FBM_ROTATION: mat2x2<f32> = mat2x2<f32>(
+    0.7451744, 0.66686964,
+    -0.66686964, 0.7451744
+);
 
 struct VertexOut {
     @builtin(position) position: vec4<f32>,
@@ -78,7 +83,9 @@ fn camera_ray(uv: vec2<f32>) -> vec3<f32> {
 }
 
 fn hash12(p: vec2<f32>) -> f32 {
-    return fract(sin(dot(p, vec2<f32>(127.1, 311.7))) * 43758.5453);
+    let p3 = fract(vec3<f32>(p.x, p.y, p.x) * 0.1031);
+    let q = p3 + vec3<f32>(dot(p3, p3.yzx + vec3<f32>(33.33)));
+    return fract((q.x + q.y) * q.z);
 }
 
 fn value_noise(p: vec2<f32>) -> f32 {
@@ -101,9 +108,9 @@ fn fbm(p: vec2<f32>) -> f32 {
     var amplitude = 0.5;
     var sample_point = p;
 
-    for (var octave = 0; octave < 4; octave = octave + 1) {
+    for (var octave = 0; octave < 3; octave = octave + 1) {
         value = value + amplitude * value_noise(sample_point);
-        sample_point = rotate2(sample_point * 2.03 + vec2<f32>(4.7, -2.9), 0.73);
+        sample_point = FBM_ROTATION * (sample_point * 2.03 + vec2<f32>(4.7, -2.9));
         amplitude = amplitude * 0.5;
     }
 
@@ -116,11 +123,10 @@ fn layer_depth(layer: i32) -> f32 {
     return 0.15 + (layer_id + offset) * LAYER_SPACING;
 }
 
-fn layer_position(ray: vec3<f32>, depth: f32) -> vec2<f32> {
+fn layer_position(ray: vec3<f32>, depth: f32, slow_time: f32) -> vec2<f32> {
     var p = ray.xy * depth;
-    p = rotate2(p, depth + uniforms.time * 0.08);
+    p = rotate2(p, depth + slow_time);
 
-    let slow_time = uniforms.time * 0.08;
     let warp = vec2<f32>(
         fbm(p.yx * WARP_SCALE + vec2<f32>(depth * 0.07, slow_time)),
         fbm(p * WARP_SCALE + vec2<f32>(-slow_time, depth * 0.05))
@@ -132,26 +138,30 @@ fn layer_position(ray: vec3<f32>, depth: f32) -> vec2<f32> {
     return p + warp * 5.0 + folded;
 }
 
-fn path_center(depth: f32) -> vec2<f32> {
+fn path_center(depth: f32, focus: f32) -> vec2<f32> {
     let t = depth * 0.21 + uniforms.time * 0.11;
     let drift = vec2<f32>(
         sin(t * 1.7) + 0.65 * sin(t * 0.41 + 2.3),
         cos(t * 1.3) + 0.55 * sin(t * 0.53 - 1.4)
     );
-    let focus = portrait_focus();
     let base = mix(vec2<f32>(-8.0), vec2<f32>(-5.2, -6.4), vec2<f32>(focus));
     let drift_scale = mix(2.2, 1.65, focus);
 
     return base + drift * drift_scale;
 }
 
-fn sample_layer(ray: vec3<f32>, depth: f32) -> LayerSample {
-    let p = layer_position(ray, depth);
-    let path_scale = PATH_SCALE * mix(1.0, 1.18, portrait_focus());
-    let path_distance = length(p - path_center(depth)) / path_scale;
+fn sample_layer(
+    ray: vec3<f32>,
+    depth: f32,
+    focus: f32,
+    slow_time: f32,
+    path_scale: f32,
+) -> LayerSample {
+    let p = layer_position(ray, depth, slow_time);
+    let path_distance = length(p - path_center(depth, focus)) / path_scale;
     let filament = 0.45 + 0.95 * fbm(p * 0.22 + vec2<f32>(depth * 0.04, -depth * 0.03));
     let shell = 1.0 - smoothstep(6.0, 52.0, depth);
-    let density = filament * shell / max(path_distance, 0.001);
+    let density = filament * shell * LAYER_WEIGHT / max(path_distance, 0.001);
     let color = sin(depth + vec3<f32>(0.0, 6.0, 7.0)) + vec3<f32>(0.1);
 
     return LayerSample(density, color);
@@ -159,20 +169,21 @@ fn sample_layer(ray: vec3<f32>, depth: f32) -> LayerSample {
 
 fn integrate_layers(ray: vec3<f32>) -> LayerState {
     var state = LayerState(vec3<f32>(0.0));
+    let focus = portrait_focus();
+    let slow_time = uniforms.time * 0.08;
+    let path_scale = PATH_SCALE * mix(1.0, 1.18, focus);
 
     for (var layer = 0; layer < MARCH_STEPS; layer = layer + 1) {
         let depth = layer_depth(layer);
-        let sample = sample_layer(ray, depth);
+        let sample = sample_layer(ray, depth, focus, slow_time, path_scale);
         state.color = state.color + sample.color * sample.density;
     }
 
     return state;
 }
 
-fn tanh3(value: vec3<f32>) -> vec3<f32> {
-    let positive = exp(value);
-    let negative = exp(-value);
-    return (positive - negative) / (positive + negative);
+fn soft_clip3(value: vec3<f32>) -> vec3<f32> {
+    return value / (vec3<f32>(1.0) + abs(value));
 }
 
 fn vignette_system(uv: vec2<f32>) -> f32 {
@@ -181,7 +192,7 @@ fn vignette_system(uv: vec2<f32>) -> f32 {
 }
 
 fn map_color(color: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
-    let mapped = tanh3(color / 950.0);
+    let mapped = soft_clip3(color / 950.0);
     let vignette = vignette_system(uv);
     return mapped * (0.5 + 0.5 * vignette);
 }

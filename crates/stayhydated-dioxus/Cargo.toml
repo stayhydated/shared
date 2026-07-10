@@ -19,5 +19,8 @@ strum = { features = [ "derive" ], workspace = true }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { features = [ "Clipboard", "Navigator", "Window" ], workspace = true }
 
+[dev-dependencies]
+dioxus = { features = [ "ssr" ], workspace = true }
+
 [lints]
 workspace = true

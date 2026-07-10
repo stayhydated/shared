@@ -18,6 +18,7 @@ use strum::{Display, IntoStaticStr};
 pub enum Project {
     Koruma,
     EsFluent,
+    SumNumbersAi,
 }
 
 #[derive(Clone, Copy, Debug, Display, Eq, IntoStaticStr, PartialEq)]
@@ -27,6 +28,8 @@ pub enum ProjectMessage {
     KorumaDescription,
     #[strum(to_string = "Rust localization")]
     EsFluentDescription,
+    #[strum(to_string = "AI-assisted arithmetic")]
+    SumNumbersAiDescription,
 }
 
 impl ProjectMessage {
@@ -69,6 +72,7 @@ impl ProjectPackage {
         "es-fluent-manager-dioxus",
         "https://crates.io/crates/es-fluent-manager-dioxus",
     );
+    pub const SUM_NUMBERS_AI_DUMMY: Self = Self::new("sum-numbers-ai-dummy", DISABLED_PROJECT_HREF);
 
     pub const fn new(name: &'static str, crates_href: &'static str) -> Self {
         Self { name, crates_href }
@@ -109,6 +113,7 @@ impl ProjectSupportLink {
 }
 
 pub const PROJECT_FLUENT_URL: &str = "https://projectfluent.org/";
+pub const DISABLED_PROJECT_HREF: &str = "about:blank";
 
 static KORUMA_PACKAGES: [ProjectPackage; 2] =
     [ProjectPackage::KORUMA, ProjectPackage::KORUMA_COLLECTION];
@@ -116,13 +121,14 @@ static ES_FLUENT_PACKAGES: [ProjectPackage; 2] = [
     ProjectPackage::ES_FLUENT,
     ProjectPackage::ES_FLUENT_MANAGER_DIOXUS,
 ];
+static SUM_NUMBERS_AI_PACKAGES: [ProjectPackage; 1] = [ProjectPackage::SUM_NUMBERS_AI_DUMMY];
 static KORUMA_COLLECTION_SUPPORT_LINKS: [ProjectSupportLink; 1] =
     [ProjectSupportLink::KORUMA_COLLECTION_CROWDIN];
 static KORUMA_SUPPORT_LINKS: [ProjectSupportLink; 1] =
     [ProjectSupportLink::KORUMA_COLLECTION_CROWDIN];
 
 impl Project {
-    pub const ALL: [Self; 2] = [Self::Koruma, Self::EsFluent];
+    pub const ALL: [Self; 3] = [Self::Koruma, Self::EsFluent, Self::SumNumbersAi];
 
     const fn metadata(self) -> ProjectMetadata {
         match self {
@@ -143,6 +149,15 @@ impl Project {
                 rustdoc_href: "https://docs.rs/es-fluent/",
                 source_href: "https://github.com/stayhydated/es-fluent",
                 skill_command: "npx skills add stayhydated/es-fluent",
+            },
+            Self::SumNumbersAi => ProjectMetadata {
+                mark: "SN",
+                description: "AI-assisted arithmetic",
+                href: "/sum-numbers-ai/",
+                site_url: "https://stayhydated.github.io/sum-numbers-ai/",
+                rustdoc_href: DISABLED_PROJECT_HREF,
+                source_href: DISABLED_PROJECT_HREF,
+                skill_command: "npx skills add stayhydated/sum-numbers-ai",
             },
         }
     }
@@ -187,6 +202,7 @@ impl Project {
         match self {
             Self::Koruma => ProjectPackage::KORUMA,
             Self::EsFluent => ProjectPackage::ES_FLUENT,
+            Self::SumNumbersAi => ProjectPackage::SUM_NUMBERS_AI_DUMMY,
         }
     }
 
@@ -194,13 +210,14 @@ impl Project {
         match self {
             Self::Koruma => &KORUMA_PACKAGES,
             Self::EsFluent => &ES_FLUENT_PACKAGES,
+            Self::SumNumbersAi => &SUM_NUMBERS_AI_PACKAGES,
         }
     }
 
     pub const fn support_links(self) -> &'static [ProjectSupportLink] {
         match self {
             Self::Koruma => &KORUMA_SUPPORT_LINKS,
-            Self::EsFluent => &[],
+            Self::EsFluent | Self::SumNumbersAi => &[],
         }
     }
 
@@ -208,6 +225,7 @@ impl Project {
         match self {
             Self::Koruma => ProjectMessage::KorumaDescription,
             Self::EsFluent => ProjectMessage::EsFluentDescription,
+            Self::SumNumbersAi => ProjectMessage::SumNumbersAiDescription,
         }
     }
 
@@ -526,9 +544,15 @@ mod tests {
     fn default_project_options_include_all_projects() {
         let projects = stayhydated_project_options();
 
-        assert_eq!(projects.len(), 2);
+        assert_eq!(projects.len(), 3);
         assert_eq!(projects[0].id.as_str(), "koruma");
         assert_eq!(projects[1].id.as_str(), "es-fluent");
+        assert_eq!(projects[2].id.as_str(), "sum-numbers-ai");
+    }
+
+    #[test]
+    fn native_clipboard_helper_is_a_safe_noop() {
+        copy_text_to_clipboard("npx skills add stayhydated/koruma");
     }
 
     #[test]
@@ -540,6 +564,10 @@ mod tests {
         assert_eq!(
             ProjectMessage::EsFluentDescription.to_string(),
             "Rust localization"
+        );
+        assert_eq!(
+            ProjectMessage::SumNumbersAiDescription.to_string(),
+            "AI-assisted arithmetic"
         );
     }
 
@@ -575,6 +603,12 @@ mod tests {
             "/es-fluent/llms-full.txt"
         );
         assert_eq!(
+            Project::SumNumbersAi.site_url(),
+            "https://stayhydated.github.io/sum-numbers-ai/"
+        );
+        assert_eq!(Project::SumNumbersAi.rustdoc_href(), DISABLED_PROJECT_HREF);
+        assert_eq!(Project::SumNumbersAi.source_href(), DISABLED_PROJECT_HREF);
+        assert_eq!(
             Project::Koruma.skill_command(),
             "npx skills add stayhydated/koruma"
         );
@@ -597,6 +631,14 @@ mod tests {
                 ProjectPackage::ES_FLUENT_MANAGER_DIOXUS,
             ]
         );
+        assert_eq!(
+            Project::SumNumbersAi.packages(),
+            &[ProjectPackage::SUM_NUMBERS_AI_DUMMY]
+        );
+        assert_eq!(
+            Project::SumNumbersAi.primary_package(),
+            ProjectPackage::SUM_NUMBERS_AI_DUMMY
+        );
     }
 
     #[test]
@@ -610,6 +652,7 @@ mod tests {
             &[ProjectSupportLink::KORUMA_COLLECTION_CROWDIN]
         );
         assert_eq!(Project::EsFluent.support_links(), &[]);
+        assert_eq!(Project::SumNumbersAi.support_links(), &[]);
         assert_eq!(
             ProjectSupportLink::KORUMA_COLLECTION_CROWDIN.href(),
             "https://crowdin.com/project/koruma-collection"

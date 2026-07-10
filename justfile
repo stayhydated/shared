@@ -1,7 +1,9 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
+mod dummy
+
 default:
-    @just --list
+    @just --list --list-submodules
 
 fmt:
     cargo sort-derives
@@ -20,4 +22,4 @@ test:
     cargo test --workspace --all-features --all-targets
 
 cov:
-    cargo llvm-cov --workspace --exclude xtask --exclude web --all-features --all-targets
+    cargo llvm-cov --workspace --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy --all-features --all-targets

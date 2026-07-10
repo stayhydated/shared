@@ -1,0 +1,39 @@
+codecov:
+  require_ci_to_pass: true
+
+# https://docs.codecov.com/docs/components
+component_management:
+  individual_components:
+    - component_id: stayhydated-dioxus-core
+      name: "stayhydated-dioxus-core"
+      paths:
+        - crates/stayhydated-dioxus-core/**
+
+    - component_id: stayhydated-dioxus
+      name: "stayhydated-dioxus"
+      paths:
+        - crates/stayhydated-dioxus/**
+
+    - component_id: stayhydated-site
+      name: "stayhydated-site"
+      paths:
+        - crates/stayhydated-site/**
+
+    - component_id: stayhydated-xtask
+      name: "stayhydated-xtask"
+      paths:
+        - crates/stayhydated-xtask/**
+
+coverage:
+  precision: 2
+  round: down
+  range: "90...100"
+  status:
+    project:
+      default:
+        target: 90%
+        threshold: 5%
+    patch:
+      default:
+        target: 90%
+        threshold: 10%

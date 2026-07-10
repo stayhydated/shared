@@ -28,6 +28,26 @@ Use it to decide:
   Role: stayhydated project-site wrapper, shared project registry, project header/footer helpers, and re-exports from `stayhydated-dioxus-core`.
   Sync: project inventory, package URLs, docs/source URLs, skill commands, header labels, and asset path behavior are tested in `src/projects.rs`, `src/header.rs`, and `src/app.rs`.
 
+- `dummy/sum-numbers-ai-dummy`
+  Audience: Local validation.
+  Role: real dummy library crate for the sum-numbers-ai concept, including local sum behavior and provider-style trace data.
+  Sync: API or positioning changes may need `src/lib.rs`, `dummy/web-dummy/src/lib.rs`, `dummy/web-dummy/src/terminal.rs`, `dummy/book-dummy/src/`, and project registry data in `crates/stayhydated-dioxus/src/projects.rs`.
+
+- `dummy/web-dummy`
+  Audience: Local validation.
+  Role: runnable Dioxus web crate for the sum-numbers-ai dummy project, including a Ratzilla terminal demo and Bun preview script.
+  Sync: generated static output is built by `dummy/xtask-dummy`; preview behavior is owned by `preview.ts`; project cards should stay aligned with `dummy/book-dummy`.
+
+- `dummy/book-dummy`
+  Audience: Documentation fixture.
+  Role: mdBook source for the local sum-numbers-ai documentation target.
+  Sync: generated book output behavior is invoked by `dummy/xtask-dummy`; website cards in `dummy/web-dummy/src/lib.rs` should stay aligned with book positioning.
+
+- `dummy/xtask-dummy`
+  Audience: Internal workflow.
+  Role: local build commands for dummy book, llms output, and Dioxus static-site output under `dummy/web-dummy`.
+  Sync: path changes under `dummy/book-dummy` or `dummy/web-dummy` may need command updates under `src/commands/` and root `justfile` recipes.
+
 - `crates/stayhydated-site`
   Audience: Public integration.
   Role: base-path, href, sitemap, and generated route-cache helpers for static project sites.
@@ -37,6 +57,11 @@ Use it to decide:
   Audience: Internal workflow and public repository tooling.
   Role: helper APIs for mdBook output, llms output, Dioxus static-site builds, and release publishing.
   Sync: web output paths and copied assets are owned by `src/book.rs`, `src/llms.rs`, and `src/web.rs`; release order and `cargo publish` behavior are owned by `src/release.rs` and its tests.
+
+- `xtask`
+  Audience: Internal workflow.
+  Role: repository-owned maintenance commands, including the GitHub Action that updates downstream Cargo revisions to `stayhydated/shared` `master`.
+  Sync: revision-update behavior is owned by `src/commands/update_shared_revisions.rs`; keep its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
 
 - `crates/stayhydated-dioxus-core/tests`
   Audience: Validation.
@@ -48,13 +73,16 @@ Use it to decide:
 - When changing a public Rust type, function, component prop, route helper, or exported constant, update the owning module, the crate `src/lib.rs` export surface, and any tests or trybuild fixtures that name the changed API.
 - When changing `dx-components-theme.css` or `DX_COMPONENTS_THEME_FILE_NAME`, keep `crates/stayhydated-dioxus-core/src/styles.rs` and `crates/stayhydated-xtask/src/web.rs` aligned.
 - When changing project registry data in `stayhydated-dioxus/src/projects.rs`, update tests for project options, URLs, package sets, support links, llms links, and skill commands in the same module.
+- When changing sum-numbers-ai positioning, keep the library behavior in `dummy/sum-numbers-ai-dummy/src/lib.rs`, website cards in `dummy/web-dummy/src/lib.rs`, terminal rendering in `dummy/web-dummy/src/terminal.rs`, and book chapters under `dummy/book-dummy/src/` aligned.
 - When changing sitemap, route-cache, book, llms, or static-site output behavior, update the helper that owns the output path plus the tests that encode the path or copied file list.
 - When changing release publishing behavior in `stayhydated-xtask/src/release.rs`, update tests for publish order, command arguments, dirty-worktree guards, resume points, and registry handling.
+- When changing downstream revision-update behavior, keep `xtask/src/commands/update_shared_revisions.rs`, its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
 
 ## Validation
 
 - Use `just --list` for the local recipe index.
 - Local recipes currently include `just fmt`, `just clippy`, `just check`, `just test`, and `just cov`.
-- CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with `cargo llvm-cov --workspace --all-features --cobertura --output-path=target/cobertura.xml`.
+- CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with `cargo llvm-cov --workspace --all-features --all-targets --cobertura --output-path=target/cobertura.xml --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy`.
 - For trybuild changes, run `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass` for `tests/pass/*` fixtures or `cargo test -p stayhydated-dioxus-core --all-features --test compile_fail` for `tests/ui/*` fixtures before broad workspace validation.
+- For downstream revision-update changes, run `cargo test -p xtask` before broad workspace validation.
 - For README-only or AGENTS.md-only changes, static review is sufficient unless a repository command directly covers the edited Markdown.
