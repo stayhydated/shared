@@ -1,0 +1,18 @@
+mod cli;
+mod commands;
+
+use clap::Parser as _;
+
+use cli::{BuildCommand, Cli, Command};
+
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Command::Build { target } => match target {
+            BuildCommand::Book => commands::build_book::run(),
+            BuildCommand::LlmsTxt => commands::build_llms_txt::run(),
+            BuildCommand::Web => commands::build_web::run(),
+        },
+    }
+}

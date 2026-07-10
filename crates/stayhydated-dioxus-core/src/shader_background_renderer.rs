@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use wasm_bindgen::{JsCast, closure::Closure};
+use wasm_bindgen::{JsCast as _, closure::Closure};
 use web_sys::HtmlCanvasElement;
 use wgpu::{
     Backends, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
@@ -16,6 +16,9 @@ use wgpu::{
 };
 
 const TARGET_FRAME_MS: f64 = 1000.0 / 30.0;
+const MAX_CANVAS_PIXELS: f64 = 1280.0 * 720.0;
+const MIN_CANVAS_SCALE: f64 = 0.4;
+const MAX_CANVAS_SCALE: f64 = 1.25;
 const SHADER_BACKGROUND_STATUS_ATTRIBUTE: &str = "data-shader-background";
 const SHADER_BACKGROUND_STATUS_READY: &str = "ready";
 
@@ -78,6 +81,10 @@ async fn run(
     let canvas = element
         .dyn_into::<HtmlCanvasElement>()
         .map_err(|_| format!("#{canvas_id} is not a canvas"))?;
+    if !wgpu::util::is_browser_webgpu_supported().await {
+        return Ok(());
+    }
+
     let renderer = ShaderBackgroundRenderer::new(canvas, grid_opacity).await?;
 
     start_render_loop(Rc::new(RefCell::new(renderer)), running, frame_callback)
@@ -94,23 +101,20 @@ fn start_render_loop(
 
     let is_ready = Rc::new(Cell::new(false));
     let callback_handle = frame_callback.clone();
-    let renderer_handle = renderer.clone();
-    let ready_handle = is_ready.clone();
-    let running_handle = running.clone();
 
     *callback_handle.borrow_mut() = Some(Closure::wrap(Box::new(move |time_ms| {
-        if !running_handle.get() {
+        if !running.get() {
             return;
         }
 
-        let rendered_frame = renderer_handle.borrow_mut().render(time_ms);
-        if rendered_frame && !ready_handle.get() {
-            ready_handle.set(true);
+        let rendered_frame = renderer.borrow_mut().render(time_ms);
+        if rendered_frame && !is_ready.get() {
+            is_ready.set(true);
             mark_shader_background_ready();
         }
 
         let borrowed_callback = frame_callback.borrow();
-        if running_handle.get()
+        if running.get()
             && let Some(callback) = borrowed_callback.as_ref()
             && let Err(error) = request_animation_frame(callback)
         {
@@ -162,6 +166,7 @@ impl ShaderBackgroundRenderer {
                 power_preference: PowerPreference::LowPower,
                 force_fallback_adapter: false,
                 compatible_surface: Some(&surface),
+                apply_limit_buckets: false,
             })
             .await
             .map_err(|error| error.to_string())?;
@@ -179,6 +184,7 @@ impl ShaderBackgroundRenderer {
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: config.format,
+            color_space: config.color_space,
             width: size.width,
             height: size.height,
             desired_maximum_frame_latency: 2,
@@ -329,7 +335,7 @@ impl ShaderBackgroundRenderer {
         }
 
         self.queue.submit(Some(encoder.finish()));
-        frame.present();
+        self.queue.present(frame);
         true
     }
 }
@@ -363,16 +369,23 @@ fn preferred_present_mode(surface: &Surface<'_>, adapter: &wgpu::Adapter) -> Pre
 
 fn canvas_size(canvas: &HtmlCanvasElement) -> CanvasSize {
     let rect = canvas.get_bounding_client_rect();
-    let scale = web_sys::window()
+    let css_width = rect.width().max(1.0);
+    let css_height = rect.height().max(1.0);
+    let device_scale = web_sys::window()
         .map(|window| window.device_pixel_ratio())
         .unwrap_or(1.0)
-        .min(2.0)
-        .max(1.0);
-    let width = (rect.width() * scale).floor().max(1.0) as u32;
-    let height = (rect.height() * scale).floor().max(1.0) as u32;
+        .clamp(1.0, MAX_CANVAS_SCALE);
+    let pixel_budget_scale = (MAX_CANVAS_PIXELS / (css_width * css_height)).sqrt();
+    let scale = device_scale.min(pixel_budget_scale).max(MIN_CANVAS_SCALE);
+    let width = (css_width * scale).floor().max(1.0) as u32;
+    let height = (css_height * scale).floor().max(1.0) as u32;
 
-    canvas.set_width(width);
-    canvas.set_height(height);
+    if canvas.width() != width {
+        canvas.set_width(width);
+    }
+    if canvas.height() != height {
+        canvas.set_height(height);
+    }
 
     CanvasSize { width, height }
 }

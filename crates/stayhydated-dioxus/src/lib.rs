@@ -10,7 +10,7 @@ pub use header::{
     stayhydated_header_labels, stayhydated_header_labels_with,
 };
 pub use projects::{
-    PROJECT_FLUENT_URL, Project, ProjectFluentTextLink, ProjectFooterPanel,
+    DISABLED_PROJECT_HREF, PROJECT_FLUENT_URL, Project, ProjectFluentTextLink, ProjectFooterPanel,
     ProjectFooterPanelForProject, ProjectFooterSkillsSection, ProjectMessage, ProjectPackage,
     ProjectPackageTextLink, ProjectSourceTextLink, ProjectSupportLink, ProjectSupportTextLink,
     ProjectSwitcher, StayhydatedProjectPageMetadata, stayhydated_project_options,

@@ -1,0 +1,6 @@
+[book]
+authors = [ "stayhydated" ]
+description = "Professional product and integration documentation for the sum-numbers-ai API."
+language = "en"
+src = "src"
+title = "sum-numbers-ai-dummy"

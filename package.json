@@ -1,6 +1,9 @@
 {
   "name": "stayhydated",
   "private": true,
+  "workspaces": [
+    "dummy/web-dummy"
+  ],
   "scripts": {
     "fmt": "oxfmt",
     "lint": "oxlint"

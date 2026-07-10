@@ -1,0 +1,15 @@
+[package]
+name = "sum-numbers-ai-dummy"
+description = "Dummy library crate for an AI-assisted sum API concept"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+tracing = { workspace = true }
+
+[lints]
+workspace = true

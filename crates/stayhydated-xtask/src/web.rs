@@ -33,6 +33,7 @@ pub struct WriteFile {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DioxusBuildCommand {
     package: Option<PackageName>,
+    base_path: Option<String>,
     platform: DioxusPlatform,
     ssg: bool,
     release: bool,
@@ -44,12 +45,18 @@ impl DioxusBuildCommand {
     pub fn web_static_site(package: Option<PackageName>) -> Self {
         Self {
             package,
+            base_path: None,
             platform: DioxusPlatform::Web,
             ssg: true,
             release: true,
             debug_symbols: false,
             force_sequential: true,
         }
+    }
+
+    pub fn with_base_path(mut self, base_path: impl Into<String>) -> Self {
+        self.base_path = Some(base_path.into());
+        self
     }
 
     pub fn argv(&self) -> Vec<String> {
@@ -68,6 +75,10 @@ impl DioxusBuildCommand {
             "--force-sequential".to_owned(),
             self.force_sequential.to_string(),
         ]);
+        if let Some(base_path) = &self.base_path {
+            args.push("--base-path".to_owned());
+            args.push(base_path.clone());
+        }
 
         args
     }
@@ -482,6 +493,31 @@ mod tests {
                 "false",
                 "--force-sequential",
                 "true",
+            ]
+        );
+    }
+
+    #[test]
+    fn dioxus_web_static_site_command_accepts_base_path() {
+        let command = DioxusBuildCommand::web_static_site(Some(PackageName::new("web")))
+            .with_base_path("project");
+
+        assert_eq!(
+            command.argv(),
+            [
+                "build",
+                "--package",
+                "web",
+                "--platform",
+                "web",
+                "--ssg",
+                "--release",
+                "--debug-symbols",
+                "false",
+                "--force-sequential",
+                "true",
+                "--base-path",
+                "project",
             ]
         );
     }
