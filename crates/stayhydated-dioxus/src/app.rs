@@ -93,4 +93,12 @@ mod tests {
             "/es-fluent/dx-components-theme.css"
         );
     }
+
+    #[test]
+    fn asset_href_accepts_empty_base() {
+        assert_eq!(
+            stayhydated_asset_href("", "/assets/site.css"),
+            "assets/site.css"
+        );
+    }
 }

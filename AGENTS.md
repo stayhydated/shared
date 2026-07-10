@@ -82,7 +82,7 @@ Use it to decide:
 
 - Use `just --list` for the local recipe index.
 - Local recipes currently include `just fmt`, `just clippy`, `just check`, `just test`, and `just cov`.
-- CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with `cargo llvm-cov --workspace --all-features --cobertura --output-path=target/cobertura.xml`.
+- CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with `cargo llvm-cov --workspace --all-features --all-targets --cobertura --output-path=target/cobertura.xml --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy`.
 - For trybuild changes, run `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass` for `tests/pass/*` fixtures or `cargo test -p stayhydated-dioxus-core --all-features --test compile_fail` for `tests/ui/*` fixtures before broad workspace validation.
 - For downstream revision-update changes, run `cargo test -p xtask` before broad workspace validation.
 - For README-only or AGENTS.md-only changes, static review is sufficient unless a repository command directly covers the edited Markdown.

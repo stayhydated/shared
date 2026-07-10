@@ -568,6 +568,35 @@ fn is_publishable(package: &Package) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+
+    fn write(path: &Path, contents: &str) {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).expect("parent directory should be created");
+        }
+        fs::write(path, contents).expect("fixture should be written");
+    }
+
+    fn write_package(root: &Path, name: &str, dependencies: &str, publish: bool) {
+        write(
+            &root.join(name).join("Cargo.toml"),
+            &format!(
+                "[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\npublish = {publish}\n\n[dependencies]\n{dependencies}\n"
+            ),
+        );
+        write(&root.join(name).join("src/lib.rs"), "pub fn marker() {}\n");
+    }
+
+    fn write_release_workspace(root: &Path) {
+        write(
+            &root.join("Cargo.toml"),
+            "[workspace]\nmembers = [\"core\", \"middle\", \"app\", \"private\"]\nresolver = \"3\"\n",
+        );
+        write_package(root, "core", "", true);
+        write_package(root, "middle", "core = { path = \"../core\" }", true);
+        write_package(root, "app", "middle = { path = \"../middle\" }", true);
+        write_package(root, "private", "", false);
+    }
 
     fn package(name: &str) -> ReleasePackage {
         ReleasePackage {
@@ -667,5 +696,142 @@ mod tests {
             error.to_string(),
             "unknown release package `missing`; expected one of: alpha, beta"
         );
+    }
+
+    #[test]
+    fn release_plan_and_dry_run_follow_workspace_dependencies() {
+        let temp = tempfile::tempdir().expect("temporary directory should be created");
+        write_release_workspace(temp.path());
+
+        let packages = release_order(temp.path()).expect("release order should resolve");
+        assert_eq!(
+            packages
+                .iter()
+                .map(|package| package.name.as_str())
+                .collect::<Vec<_>>(),
+            ["core", "middle", "app"]
+        );
+        plan(temp.path()).expect("release plan should print");
+        publish(temp.path(), &PublishOptions::new(false))
+            .expect("dry-run publish should print commands");
+
+        let resumed = options()
+            .resume_from(Some("middle".to_owned()))
+            .expect("resume point should parse");
+        publish(temp.path(), &resumed).expect("resumed dry run should succeed");
+    }
+
+    #[test]
+    fn publish_options_and_command_flags_preserve_all_choices() {
+        let configured = PublishOptions::new(false)
+            .resume_from(None)
+            .expect("missing resume point should be accepted")
+            .registry(None)
+            .expect("missing registry should be accepted")
+            .allow_dirty(true)
+            .no_verify(true)
+            .include_dev_deps(true)
+            .skip_existing(true)
+            .retries(7)
+            .retry_delay_seconds(0);
+
+        assert!(configured.allow_dirty);
+        assert!(configured.no_verify);
+        assert!(configured.include_dev_deps);
+        assert!(configured.skip_existing);
+        assert_eq!(configured.retries, 7);
+        assert_eq!(configured.retry_delay_seconds, 0);
+        assert!(!requires_clean_worktree_guard(&configured));
+        assert!(cargo_publish_needs_allow_dirty(&configured));
+        assert_eq!(
+            cargo_publish_command(&package("public-crate"), &configured).argv(),
+            [
+                "cargo",
+                "publish",
+                "-p",
+                "public-crate",
+                "--allow-dirty",
+                "--no-verify",
+            ]
+        );
+
+        assert_eq!(
+            options()
+                .registry(Some(" ".to_owned()))
+                .expect_err("empty registry should fail")
+                .to_string(),
+            "registry name cannot be empty"
+        );
+    }
+
+    #[test]
+    fn package_selection_accepts_start_and_resume_points() {
+        let packages = [package("alpha"), package("beta")];
+        assert_eq!(
+            packages_from(&packages, None)
+                .expect("full package list should be accepted")
+                .len(),
+            2
+        );
+        let resume = ReleaseResumePoint::parse("beta").expect("resume point should parse");
+        assert_eq!(
+            packages_from(&packages, Some(&resume)).expect("known resume point should be accepted")
+                [0]
+            .name
+            .as_str(),
+            "beta"
+        );
+    }
+
+    #[test]
+    fn existing_upload_detection_accepts_registry_wording() {
+        let mut output = Command::new(std::env::current_exe().expect("test binary should resolve"))
+            .arg("--list")
+            .output()
+            .expect("test binary should run");
+        output.stderr = b"crate is already uploaded".to_vec();
+        assert!(output_mentions_existing_upload(&output));
+        output.stderr = b"version already exists".to_vec();
+        assert!(output_mentions_existing_upload(&output));
+        output.stderr = b"different failure".to_vec();
+        assert!(!output_mentions_existing_upload(&output));
+        output.stdout.clear();
+        output.stderr.clear();
+        print_output(&output).expect("captured output should print");
+    }
+
+    #[test]
+    fn clean_worktree_guard_distinguishes_tracked_and_untracked_changes() {
+        let temp = tempfile::tempdir().expect("temporary directory should be created");
+        let status = Command::new("git")
+            .current_dir(temp.path())
+            .args(["init", "--quiet"])
+            .status()
+            .expect("git should run");
+        assert!(status.success());
+        write(&temp.path().join("tracked.txt"), "tracked\n");
+        let status = Command::new("git")
+            .current_dir(temp.path())
+            .args(["add", "tracked.txt"])
+            .status()
+            .expect("git add should run");
+        assert!(status.success());
+
+        let error = ensure_tracked_worktree_clean(temp.path())
+            .expect_err("staged change should fail the clean guard");
+        assert!(
+            error
+                .to_string()
+                .contains("commit or stash tracked changes")
+        );
+
+        let status = Command::new("git")
+            .current_dir(temp.path())
+            .args(["rm", "--cached", "--quiet", "tracked.txt"])
+            .status()
+            .expect("git rm should run");
+        assert!(status.success());
+        ensure_tracked_worktree_clean(temp.path())
+            .expect("untracked files should be ignored by the guard");
     }
 }

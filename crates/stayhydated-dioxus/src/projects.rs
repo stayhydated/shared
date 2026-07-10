@@ -551,6 +551,11 @@ mod tests {
     }
 
     #[test]
+    fn native_clipboard_helper_is_a_safe_noop() {
+        copy_text_to_clipboard("npx skills add stayhydated/koruma");
+    }
+
+    #[test]
     fn project_messages_display_as_english_descriptions() {
         assert_eq!(
             ProjectMessage::KorumaDescription.to_string(),
