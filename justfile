@@ -22,4 +22,4 @@ test:
     cargo test --workspace --all-features --all-targets
 
 cov:
-    cargo llvm-cov --workspace --exclude xtask-dummy --exclude web-dummy --all-features --all-targets
+    cargo llvm-cov --workspace --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy --all-features --all-targets

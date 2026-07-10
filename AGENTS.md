@@ -58,6 +58,11 @@ Use it to decide:
   Role: helper APIs for mdBook output, llms output, Dioxus static-site builds, and release publishing.
   Sync: web output paths and copied assets are owned by `src/book.rs`, `src/llms.rs`, and `src/web.rs`; release order and `cargo publish` behavior are owned by `src/release.rs` and its tests.
 
+- `xtask`
+  Audience: Internal workflow.
+  Role: repository-owned maintenance commands, including the GitHub Action that updates downstream Cargo revisions to `stayhydated/shared` `master`.
+  Sync: revision-update behavior is owned by `src/commands/update_shared_revisions.rs`; keep its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
+
 - `crates/stayhydated-dioxus-core/tests`
   Audience: Validation.
   Role: trybuild compile-pass and compile-fail coverage for the public component API.
@@ -71,6 +76,7 @@ Use it to decide:
 - When changing sum-numbers-ai positioning, keep the library behavior in `dummy/sum-numbers-ai-dummy/src/lib.rs`, website cards in `dummy/web-dummy/src/lib.rs`, terminal rendering in `dummy/web-dummy/src/terminal.rs`, and book chapters under `dummy/book-dummy/src/` aligned.
 - When changing sitemap, route-cache, book, llms, or static-site output behavior, update the helper that owns the output path plus the tests that encode the path or copied file list.
 - When changing release publishing behavior in `stayhydated-xtask/src/release.rs`, update tests for publish order, command arguments, dirty-worktree guards, resume points, and registry handling.
+- When changing downstream revision-update behavior, keep `xtask/src/commands/update_shared_revisions.rs`, its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
 
 ## Validation
 
@@ -78,4 +84,5 @@ Use it to decide:
 - Local recipes currently include `just fmt`, `just clippy`, `just check`, `just test`, and `just cov`.
 - CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with `cargo llvm-cov --workspace --all-features --cobertura --output-path=target/cobertura.xml`.
 - For trybuild changes, run `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass` for `tests/pass/*` fixtures or `cargo test -p stayhydated-dioxus-core --all-features --test compile_fail` for `tests/ui/*` fixtures before broad workspace validation.
+- For downstream revision-update changes, run `cargo test -p xtask` before broad workspace validation.
 - For README-only or AGENTS.md-only changes, static review is sufficient unless a repository command directly covers the edited Markdown.

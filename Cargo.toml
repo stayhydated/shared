@@ -7,6 +7,7 @@ members = [
   "crates/stayhydated-dioxus-core",
   "crates/stayhydated-site",
   "crates/stayhydated-xtask",
+  "xtask",
 ]
 resolver = "3"
 
@@ -40,6 +41,7 @@ stayhydated-xtask = { path = "crates/stayhydated-xtask", version = "0.1.0" }
 strum = "0.28"
 sum-numbers-ai-dummy = { path = "dummy/sum-numbers-ai-dummy", version = "0.1.0" }
 tempfile = "3"
+toml_edit = "0.25"
 tracing = "0.1"
 trybuild = "1.0"
 walkdir = "2.5"
