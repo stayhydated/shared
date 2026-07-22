@@ -13,7 +13,7 @@ Use it to decide:
 
 - `Cargo.toml` defines the Rust workspace members and workspace lints.
 - `justfile` is the local command index. Start with `just --list` before choosing a broad command.
-- Public Rust exports start in each crate's `src/lib.rs`. Keep those exports aligned with the owning module and any compile-pass or compile-fail fixture that names the API.
+- Public Rust exports start in each library crate's `src/lib.rs`. Keep those exports aligned with the owning module and any `tests/pass/*` compile-pass fixture that names the API.
 - The workspace package version is `0.1.0`; keep docs, exports, examples, and tests focused on the current API shape unless a user or repository policy asks for a compatibility bridge.
 
 ## Workspace Map
@@ -26,7 +26,7 @@ Use it to decide:
 - `crates/stayhydated-dioxus`
   Audience: Public integration.
   Role: stayhydated project-site wrapper, shared project registry, portal helpers, page metadata, and selected re-exports from `stayhydated-dioxus-core`.
-  Sync: project identity, site/docs/source URLs, skill commands, and asset path behavior are tested in `src/projects.rs`, `src/portal.rs`, and `src/app.rs`.
+  Sync: project identity, site/docs/source URLs, book paths, and skill commands are tested in `src/projects.rs` and `tests/render_components.rs`; asset path behavior is tested in `src/app.rs`.
 
 - `dummy/sum-numbers-ai-dummy`
   Audience: Local validation.
@@ -46,7 +46,7 @@ Use it to decide:
 - `dummy/xtask-dummy`
   Audience: Internal workflow.
   Role: local build commands for dummy book, llms output, and Dioxus static-site output under `dummy/web-dummy`.
-  Sync: path changes under `dummy/book-dummy` or `dummy/web-dummy` may need command updates under `src/commands/` and root `justfile` recipes.
+  Sync: path changes under `dummy/book-dummy` or `dummy/web-dummy` may need command updates under `src/commands/` and in `dummy.just`, which the root `justfile` imports.
 
 - `crates/stayhydated-site`
   Audience: Public integration.
