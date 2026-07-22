@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use dioxus::{document, prelude::*};
-use stayhydated_dioxus_core::{Href, ShaderBackground, SharedStyles};
+use stayhydated_dioxus_core::{Href, SharedStyles};
 
 pub fn stayhydated_asset_href(base_href: impl AsRef<str>, asset_path: impl AsRef<str>) -> String {
     let base_href = base_href.as_ref();
@@ -31,7 +31,6 @@ pub fn StayhydatedDocumentAssets(
         SharedStyles {}
         document::Stylesheet { href: stylesheet_href }
         document::Stylesheet { href: components_theme_href }
-        ShaderBackground {}
     }
 }
 

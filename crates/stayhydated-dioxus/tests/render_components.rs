@@ -20,127 +20,86 @@ fn Demos() -> Element {
 }
 
 #[test]
-fn renders_router_app_at_root_route() {
+fn router_app_keeps_shader_local_to_rendered_surfaces() {
     let html = dioxus::ssr::render_element(rsx! {
         StayhydatedRouterApp::<TestRoute> { base_href: "/" }
     });
 
-    assert!(html.contains("shader-background-canvas"));
+    assert!(!html.contains("shader-background-canvas"));
 }
 
-#[component]
-fn ProjectApp() -> Element {
-    let config = StayhydatedProjectHeaderConfig::new(
-        Project::Koruma,
-        "/koruma/",
-        LinkTarget::route(TestRoute::Home {}),
-        LinkTarget::route(TestRoute::Demos {}),
-        "/koruma/book/",
-        stayhydated_header_labels(),
-        ProjectNavItem::Home,
-    )
-    .with_project_options(stayhydated_project_options())
-    .with_source("https://example.com/source")
-    .with_docs("https://example.com/docs")
-    .with_project_labels("Choose project", "Available projects")
-    .with_labels(stayhydated_header_labels_with(|message| {
-        format!("Project {message}")
-    }))
-    .with_active(ProjectNavItem::Demos);
-
-    rsx! {
-        StayhydatedDioxusApp { base_href: "/koruma/",
-            StayhydatedProjectHeader::<TestRoute> { config,
-                span { "Header child" }
-            }
-            ProjectSwitcher {
-                project: Project::EsFluent,
-                href: "/es-fluent/",
-                label: "Switch project",
-                list_label: "Project list",
-            }
-            StayhydatedProjectPageMetadata {
-                project: Project::Koruma,
-                page_title: "Home",
-                description: "Koruma project home",
-            }
-            ProjectSupportTextLink {
-                link: ProjectSupportLink::KORUMA_COLLECTION_CROWDIN,
-            }
-            ProjectSupportTextLink {
-                link: ProjectSupportLink::KORUMA_COLLECTION_CROWDIN,
-                label: "Translate",
-                class: "translate-link",
-            }
-            ProjectSourceTextLink { project: Project::Koruma }
-            ProjectSourceTextLink {
-                project: Project::EsFluent,
-                label: "Repository",
-            }
-            ProjectFluentTextLink {}
-            ProjectFluentTextLink { label: "Fluent" }
-            ProjectPackageTextLink { package: ProjectPackage::KORUMA }
-            ProjectPackageTextLink {
-                package: ProjectPackage::ES_FLUENT,
-                label: "es-fluent crate",
-            }
-            ProjectFooterPanelForProject { project: Project::Koruma }
+#[test]
+fn renders_project_metadata_and_responsive_portal_destinations() {
+    let html = dioxus::ssr::render_element(rsx! {
+        StayhydatedProjectPageMetadata {
+            project: Project::SumNumbersAi,
+            page_title: "Home",
+            description: "Sum numbers project home",
         }
-    }
+        StayhydatedProjectPortal::<TestRoute> {
+            project: Project::SumNumbersAi,
+            version: "0.1.0",
+            home: NavigationTarget::Internal(TestRoute::Home {}),
+            docs: Href::new("/sum-numbers-ai/book/api-contract.html"),
+            book: Href::new("/sum-numbers-ai/book/"),
+            demos: NavigationTarget::Internal(TestRoute::Demos {}),
+            source: Href::new("https://github.com/stayhydated/shared"),
+        }
+    });
+
+    assert!(html.contains("project-portal is-root"));
+    assert!(html.contains("href=\"/\""));
+    assert!(html.contains("aria-label=\"Home\""));
+    assert!(html.contains("sum-numbers-ai-portal-0"));
+    assert!(html.contains("sum-numbers-ai-portal-3"));
+    assert!(html.contains("portal-accent-yellow"));
+    assert!(html.contains("portal-accent-cyan"));
+    assert!(html.contains("portal-accent-magenta"));
+    assert!(html.contains("portal-accent-white"));
+    assert!(html.contains("Docs"));
+    assert!(html.contains("Book"));
+    assert!(html.contains("Demos"));
+    assert!(html.contains("Git"));
+    assert!(html.contains("portal-skills-copy"));
+    assert!(html.contains("Copy skills command"));
+    assert!(html.contains("An auditable AI addition API"));
 }
 
 #[test]
-fn renders_project_app_assets_navigation_resources_and_footer() {
-    let html = dioxus::ssr::render_element(rsx! { ProjectApp {} });
+fn project_portal_uses_registry_defaults() {
+    let html = dioxus::ssr::render_element(rsx! {
+        StayhydatedProjectPortal::<TestRoute> {
+            project: Project::Koruma,
+            version: "0.1.0",
+            home: NavigationTarget::Internal(TestRoute::Home {}),
+            demos: NavigationTarget::Internal(TestRoute::Demos {}),
+        }
+    });
 
-    assert!(html.contains("shader-background-canvas"));
-    assert!(html.contains("Choose project"));
-    assert!(html.contains("Project Home"));
-    assert!(html.contains("translate-link"));
-    assert!(html.contains("Project Fluent"));
-    assert!(html.contains("es-fluent crate"));
-    assert!(html.contains("Resources"));
-    assert!(html.contains("/koruma/llms-full.txt"));
+    assert!(html.contains("https://docs.rs/koruma/"));
+    assert!(html.contains("/koruma/book/"));
+    assert!(html.contains("https://github.com/stayhydated/koruma"));
+    assert_eq!(Project::Koruma.as_str(), "koruma");
+    assert_eq!(
+        Project::EsFluent.site_url(),
+        "https://stayhydated.github.io/es-fluent/"
+    );
 }
 
 #[test]
-fn project_registry_constructors_cover_custom_and_disabled_metadata() {
-    let custom = Project::SumNumbersAi.option_with("Arithmetic", "/arithmetic/");
-    assert_eq!(custom.name.as_str(), "Arithmetic");
-    assert!(custom.description.is_none());
+fn project_portal_shell_keeps_only_the_shared_heading() {
+    let html = dioxus::ssr::render_element(rsx! {
+        StayhydatedProjectPortalShell::<TestRoute> {
+            project: Project::SumNumbersAi,
+            version: "0.1.0",
+            home: NavigationTarget::Internal(TestRoute::Home {}),
+            section { class: "example-cards", "Examples" }
+        }
+    });
 
-    let localized = Project::EsFluent
-        .option_with_message_href("/localized/", |message| format!("Localized {message}"));
-    assert_eq!(
-        localized.description.as_ref().map(DisplayText::as_str),
-        Some("Localized Rust localization")
-    );
-
-    let converted: CoreProjectId = Project::Koruma.into();
-    assert_eq!(converted.as_str(), "koruma");
-    let converted: ProjectOption = Project::Koruma.into();
-    assert_eq!(converted.href.as_str(), "/koruma/");
-
-    assert_eq!(HeaderMessage::Language.as_str(), "Language");
-    assert_eq!(
-        ProjectMessage::SumNumbersAiDescription.as_str(),
-        "AI-assisted arithmetic"
-    );
-    let package = ProjectPackage::new("custom", "https://example.com/custom");
-    assert_eq!(package.name(), "custom");
-    assert_eq!(package.crates_href(), "https://example.com/custom");
-    let support = ProjectSupportLink::new("Support", "https://example.com/support");
-    assert_eq!(support.label(), "Support");
-    assert_eq!(support.href(), "https://example.com/support");
-    assert_eq!(Project::Koruma.primary_package(), ProjectPackage::KORUMA);
-    assert_eq!(
-        Project::SumNumbersAi.primary_package().name(),
-        "sum-numbers-ai-dummy"
-    );
-    assert!(Project::EsFluent.support_links().is_empty());
-    assert!(ProjectPackage::KORUMA.support_links().is_empty());
-    assert_eq!(
-        ProjectPackage::KORUMA_COLLECTION.support_links(),
-        &[ProjectSupportLink::KORUMA_COLLECTION_CROWDIN]
-    );
+    assert!(html.contains("portal-header"));
+    assert!(html.contains("portal-skills-copy"));
+    assert!(html.contains("example-cards"));
+    assert!(!html.contains("portal-destinations"));
+    assert!(!html.contains("project-portal is-root"));
 }

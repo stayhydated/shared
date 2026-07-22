@@ -1,7 +1,7 @@
-use crate::pages;
+use crate::{pages, site::constants::PROJECT};
 use dioxus::cli_config;
 use dioxus::prelude::*;
-use stayhydated_dioxus::{Project, ProjectNavItem, StayhydatedProjectPageMetadata};
+use stayhydated_dioxus::StayhydatedProjectPageMetadata;
 use stayhydated_site::routing::{BaseHref, BasePath, Href, RoutePath};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -10,6 +10,12 @@ pub(crate) enum PageKind {
     Demos,
     DioxusDemo,
     TerminalDemo,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct PageMetadata {
+    title: &'static str,
+    description: &'static str,
 }
 
 impl PageKind {
@@ -22,46 +28,33 @@ impl PageKind {
         ]
     }
 
-    fn route(self) -> &'static str {
+    const fn metadata(self) -> PageMetadata {
         match self {
-            Self::Home => "",
-            Self::Demos => "demos",
-            Self::DioxusDemo => "demos/dioxus",
-            Self::TerminalDemo => "demos/terminal",
+            Self::Home => PageMetadata {
+                title: "Home",
+                description: "A production-shaped documentation and demo target for an AI-assisted sum API.",
+            },
+            Self::Demos => PageMetadata {
+                title: "Demos",
+                description: "Dioxus and terminal clients for inspecting the sum-numbers-ai API contract.",
+            },
+            Self::DioxusDemo => PageMetadata {
+                title: "Dioxus Demo",
+                description: "A Dioxus console for request, response, and trace review in sum-numbers-ai.",
+            },
+            Self::TerminalDemo => PageMetadata {
+                title: "Terminal Demo",
+                description: "A Ratzilla operator CLI with a clap parser for sum-numbers-ai workloads.",
+            },
         }
     }
 
-    pub(crate) const fn project_nav_item(self) -> ProjectNavItem {
-        match self {
-            Self::Home => ProjectNavItem::Home,
-            Self::Demos | Self::DioxusDemo | Self::TerminalDemo => ProjectNavItem::Demos,
-        }
+    const fn title(self) -> &'static str {
+        self.metadata().title
     }
 
-    fn title(self) -> &'static str {
-        match self {
-            Self::Home => "Home",
-            Self::Demos => "Demos",
-            Self::DioxusDemo => "Dioxus Demo",
-            Self::TerminalDemo => "Terminal Demo",
-        }
-    }
-
-    fn description(self) -> &'static str {
-        match self {
-            Self::Home => {
-                "A production-shaped documentation and demo target for an AI-assisted sum API."
-            },
-            Self::Demos => {
-                "Dioxus and terminal clients for inspecting the sum-numbers-ai API contract."
-            },
-            Self::DioxusDemo => {
-                "A Dioxus console for request, response, and trace review in sum-numbers-ai."
-            },
-            Self::TerminalDemo => {
-                "A Ratzilla operator CLI with a clap parser for sum-numbers-ai workloads."
-            },
-        }
+    const fn description(self) -> &'static str {
+        self.metadata().description
     }
 }
 
@@ -76,7 +69,7 @@ impl SiteRoute {
     }
 
     pub(crate) fn path(self) -> Href {
-        stayhydated_site::routing::href(&BaseHref::root(), &relative_path(self.page))
+        Href::new(app_route(self.page).to_string())
     }
 }
 
@@ -88,10 +81,6 @@ pub(crate) fn app_base_href() -> BaseHref {
     let base_path = cli_config::base_path();
     let base_path = base_path.as_deref().map(BasePath::new);
     stayhydated_site::routing::base_href(base_path.as_ref())
-}
-
-pub(crate) fn page_href(page: PageKind) -> Href {
-    stayhydated_site::routing::href(&app_base_href(), &relative_path(page))
 }
 
 pub(crate) fn book_href() -> Href {
@@ -120,18 +109,33 @@ pub(crate) fn app_route(page: PageKind) -> AppRoute {
     }
 }
 
-fn relative_path(page: PageKind) -> RoutePath {
-    RoutePath::new(page.route())
-}
-
 fn route_element(route: SiteRoute) -> Element {
     rsx! {
         StayhydatedProjectPageMetadata {
-            project: Project::SumNumbersAi,
+            project: PROJECT,
             page_title: route.page.title(),
             description: route.page.description(),
         }
         {pages::route_content(route)}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn site_routes_use_app_route_paths() {
+        assert_eq!(SiteRoute::new(PageKind::Home).path().as_str(), "/");
+        assert_eq!(SiteRoute::new(PageKind::Demos).path().as_str(), "/demos/");
+        assert_eq!(
+            SiteRoute::new(PageKind::DioxusDemo).path().as_str(),
+            "/demos/dioxus/"
+        );
+        assert_eq!(
+            SiteRoute::new(PageKind::TerminalDemo).path().as_str(),
+            "/demos/terminal/"
+        );
     }
 }
 

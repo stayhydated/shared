@@ -3,7 +3,9 @@ use std::fmt;
 use clap::{Parser, Subcommand, error::ErrorKind};
 use sum_numbers_ai_dummy::{SumRequest, sum_with_request};
 
-const PROGRAM_NAME: &str = "sum-numbers-ai";
+use crate::site::constants::PROJECT;
+
+const PROGRAM_NAME: &str = PROJECT.as_str();
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TerminalCommandOutput {

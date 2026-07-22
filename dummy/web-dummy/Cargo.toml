@@ -21,6 +21,9 @@ stayhydated-dioxus = { workspace = true }
 stayhydated-site = { workspace = true }
 sum-numbers-ai-dummy = { workspace = true }
 
+[dev-dependencies]
+dioxus = { features = [ "ssr" ], workspace = true }
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 critical-section = { features = [ "std" ], workspace = true }
 ratzilla = { workspace = true }

@@ -1,11 +1,11 @@
 #[cfg(any(target_arch = "wasm32", test))]
 mod cli;
-mod components;
 mod pages;
 mod site;
 mod terminal;
 
 pub use site::app::App;
+pub use site::constants::SITE_URL;
 
 pub fn route_paths() -> Vec<String> {
     site::routing::all_routes()

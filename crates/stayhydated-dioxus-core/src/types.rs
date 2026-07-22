@@ -23,51 +23,6 @@ impl DisplayText {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct OptionalDisplayText(Option<DisplayText>);
-
-impl OptionalDisplayText {
-    pub fn into_option(self) -> Option<DisplayText> {
-        self.0
-    }
-}
-
-impl From<DisplayText> for OptionalDisplayText {
-    fn from(value: DisplayText) -> Self {
-        Self(Some(value))
-    }
-}
-
-impl From<String> for OptionalDisplayText {
-    fn from(value: String) -> Self {
-        Self(Some(DisplayText::new(value)))
-    }
-}
-
-impl From<&str> for OptionalDisplayText {
-    fn from(value: &str) -> Self {
-        Self(Some(DisplayText::new(value)))
-    }
-}
-
-impl From<Option<DisplayText>> for OptionalDisplayText {
-    fn from(value: Option<DisplayText>) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Option<String>> for OptionalDisplayText {
-    fn from(value: Option<String>) -> Self {
-        Self(value.map(DisplayText::new))
-    }
-}
-
-impl From<Option<&str>> for OptionalDisplayText {
-    fn from(value: Option<&str>) -> Self {
-        Self(value.map(DisplayText::new))
-    }
-}
-
 #[derive(AsRef, Clone, Debug, Display, Eq, From, PartialEq)]
 #[as_ref(forward)]
 #[from(String, &str)]

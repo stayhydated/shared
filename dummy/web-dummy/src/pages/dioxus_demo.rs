@@ -1,5 +1,3 @@
-use crate::components::{FooterPanel, PageHeader};
-use crate::site::routing::PageKind;
 use dioxus::prelude::*;
 use dioxus_free_icons::{
     Icon,
@@ -9,10 +7,13 @@ use dioxus_primitives::drag_and_drop_list::{
     DragAndDropInstructions, DragAndDropList, DragAndDropListItems, DragAndDropLiveRegion,
     use_drag_and_drop_list_items,
 };
-use stayhydated_dioxus::{
-    CodeBlock, PageTitleBand, ProjectPageShell, ProjectSurfaceSection, surface_reveal_style,
-};
+use stayhydated_dioxus::{CodeBlock, NavigationTarget, StayhydatedProjectPortalShell};
 use sum_numbers_ai_dummy::{SumRequest, SumResponse, sum_with_request};
+
+use crate::site::{
+    constants::{PROJECT, VERSION},
+    routing::PageKind,
+};
 
 #[component]
 pub(crate) fn DioxusDemoPage() -> Element {
@@ -51,114 +52,92 @@ pub(crate) fn DioxusDemoPage() -> Element {
         })
         .collect::<Vec<_>>();
     let result_summary = response_summary(response.as_ref(), &parsed_numbers);
-    let surface_style = surface_reveal_style();
-
     use_effect(move || {
         install_number_list_key_guard();
     });
 
     rsx! {
-        ProjectPageShell {
-            header: rsx!(PageHeader { current_page: PageKind::DioxusDemo }),
-            footer: Some(rsx!(FooterPanel {})),
-            PageTitleBand {
-                label: "Dioxus console",
-                title: "A buyer-facing console for the managed AI provider",
-                lead: "Change the operand workload and watch the same request contract, response envelope, and trace evidence update from the local library.",
-            }
-            ProjectSurfaceSection {
-                label: "Workload",
-                title: "Customer request builder",
-                lead: "The focused integer workload keeps validation, ordering, and repeatable request generation easy to inspect.",
-                content_class: "sum-demo-workbench",
-                style: surface_style,
-                div { class: "sum-number-editor",
-                    div { class: "sum-number-toolbar",
-                        button {
-                            class: "sum-action-button",
-                            r#type: "button",
-                            onclick: move |_| {
-                                add_number_input(&mut numbers, &mut list_version);
-                            },
-                            Icon {
-                                class: "sum-button-icon".to_string(),
-                                width: 17,
-                                height: 17,
-                                icon: LdPlus,
+        StayhydatedProjectPortalShell {
+            project: PROJECT,
+            version: VERSION,
+            home: NavigationTarget::Internal(crate::site::routing::app_route(PageKind::Home)),
+            div { class: "demo-page sum-console-demo",
+                section { class: "sum-demo-workbench", aria_label: "Sum console",
+                    div { class: "sum-number-editor",
+                        div { class: "sum-number-toolbar",
+                            button {
+                                class: "sum-action-button",
+                                r#type: "button",
+                                onclick: move |_| {
+                                    add_number_input(&mut numbers, &mut list_version);
+                                },
+                                Icon {
+                                    class: "sum-button-icon".to_string(),
+                                    width: 17,
+                                    height: 17,
+                                    icon: LdPlus,
+                                }
                             }
-                            "Add"
-                        }
-                        button {
-                            class: "sum-action-button",
-                            r#type: "button",
-                            onclick: move |_| {
-                                reset_number_inputs(&mut numbers, &mut list_version);
-                            },
-                            Icon {
-                                class: "sum-button-icon".to_string(),
-                                width: 17,
-                                height: 17,
-                                icon: LdRotateCcw,
+                            button {
+                                class: "sum-action-button",
+                                r#type: "button",
+                                onclick: move |_| {
+                                    reset_number_inputs(&mut numbers, &mut list_version);
+                                },
+                                Icon {
+                                    class: "sum-button-icon".to_string(),
+                                    width: 17,
+                                    height: 17,
+                                    icon: LdRotateCcw,
+                                }
+                                "Reset"
                             }
-                            "Reset"
+                        }
+                        DragAndDropList {
+                            key: "{list_version()}",
+                            class: "sum-number-dnd",
+                            aria_label: Some("Number inputs".to_owned()),
+                            items: sortable_items,
+                            SyncedNumberOrder {
+                                numbers,
+                            }
+                            DragAndDropInstructions {}
+                            DragAndDropListItems {
+                                aria_label: "Number inputs".to_owned(),
+                            }
+                            DragAndDropLiveRegion {}
                         }
                     }
-                    DragAndDropList {
-                        key: "{list_version()}",
-                        class: "sum-number-dnd",
-                        aria_label: Some("Number inputs".to_owned()),
-                        items: sortable_items,
-                        SyncedNumberOrder {
-                            numbers,
+                    div { class: "sum-result-panel",
+                        div { class: "sum-result-metric",
+                            span { "Total" }
+                            strong { "{result_summary.total}" }
                         }
-                        DragAndDropInstructions {}
-                        DragAndDropListItems {
-                            aria_label: "Number inputs".to_owned(),
+                        div { class: "sum-result-metric",
+                            span { "Operands" }
+                            strong { "{result_summary.operands}" }
                         }
-                        DragAndDropLiveRegion {}
+                        div { class: "sum-result-metric",
+                            span { "Verification" }
+                            strong { "{result_summary.verification}" }
+                        }
+                        p { class: "{result_summary.class_name}", "{result_summary.detail}" }
                     }
                 }
-                div { class: "sum-result-panel",
-                    div { class: "sum-result-metric",
-                        span { "Total" }
-                        strong { "{result_summary.total}" }
+                section { class: "sum-code-grid", aria_label: "Request",
+                    CodeBlock {
+                        code: request_code,
                     }
-                    div { class: "sum-result-metric",
-                        span { "Operands" }
-                        strong { "{result_summary.operands}" }
+                }
+                section { class: "sum-code-grid", aria_label: "Response",
+                    CodeBlock {
+                        code: response_code,
                     }
-                    div { class: "sum-result-metric",
-                        span { "Verification" }
-                        strong { "{result_summary.verification}" }
+                }
+                section { class: "sum-code-grid", aria_label: "Trace",
+                    CodeBlock {
+                        code: trace_code,
                     }
-                    p { class: "{result_summary.class_name}", "{result_summary.detail}" }
-                }
-            }
-            ProjectSurfaceSection {
-                label: "Request",
-                title: "HTTP-style request facade",
-                lead: "The preview projects the Rust SumRequest into the wire shape a managed API would document.",
-                content_class: "sum-code-grid",
-                CodeBlock {
-                    code: request_code,
-                }
-            }
-            ProjectSurfaceSection {
-                label: "Response",
-                title: "Verified response envelope",
-                lead: "The answer is computed locally, then returned beside the provider result, usage, latency, and verification status.",
-                content_class: "sum-code-grid",
-                CodeBlock {
-                    code: response_code,
-                }
-            }
-            ProjectSurfaceSection {
-                label: "Trace",
-                title: "Provider evidence trail",
-                lead: "Trace events make the AI boundary observable enough for docs, reviews, and demo parity checks.",
-                content_class: "sum-code-grid",
-                CodeBlock {
-                    code: trace_code,
                 }
             }
         }
@@ -565,4 +544,26 @@ fn trace_example(response: &SumResponse) -> String {
         .map(|event| format!("{}  {}", event.code, event.message))
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dioxus_demo_renders_only_the_console() {
+        let html = dioxus::ssr::render_element(rsx! { DioxusDemoPage {} });
+
+        assert!(html.contains("demo-page sum-console-demo"));
+        assert!(html.contains("sum-demo-workbench"));
+        assert_eq!(html.matches("class=\"code-sample\"").count(), 3);
+        assert!(html.contains("class=\"project-portal\""));
+        assert!(html.contains("portal-header"));
+        assert!(html.contains("portal-skills-copy"));
+        assert!(!html.contains("project-portal is-root"));
+        assert!(!html.contains("page-header"));
+        assert!(!html.contains("page-title-band"));
+        assert!(!html.contains("project-surface-header"));
+        assert!(!html.contains("site-footer"));
+    }
 }

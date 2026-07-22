@@ -10,7 +10,6 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
-bon = { workspace = true }
 derive_more = { features = [ "as_ref", "display", "from" ], workspace = true }
 dioxus = { features = [ "lib", "router" ], workspace = true }
 dioxus-free-icons = { features = [ "lucide" ], workspace = true }
@@ -32,6 +31,7 @@ wgpu = { default-features = false, features = [ "std", "webgpu", "wgsl" ], versi
 
 [dev-dependencies]
 dioxus = { features = [ "ssr" ], workspace = true }
+naga = { features = [ "wgsl-in" ], version = "30.0.0" }
 trybuild = { workspace = true }
 
 [lints]

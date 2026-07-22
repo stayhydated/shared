@@ -1,8 +1,5 @@
 :root {
-  --bg: #000000;
   --bg-elevated: #000000;
-  --bg-panel: #000000;
-  --bg-hover: #05000c;
   --line: rgba(0, 246, 255, 0.44);
   --line-strong: rgba(182, 255, 0, 0.72);
   --text: #f5fbff;
@@ -12,7 +9,6 @@
   --magenta: #ff00e6;
   --lime: #b6ff00;
   --amber: #ffd400;
-  --violet: #8a5cff;
   --panel-bg:
     linear-gradient(
       145deg,
@@ -43,24 +39,7 @@
   --radius: 8px;
   --site-shell-width: 1120px;
   --site-shell-gutter: 2rem;
-  --site-shell-gutter-compact: 1rem;
-  --chrome-padding: 0.75rem;
-  --chrome-gap: 0.75rem;
-  --chrome-gap-compact: 0.65rem;
-  --chrome-lockup-gap: 0.8rem;
-  --chrome-lockup-gap-compact: 0.65rem;
-  --chrome-lockup-copy-gap: 0.1rem;
-  --chrome-mark-size: 2.5rem;
-  --chrome-mark-size-compact: 2.2rem;
-  --chrome-control-height: 2.5rem;
-  --chrome-control-min-width: 5.5rem;
-  --chrome-control-padding-y: 0.55rem;
-  --chrome-control-padding-x: 0.85rem;
-  --chrome-nav-gap: 0.35rem;
-  --chrome-nav-font-size: 0.94rem;
-  --button-padding-y: 0.75rem;
-  --button-padding-x: 1rem;
-  --control-height: var(--chrome-control-height);
+  --control-height: 2.5rem;
   --control-gap: 0.45rem;
   --control-padding-y: 0.45rem;
   --control-padding-x: 0.65rem;
