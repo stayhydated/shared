@@ -1,5 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use wasm_bindgen::{JsCast as _, closure::Closure};
 use web_sys::HtmlCanvasElement;
@@ -29,9 +30,10 @@ pub(crate) struct ShaderBackgroundHandle {
     frame_callback: Rc<RefCell<Option<AnimationFrameCallback>>>,
 }
 
-impl ShaderBackgroundHandle {
-    pub(crate) fn stop(&self) {
+impl Drop for ShaderBackgroundHandle {
+    fn drop(&mut self) {
         self.running.set(false);
+        // The callback captures this shared slot, so removing it also breaks the reference cycle.
         self.frame_callback.borrow_mut().take();
     }
 }
@@ -44,16 +46,28 @@ struct Uniforms {
     grid_opacity: f32,
 }
 
-pub(crate) fn start(canvas_id: String, grid_opacity: f32) -> ShaderBackgroundHandle {
+pub(crate) fn start(
+    canvas_id: String,
+    grid_opacity: f32,
+    time_offset: f32,
+) -> ShaderBackgroundHandle {
     let handle = ShaderBackgroundHandle {
         running: Rc::new(Cell::new(true)),
         frame_callback: Rc::new(RefCell::new(None)),
     };
-    let running = handle.running.clone();
-    let frame_callback = handle.frame_callback.clone();
+    let running = Rc::clone(&handle.running);
+    let frame_callback = Rc::clone(&handle.frame_callback);
 
     dioxus::prelude::spawn(async move {
-        if let Err(error) = run(&canvas_id, grid_opacity, running, frame_callback).await {
+        if let Err(error) = run(
+            &canvas_id,
+            grid_opacity,
+            time_offset,
+            running,
+            frame_callback,
+        )
+        .await
+        {
             log_error(&format!("failed to start shader background: {error}"));
         }
     });
@@ -64,6 +78,7 @@ pub(crate) fn start(canvas_id: String, grid_opacity: f32) -> ShaderBackgroundHan
 async fn run(
     canvas_id: &str,
     grid_opacity: f32,
+    time_offset: f32,
     running: Rc<Cell<bool>>,
     frame_callback: Rc<RefCell<Option<AnimationFrameCallback>>>,
 ) -> Result<(), String> {
@@ -85,7 +100,7 @@ async fn run(
         return Ok(());
     }
 
-    let renderer = ShaderBackgroundRenderer::new(canvas, grid_opacity).await?;
+    let renderer = ShaderBackgroundRenderer::new(canvas, grid_opacity, time_offset).await?;
 
     start_render_loop(Rc::new(RefCell::new(renderer)), running, frame_callback)
 }
@@ -99,18 +114,18 @@ fn start_render_loop(
         return Ok(());
     }
 
-    let is_ready = Rc::new(Cell::new(false));
-    let callback_handle = frame_callback.clone();
+    let mut is_ready = false;
+    let callback_handle = Rc::clone(&frame_callback);
 
-    *callback_handle.borrow_mut() = Some(Closure::wrap(Box::new(move |time_ms| {
+    *callback_handle.borrow_mut() = Some(Closure::new(move |time_ms| {
         if !running.get() {
             return;
         }
 
         let rendered_frame = renderer.borrow_mut().render(time_ms);
-        if rendered_frame && !is_ready.get() {
-            is_ready.set(true);
-            mark_shader_background_ready();
+        if rendered_frame && !is_ready {
+            is_ready = true;
+            renderer.borrow().mark_ready();
         }
 
         let borrowed_callback = frame_callback.borrow();
@@ -120,7 +135,7 @@ fn start_render_loop(
         {
             log_error(&format!("failed to request animation frame: {error}"));
         }
-    }) as Box<dyn FnMut(f64)>));
+    }));
 
     {
         let borrowed_callback = callback_handle.borrow();
@@ -133,10 +148,11 @@ fn start_render_loop(
     Ok(())
 }
 
-fn request_animation_frame(callback: &Closure<dyn FnMut(f64)>) -> Result<i32, String> {
+fn request_animation_frame(callback: &AnimationFrameCallback) -> Result<(), String> {
     web_sys::window()
         .ok_or_else(|| "window unavailable".to_string())?
         .request_animation_frame(callback.as_ref().unchecked_ref())
+        .map(drop)
         .map_err(|error| format!("{error:?}"))
 }
 
@@ -151,10 +167,15 @@ struct ShaderBackgroundRenderer {
     config: SurfaceConfiguration,
     last_frame_ms: f64,
     grid_opacity: f32,
+    time_offset: f32,
 }
 
 impl ShaderBackgroundRenderer {
-    async fn new(canvas: HtmlCanvasElement, grid_opacity: f32) -> Result<Self, String> {
+    async fn new(
+        canvas: HtmlCanvasElement,
+        grid_opacity: f32,
+        time_offset: f32,
+    ) -> Result<Self, String> {
         let mut instance_descriptor = InstanceDescriptor::new_without_display_handle();
         instance_descriptor.backends = Backends::BROWSER_WEBGPU;
         let instance = Instance::new(instance_descriptor);
@@ -177,21 +198,18 @@ impl ShaderBackgroundRenderer {
             })
             .await
             .map_err(|error| error.to_string())?;
-        let size = canvas_size(&canvas);
-        let config = surface
+        device.on_uncaptured_error(Arc::new(|error| {
+            log_error(&format!("shader background WebGPU error: {error}"));
+        }));
+        let size = resize_canvas(&canvas);
+        let mut config = surface
             .get_default_config(&adapter, size.width, size.height)
             .ok_or_else(|| "surface is not supported by the selected adapter".to_string())?;
-        let config = SurfaceConfiguration {
-            usage: TextureUsages::RENDER_ATTACHMENT,
-            format: config.format,
-            color_space: config.color_space,
-            width: size.width,
-            height: size.height,
-            desired_maximum_frame_latency: 2,
-            present_mode: preferred_present_mode(&surface, &adapter),
-            alpha_mode: CompositeAlphaMode::Opaque,
-            view_formats: vec![],
-        };
+        config.usage = TextureUsages::RENDER_ATTACHMENT;
+        config.desired_maximum_frame_latency = 2;
+        config.present_mode = preferred_present_mode(&surface, &adapter);
+        config.alpha_mode = CompositeAlphaMode::Opaque;
+        config.view_formats.clear();
         surface.configure(&device, &config);
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {
@@ -267,6 +285,7 @@ impl ShaderBackgroundRenderer {
             config,
             last_frame_ms: -TARGET_FRAME_MS,
             grid_opacity,
+            time_offset,
         })
     }
 
@@ -276,10 +295,7 @@ impl ShaderBackgroundRenderer {
         }
         self.last_frame_ms = time_ms;
 
-        let size = canvas_size(&self.canvas);
-        if size.width == 0 || size.height == 0 {
-            return false;
-        }
+        let size = resize_canvas(&self.canvas);
         if size.width != self.config.width || size.height != self.config.height {
             self.config.width = size.width;
             self.config.height = size.height;
@@ -300,7 +316,7 @@ impl ShaderBackgroundRenderer {
 
         let uniforms = Uniforms {
             resolution: [self.config.width as f32, self.config.height as f32],
-            time: (time_ms * 0.001) as f32,
+            time: (time_ms * 0.001) as f32 + self.time_offset,
             grid_opacity: self.grid_opacity,
         };
         self.queue
@@ -338,23 +354,16 @@ impl ShaderBackgroundRenderer {
         self.queue.present(frame);
         true
     }
-}
 
-fn mark_shader_background_ready() {
-    let Some(document) = web_sys::window().and_then(|window| window.document()) else {
-        return;
-    };
-    let Some(root) = document.document_element() else {
-        return;
-    };
-
-    if let Err(error) = root.set_attribute(
-        SHADER_BACKGROUND_STATUS_ATTRIBUTE,
-        SHADER_BACKGROUND_STATUS_READY,
-    ) {
-        log_error(&format!(
-            "failed to mark shader background ready: {error:?}"
-        ));
+    fn mark_ready(&self) {
+        if let Err(error) = self.canvas.set_attribute(
+            SHADER_BACKGROUND_STATUS_ATTRIBUTE,
+            SHADER_BACKGROUND_STATUS_READY,
+        ) {
+            log_error(&format!(
+                "failed to mark shader background ready: {error:?}"
+            ));
+        }
     }
 }
 
@@ -367,7 +376,7 @@ fn preferred_present_mode(surface: &Surface<'_>, adapter: &wgpu::Adapter) -> Pre
         .unwrap_or(PresentMode::AutoVsync)
 }
 
-fn canvas_size(canvas: &HtmlCanvasElement) -> CanvasSize {
+fn resize_canvas(canvas: &HtmlCanvasElement) -> CanvasSize {
     let rect = canvas.get_bounding_client_rect();
     let css_width = rect.width().max(1.0);
     let css_height = rect.height().max(1.0);

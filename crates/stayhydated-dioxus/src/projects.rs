@@ -9,7 +9,7 @@ use dioxus_primitives::{
 };
 use stayhydated_dioxus_core::{
     CssClass, DisplayText, ExternalTextLink, FooterPanel, Href, OptionalDisplayText,
-    ProjectId as CoreProjectId, ProjectMark, ProjectOption, ProjectPageMetadata,
+    ProjectIdentity, ProjectPageMetadata,
 };
 use strum::{Display, IntoStaticStr};
 
@@ -21,32 +21,54 @@ pub enum Project {
     SumNumbersAi,
 }
 
-#[derive(Clone, Copy, Debug, Display, Eq, IntoStaticStr, PartialEq)]
-#[strum(const_into_str)]
-pub enum ProjectMessage {
-    #[strum(to_string = "Rust validation")]
-    KorumaDescription,
-    #[strum(to_string = "Rust localization")]
-    EsFluentDescription,
-    #[strum(to_string = "AI-assisted arithmetic")]
-    SumNumbersAiDescription,
-}
-
-impl ProjectMessage {
-    pub const fn as_str(self) -> &'static str {
-        self.into_str()
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ProjectMetadata {
-    mark: &'static str,
     description: &'static str,
     href: &'static str,
     site_url: &'static str,
     rustdoc_href: &'static str,
     source_href: &'static str,
     skill_command: &'static str,
+}
+
+macro_rules! project_metadata {
+    ($slug:literal, $description:literal) => {
+        ProjectMetadata {
+            description: $description,
+            href: concat!("/", $slug, "/"),
+            site_url: concat!("https://stayhydated.github.io/", $slug, "/"),
+            rustdoc_href: concat!("https://docs.rs/", $slug, "/"),
+            source_href: concat!("https://github.com/stayhydated/", $slug),
+            skill_command: concat!("npx skills add stayhydated/", $slug),
+        }
+    };
+}
+
+const KORUMA_METADATA: ProjectMetadata = project_metadata!("koruma", "Rust validation");
+const ES_FLUENT_METADATA: ProjectMetadata = project_metadata!("es-fluent", "Rust localization");
+const SUM_NUMBERS_AI_METADATA: ProjectMetadata =
+    project_metadata!("sum-numbers-ai", "An auditable AI addition API");
+
+#[bon::builder(const)]
+const fn metadata_with(
+    #[builder(start_fn)] defaults: ProjectMetadata,
+    #[builder(default = defaults.description)] description: &'static str,
+    #[builder(default = defaults.href)] href: &'static str,
+    #[builder(default = defaults.site_url)] site_url: &'static str,
+    #[builder(default = defaults.rustdoc_href)] rustdoc_href: &'static str,
+    #[builder(default = defaults.source_href)] source_href: &'static str,
+    #[builder(default = defaults.skill_command)] skill_command: &'static str,
+) -> ProjectMetadata {
+    let _ = defaults;
+
+    ProjectMetadata {
+        description,
+        href,
+        site_url,
+        rustdoc_href,
+        source_href,
+        skill_command,
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -61,17 +83,17 @@ pub struct ProjectSupportLink {
     href: &'static str,
 }
 
+macro_rules! published_package {
+    ($name:literal) => {
+        ProjectPackage::new($name, concat!("https://crates.io/crates/", $name))
+    };
+}
+
 impl ProjectPackage {
-    pub const KORUMA: Self = Self::new("koruma", "https://crates.io/crates/koruma");
-    pub const KORUMA_COLLECTION: Self = Self::new(
-        "koruma-collection",
-        "https://crates.io/crates/koruma-collection",
-    );
-    pub const ES_FLUENT: Self = Self::new("es-fluent", "https://crates.io/crates/es-fluent");
-    pub const ES_FLUENT_MANAGER_DIOXUS: Self = Self::new(
-        "es-fluent-manager-dioxus",
-        "https://crates.io/crates/es-fluent-manager-dioxus",
-    );
+    pub const KORUMA: Self = published_package!("koruma");
+    pub const KORUMA_COLLECTION: Self = published_package!("koruma-collection");
+    pub const ES_FLUENT: Self = published_package!("es-fluent");
+    pub const ES_FLUENT_MANAGER_DIOXUS: Self = published_package!("es-fluent-manager-dioxus");
     pub const SUM_NUMBERS_AI_DUMMY: Self = Self::new("sum-numbers-ai-dummy", DISABLED_PROJECT_HREF);
 
     pub const fn new(name: &'static str, crates_href: &'static str) -> Self {
@@ -124,41 +146,16 @@ static ES_FLUENT_PACKAGES: [ProjectPackage; 2] = [
 static SUM_NUMBERS_AI_PACKAGES: [ProjectPackage; 1] = [ProjectPackage::SUM_NUMBERS_AI_DUMMY];
 static KORUMA_COLLECTION_SUPPORT_LINKS: [ProjectSupportLink; 1] =
     [ProjectSupportLink::KORUMA_COLLECTION_CROWDIN];
-static KORUMA_SUPPORT_LINKS: [ProjectSupportLink; 1] =
-    [ProjectSupportLink::KORUMA_COLLECTION_CROWDIN];
 
 impl Project {
-    pub const ALL: [Self; 3] = [Self::Koruma, Self::EsFluent, Self::SumNumbersAi];
-
     const fn metadata(self) -> ProjectMetadata {
         match self {
-            Self::Koruma => ProjectMetadata {
-                mark: "K",
-                description: "Rust validation",
-                href: "/koruma/",
-                site_url: "https://stayhydated.github.io/koruma/",
-                rustdoc_href: "https://docs.rs/koruma/",
-                source_href: "https://github.com/stayhydated/koruma",
-                skill_command: "npx skills add stayhydated/koruma",
-            },
-            Self::EsFluent => ProjectMetadata {
-                mark: "EF",
-                description: "Rust localization",
-                href: "/es-fluent/",
-                site_url: "https://stayhydated.github.io/es-fluent/",
-                rustdoc_href: "https://docs.rs/es-fluent/",
-                source_href: "https://github.com/stayhydated/es-fluent",
-                skill_command: "npx skills add stayhydated/es-fluent",
-            },
-            Self::SumNumbersAi => ProjectMetadata {
-                mark: "SN",
-                description: "AI-assisted arithmetic",
-                href: "/sum-numbers-ai/",
-                site_url: "https://stayhydated.github.io/sum-numbers-ai/",
-                rustdoc_href: DISABLED_PROJECT_HREF,
-                source_href: DISABLED_PROJECT_HREF,
-                skill_command: "npx skills add stayhydated/sum-numbers-ai",
-            },
+            Self::Koruma => metadata_with(KORUMA_METADATA).call(),
+            Self::EsFluent => metadata_with(ES_FLUENT_METADATA).call(),
+            Self::SumNumbersAi => metadata_with(SUM_NUMBERS_AI_METADATA)
+                .rustdoc_href(DISABLED_PROJECT_HREF)
+                .source_href(DISABLED_PROJECT_HREF)
+                .call(),
         }
     }
 
@@ -168,6 +165,10 @@ impl Project {
 
     pub const fn href(self) -> &'static str {
         self.metadata().href
+    }
+
+    pub const fn description(self) -> &'static str {
+        self.metadata().description
     }
 
     pub const fn source_href(self) -> &'static str {
@@ -194,18 +195,19 @@ impl Project {
         self.project_file_href("llms-full.txt")
     }
 
+    pub fn book_href(self) -> Href {
+        self.project_file_href("book/")
+    }
+
     fn project_file_href(self, file_name: &str) -> Href {
         Href::new(format!("{}{file_name}", self.href()))
     }
 
     pub const fn primary_package(self) -> ProjectPackage {
-        match self {
-            Self::Koruma => ProjectPackage::KORUMA,
-            Self::EsFluent => ProjectPackage::ES_FLUENT,
-            Self::SumNumbersAi => ProjectPackage::SUM_NUMBERS_AI_DUMMY,
-        }
+        self.packages()[0]
     }
 
+    /// Returns the project packages with the primary package first.
     pub const fn packages(self) -> &'static [ProjectPackage] {
         match self {
             Self::Koruma => &KORUMA_PACKAGES,
@@ -216,115 +218,19 @@ impl Project {
 
     pub const fn support_links(self) -> &'static [ProjectSupportLink] {
         match self {
-            Self::Koruma => &KORUMA_SUPPORT_LINKS,
+            Self::Koruma => &KORUMA_COLLECTION_SUPPORT_LINKS,
             Self::EsFluent | Self::SumNumbersAi => &[],
         }
     }
 
-    pub const fn description_message(self) -> ProjectMessage {
-        match self {
-            Self::Koruma => ProjectMessage::KorumaDescription,
-            Self::EsFluent => ProjectMessage::EsFluentDescription,
-            Self::SumNumbersAi => ProjectMessage::SumNumbersAiDescription,
-        }
-    }
-
-    pub fn option(self) -> ProjectOption {
+    pub fn identity(self) -> ProjectIdentity {
         let metadata = self.metadata();
-        self.option_with_description(self.as_str(), metadata.description, metadata.href)
+        self.identity_with_href(metadata.href)
     }
 
-    pub fn option_with_href(self, href: impl Into<Href>) -> ProjectOption {
+    pub fn identity_with_href(self, href: impl Into<Href>) -> ProjectIdentity {
         let metadata = self.metadata();
-        self.option_with_description(self.as_str(), metadata.description, href)
-    }
-
-    pub fn option_with(self, name: impl Into<DisplayText>, href: impl Into<Href>) -> ProjectOption {
-        self.option_with_optional_description(name.into(), None, href.into())
-    }
-
-    pub fn option_with_description(
-        self,
-        name: impl Into<DisplayText>,
-        description: impl Into<DisplayText>,
-        href: impl Into<Href>,
-    ) -> ProjectOption {
-        self.option_with_optional_description(name.into(), Some(description.into()), href.into())
-    }
-
-    pub fn option_with_message_href(
-        self,
-        href: impl Into<Href>,
-        mut message_text: impl FnMut(ProjectMessage) -> String,
-    ) -> ProjectOption {
-        self.option_with_description(
-            self.as_str(),
-            message_text(self.description_message()),
-            href,
-        )
-    }
-
-    fn option_with_optional_description(
-        self,
-        name: DisplayText,
-        description: Option<DisplayText>,
-        href: Href,
-    ) -> ProjectOption {
-        let metadata = self.metadata();
-        ProjectOption {
-            id: self.into(),
-            mark: ProjectMark::new(metadata.mark),
-            name,
-            description,
-            href,
-        }
-    }
-}
-
-impl From<Project> for CoreProjectId {
-    fn from(project: Project) -> Self {
-        Self::new(project.as_str())
-    }
-}
-
-impl From<Project> for ProjectOption {
-    fn from(project: Project) -> Self {
-        project.option()
-    }
-}
-
-pub fn stayhydated_project_options() -> Vec<ProjectOption> {
-    Project::ALL.into_iter().map(Project::option).collect()
-}
-
-pub fn stayhydated_project_options_with(
-    mut message_text: impl FnMut(ProjectMessage) -> String,
-) -> Vec<ProjectOption> {
-    Project::ALL
-        .into_iter()
-        .map(|project| {
-            let href = project.href();
-            project.option_with_message_href(href, &mut message_text)
-        })
-        .collect()
-}
-
-#[component]
-pub fn ProjectSwitcher(
-    project: Project,
-    #[props(into)] href: Href,
-    #[props(default = DisplayText::new("Project selector"), into)] label: DisplayText,
-    #[props(default = DisplayText::new("Projects"), into)] list_label: DisplayText,
-) -> Element {
-    let selected = project.option_with_href(href);
-
-    rsx! {
-        stayhydated_dioxus_core::ProjectSwitcher {
-            selected,
-            projects: stayhydated_project_options(),
-            label,
-            list_label,
-        }
+        ProjectIdentity::with_description(self.as_str(), metadata.description, href)
     }
 }
 
@@ -419,10 +325,8 @@ pub fn ProjectPackageTextLink(
 }
 
 #[component]
-pub fn ProjectFooterSkillsSection(project: Project) -> Element {
+pub(crate) fn ProjectSkillsCopyButton(project: Project) -> Element {
     let command = project.skill_command();
-    let llms_href = project.llms_href();
-    let llms_full_href = project.llms_full_href();
     let mut copied = use_signal(|| false);
     let copy_label = if copied() {
         "Copied"
@@ -431,56 +335,66 @@ pub fn ProjectFooterSkillsSection(project: Project) -> Element {
     };
 
     rsx! {
+        Tooltip {
+            class: "skills-copy-tooltip",
+            TooltipTrigger {
+                as: move |trigger_attrs: Vec<Attribute>| {
+                    rsx! {
+                        button {
+                            class: if copied() {
+                                "skills-copy-button is-copied"
+                            } else {
+                                "skills-copy-button"
+                            },
+                            r#type: "button",
+                            "aria-label": copy_label,
+                            onclick: move |_| {
+                                copy_text_to_clipboard(command);
+                                copied.set(true);
+                            },
+                            ..trigger_attrs,
+                            if copied() {
+                                Icon {
+                                    class: "skills-copy-icon".to_string(),
+                                    width: 16,
+                                    height: 16,
+                                    icon: LdCopyCheck,
+                                }
+                            } else {
+                                Icon {
+                                    class: "skills-copy-icon".to_string(),
+                                    width: 16,
+                                    height: 16,
+                                    icon: LdCopy,
+                                }
+                            }
+                            span { class: "skills-copy-status", "{copy_label}" }
+                        }
+                    }
+                }
+            }
+            TooltipContent {
+                side: ContentSide::Top,
+                class: "skills-command-tooltip",
+                code { "{command}" }
+            }
+        }
+    }
+}
+
+#[component]
+fn ProjectFooterSkillsSection(project: Project) -> Element {
+    let llms_href = project.llms_href();
+    let llms_full_href = project.llms_full_href();
+
+    rsx! {
         section { class: "footer-section footer-resources-section",
             h2 { class: "footer-section-title", "Resources" }
             ul { class: "footer-resource-list",
                 li {
                     div { class: "footer-resource-row footer-skill-resource",
                         span { class: "footer-link footer-skills-link", "Skills" }
-                        Tooltip {
-                            class: "footer-copy-tooltip",
-                            TooltipTrigger {
-                                as: move |trigger_attrs: Vec<Attribute>| {
-                                    rsx! {
-                                        button {
-                                            class: if copied() {
-                                                "footer-copy-button is-copied"
-                                            } else {
-                                                "footer-copy-button"
-                                            },
-                                            r#type: "button",
-                                            "aria-label": copy_label,
-                                            onclick: move |_| {
-                                                copy_text_to_clipboard(command);
-                                                copied.set(true);
-                                            },
-                                            ..trigger_attrs,
-                                            if copied() {
-                                                Icon {
-                                                    class: "footer-copy-icon".to_string(),
-                                                    width: 16,
-                                                    height: 16,
-                                                    icon: LdCopyCheck,
-                                                }
-                                            } else {
-                                                Icon {
-                                                    class: "footer-copy-icon".to_string(),
-                                                    width: 16,
-                                                    height: 16,
-                                                    icon: LdCopy,
-                                                }
-                                            }
-                                            span { class: "footer-copy-status", "{copy_label}" }
-                                        }
-                                    }
-                                }
-                            }
-                            TooltipContent {
-                                side: ContentSide::Top,
-                                class: "footer-command-tooltip",
-                                code { "{command}" }
-                            }
-                        }
+                        ProjectSkillsCopyButton { project }
                     }
                 }
                 li {
@@ -517,21 +431,10 @@ fn copy_text_to_clipboard(value: &str) {
 fn copy_text_to_clipboard(_value: &str) {}
 
 #[component]
-pub fn ProjectFooterPanel(project: Project) -> Element {
-    rsx! {
-        FooterPanel {
-            ProjectFooterSkillsSection {
-                project,
-            }
-        }
-    }
-}
-
-#[component]
 pub fn ProjectFooterPanelForProject(project: Project) -> Element {
     rsx! {
-        ProjectFooterPanel {
-            project,
+        FooterPanel {
+            ProjectFooterSkillsSection { project }
         }
     }
 }
@@ -541,45 +444,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_project_options_include_all_projects() {
-        let projects = stayhydated_project_options();
-
-        assert_eq!(projects.len(), 3);
-        assert_eq!(projects[0].id.as_str(), "koruma");
-        assert_eq!(projects[1].id.as_str(), "es-fluent");
-        assert_eq!(projects[2].id.as_str(), "sum-numbers-ai");
-    }
-
-    #[test]
     fn native_clipboard_helper_is_a_safe_noop() {
         copy_text_to_clipboard("npx skills add stayhydated/koruma");
     }
 
     #[test]
-    fn project_messages_display_as_english_descriptions() {
-        assert_eq!(
-            ProjectMessage::KorumaDescription.to_string(),
-            "Rust validation"
-        );
-        assert_eq!(
-            ProjectMessage::EsFluentDescription.to_string(),
-            "Rust localization"
-        );
-        assert_eq!(
-            ProjectMessage::SumNumbersAiDescription.to_string(),
-            "AI-assisted arithmetic"
-        );
-    }
+    fn project_identity_uses_registry_branding() {
+        let project = Project::Koruma.identity();
 
-    #[test]
-    fn message_project_options_use_static_project_names() {
-        let projects = stayhydated_project_options_with(|message| format!("{message:?}"));
-
-        assert_eq!(projects[0].name.as_str(), "koruma");
+        assert_eq!(project.name.as_str(), "koruma");
         assert_eq!(
-            projects[0].description.as_ref().map(DisplayText::as_str),
-            Some("KorumaDescription")
+            project.description.as_ref().map(DisplayText::as_str),
+            Some("Rust validation")
         );
+        assert_eq!(project.href.as_str(), "/koruma/");
     }
 
     #[test]

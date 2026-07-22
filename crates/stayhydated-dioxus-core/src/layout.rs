@@ -1,43 +1,13 @@
 use dioxus::prelude::*;
-use dioxus_primitives::navbar::{self, NavbarProps};
-use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use strum::IntoStaticStr;
 
 use crate::{
     CssClass, DisplayText, Href, InlineStyle, OptionalDisplayText,
     cards::SectionHeader,
     classes,
-    links::{BackLink, LinkTarget},
-    projects::{ProjectOption, ProjectSwitcher},
+    links::BackLink,
+    projects::{ProjectIdentity, ProjectLockup},
 };
-
-#[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
-#[strum(const_into_str)]
-pub enum PanelKind {
-    #[strum(to_string = "hero")]
-    Hero,
-    #[strum(to_string = "section-band")]
-    Section,
-    #[strum(to_string = "code-band")]
-    Code,
-    #[strum(to_string = "page-title-band")]
-    PageTitle,
-    #[strum(to_string = "contribute-panel")]
-    Contribute,
-}
-
-impl PanelKind {
-    fn class(self) -> &'static str {
-        self.into_str()
-    }
-}
-
-#[component]
-pub fn PageShell(children: Element) -> Element {
-    rsx! {
-        main { class: "page-shell", {children} }
-    }
-}
 
 #[component]
 pub fn ProjectPageShell(
@@ -73,33 +43,6 @@ pub fn ProjectHomeShell(header: Element, footer: Element, children: Element) -> 
 }
 
 #[component]
-pub fn Panel(
-    kind: PanelKind,
-    children: Element,
-    #[props(default, into)] extra_class: CssClass,
-    #[props(default, into)] style: InlineStyle,
-) -> Element {
-    let class = classes::join(kind.class(), &extra_class);
-    let style = style.into_string();
-    rsx! {
-        section { class, style, {children} }
-    }
-}
-
-#[component]
-pub fn SharedGrid(
-    children: Element,
-    #[props(default)] columns: Option<GridColumns>,
-    #[props(default, into)] extra_class: CssClass,
-) -> Element {
-    let class = grid_class(columns, &extra_class);
-
-    rsx! {
-        div { class, {children} }
-    }
-}
-
-#[component]
 pub fn GridSection(
     children: Element,
     #[props(default)] columns: Option<GridColumns>,
@@ -129,61 +72,12 @@ fn grid_class(columns: Option<GridColumns>, extra_class: &CssClass) -> String {
 }
 
 #[component]
-pub fn PageHeaderShell(props: NavbarProps) -> Element {
-    let base = attributes!(div {
-        class: "page-header"
-    });
-    let merged = merge_attributes(vec![base, props.attributes]);
-
-    rsx! {
-        navbar::Navbar {
-            disabled: props.disabled,
-            roving_loop: props.roving_loop,
-            attributes: merged,
-            {props.children}
-        }
-    }
-}
-
-#[component]
-pub fn ProjectSiteHeader(project_lockup: Element, children: Element) -> Element {
+pub fn ProjectHeader(project: ProjectIdentity, children: Element) -> Element {
     rsx! {
         header { class: "page-header",
-            {project_lockup}
-            HeaderCluster { {children} }
+            ProjectLockup { project }
+            div { class: "header-cluster", {children} }
         }
-    }
-}
-
-#[component]
-pub fn ProjectHeader(
-    project: ProjectOption,
-    children: Element,
-    #[props(default)] project_options: Vec<ProjectOption>,
-    #[props(default = DisplayText::new("Project selector"), into)] project_label: DisplayText,
-    #[props(default = DisplayText::new("Projects"), into)] project_list_label: DisplayText,
-) -> Element {
-    let _ = project_options;
-    let _ = project_list_label;
-
-    rsx! {
-        ProjectSiteHeader {
-            project_lockup: rsx! {
-                ProjectSwitcher {
-                    selected: project,
-                    projects: Vec::new(),
-                    label: project_label,
-                }
-            },
-            {children}
-        }
-    }
-}
-
-#[component]
-pub fn HeaderCluster(children: Element) -> Element {
-    rsx! {
-        div { class: "header-cluster", {children} }
     }
 }
 
@@ -196,31 +90,6 @@ pub fn HeaderNav(
 
     rsx! {
         nav { class: "header-nav-links", "aria-label": label, {children} }
-    }
-}
-
-#[component]
-pub fn BrandMark(#[props(into)] label: DisplayText) -> Element {
-    rsx! {
-        span { class: "brand-mark", "{label}" }
-    }
-}
-
-#[component]
-pub fn BrandLockup(
-    #[props(into)] href: Href,
-    #[props(into)] mark: DisplayText,
-    #[props(into)] kicker: DisplayText,
-    #[props(into)] title: DisplayText,
-) -> Element {
-    rsx! {
-        a { class: "brand", href: href.as_str(),
-            BrandMark { label: mark }
-            span { class: "brand-copy",
-                span { class: "brand-kicker", "{kicker}" }
-                span { class: "brand-title", "{title}" }
-            }
-        }
     }
 }
 
@@ -414,44 +283,12 @@ pub fn ProjectSurfaceSection(
 }
 
 #[component]
-pub fn PageTitleBand(
-    #[props(default, into)] label: OptionalDisplayText,
-    #[props(into)] title: DisplayText,
-    #[props(default, into)] lead: OptionalDisplayText,
-) -> Element {
-    let label = label.into_option();
-    let lead = lead.into_option();
-
-    rsx! {
-        section { class: "page-title-band motion-reveal",
-            if let Some(label) = label {
-                span { class: "panel-label", "{label}" }
-            }
-            h1 { "{title}" }
-            if let Some(lead) = lead {
-                p { "{lead}" }
-            }
-        }
-    }
-}
-
-#[component]
 pub fn FooterPanel(children: Element) -> Element {
     rsx! {
         footer { class: "site-footer",
             div { class: "site-footer-shell",
                 div { class: "site-footer-sections", {children} }
             }
-        }
-    }
-}
-
-#[component]
-pub fn FooterCopy(#[props(into)] label: DisplayText, children: Element) -> Element {
-    rsx! {
-        p { class: "footer-copy",
-            span { class: "footer-label", "{label}" }
-            span { class: "footer-text", {children} }
         }
     }
 }
@@ -495,7 +332,7 @@ pub fn FullscreenDemoFrame(
 
 #[component]
 pub fn FullscreenDemoPage<R: Routable + Clone + PartialEq + 'static>(
-    back_target: LinkTarget<R>,
+    back_target: NavigationTarget<R>,
     #[props(into)] back_label: DisplayText,
     #[props(into)] src: Href,
     #[props(into)] title: DisplayText,
@@ -531,9 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn panel_and_button_variants_use_static_class_labels() {
-        assert_eq!(PanelKind::Hero.class(), "hero");
-        assert_eq!(PanelKind::PageTitle.class(), "page-title-band");
+    fn button_variants_use_static_class_labels() {
         assert_eq!(ButtonVariant::Primary.class(), "primary");
         assert_eq!(ButtonVariant::Secondary.class(), "secondary");
     }

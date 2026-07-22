@@ -13,33 +13,6 @@
   box-shadow: var(--shadow);
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--chrome-lockup-gap);
-  min-height: var(--chrome-control-height);
-  min-width: 0;
-  color: var(--text);
-  text-decoration: none;
-}
-
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: var(--chrome-mark-size);
-  height: var(--chrome-mark-size);
-  flex: 0 0 auto;
-  border: 1px solid rgba(182, 255, 0, 0.72);
-  border-radius: var(--radius);
-  background: #000;
-  color: var(--lime);
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  box-shadow: var(--glow-lime);
-  text-shadow: 0 0 14px rgba(182, 255, 0, 0.78);
-}
-
 .brand-copy {
   display: grid;
   gap: var(--chrome-lockup-copy-gap);
@@ -48,8 +21,7 @@
 
 .brand-kicker,
 .panel-label,
-.card-label,
-.footer-label {
+.card-label {
   color: var(--amber);
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.75rem;
@@ -75,21 +47,14 @@
 .project-lockup {
   display: inline-flex;
   align-items: center;
-  gap: var(--chrome-lockup-gap);
   min-height: var(--chrome-control-height);
   min-width: 0;
   color: var(--text);
+  text-decoration: none;
 }
 
 .project-lockup.is-compact {
   width: 100%;
-  gap: var(--chrome-lockup-gap-compact);
-}
-
-.project-lockup.is-compact .project-mark {
-  width: var(--chrome-mark-size-compact);
-  height: var(--chrome-mark-size-compact);
-  font-size: 0.95rem;
 }
 
 .project-copy {

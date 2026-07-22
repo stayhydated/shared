@@ -54,8 +54,7 @@
   color: var(--lime);
 }
 
-.code-sample,
-.code-panel pre {
+.code-sample {
   margin: 0;
   padding: 1rem;
   overflow-x: auto;

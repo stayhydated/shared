@@ -23,14 +23,13 @@ fn render(element: Element) -> String {
     dioxus::ssr::render_element(element)
 }
 
-fn project() -> ProjectOption {
-    ProjectOption::with_description("shared", "SH", "shared", "Shared crates", "/shared/")
+fn project() -> ProjectIdentity {
+    ProjectIdentity::with_description("shared", "Shared crates", "/shared/")
 }
 
 #[component]
 fn PrimitiveApp() -> Element {
     rsx! {
-        PageHeaderShell { div { "Primitive navigation" } }
         Tabs {
             default_value: "overview",
             orientation: TabsOrientation::Vertical,
@@ -102,46 +101,29 @@ fn renders_card_grid_and_shell_components() {
     ];
 
     let html = render(rsx! {
-        PageShell {
-            ProjectPageShell {
-                extra_class: "outer",
-                main_extra_class: "inner",
-                header: rsx! { header { "Header" } },
-                footer: rsx! { FooterPanel { FooterCopy { label: "Project", "Footer" } } },
-                Panel {
-                    kind: PanelKind::Hero,
-                    extra_class: "featured",
-                    style: "--accent: red;",
-                    FeatureCard {
-                        label: "one",
-                        title: "First feature",
-                        body: "Feature body",
-                        style: "--motion-delay: 10ms;",
-                    }
-                    CodeBlock { code: "cargo test", class: "command" }
-                }
-        Grid {
-                    columns: GridColumns::Three,
-                    extra_class: "cards",
-                    SectionHeader {
-                        label: "Highlights",
-                        title: "Shared components",
-                        lead: "Reusable project surfaces",
-                }
-        }
-        Grid { div { "Default grid" } }
-                DemoCardGrid::<TestRoute> {
-                    cards,
-                    columns: GridColumns::Two,
-                    extra_class: "demo-grid",
-                    body_class: "default-card-body",
-                }
+        ProjectPageShell {
+            extra_class: "outer",
+            main_extra_class: "inner",
+            header: rsx! { header { "Header" } },
+            footer: rsx! { FooterPanel { div { "Footer" } } },
+            FeatureCard {
+                label: "one",
+                title: "First feature",
+                body: "Feature body",
+                style: "--motion-delay: 10ms;",
+            }
+            CodeBlock { code: "cargo test", class: "command" }
+            DemoCardGrid::<TestRoute> {
+                cards,
+                columns: GridColumns::Two,
+                extra_class: "demo-grid",
+                body_class: "default-card-body",
             }
         }
     });
 
     assert!(html.contains("page-shell outer"));
-    assert!(html.contains("grid columns-3 cards"));
+    assert!(html.contains("grid columns-2 demo-grid"));
     assert!(html.contains("route-card-body"));
     assert!(html.contains("default-card-body"));
     assert!(html.contains("https://example.com/source"));
@@ -153,8 +135,8 @@ fn renders_project_header_navigation_and_hero_components() {
     let labels = ProjectNavLabels::new("Home", "Demos", "Book", "Docs", "Source");
     let nav = ProjectNavConfig::builder()
         .project(project())
-        .home(LinkTarget::route(TestRoute::Home {}))
-        .demos(LinkTarget::route(TestRoute::Demos {}))
+        .home(NavigationTarget::Internal(TestRoute::Home {}))
+        .demos(NavigationTarget::Internal(TestRoute::Demos {}))
         .book(Href::new("/shared/book/"))
         .docs(Href::new("https://docs.rs/shared"))
         .source(Href::new("https://example.com/source"))
@@ -162,9 +144,7 @@ fn renders_project_header_navigation_and_hero_components() {
         .active(ProjectNavItem::Demos)
         .build()
         .with_labels(labels)
-        .with_active(ProjectNavItem::Home)
-        .with_project_options(vec![project()])
-        .with_project_labels("Choose project", "Available projects");
+        .with_active(ProjectNavItem::Home);
 
     let html = render(rsx! {
         ProjectHomeShell {
@@ -187,7 +167,7 @@ fn renders_project_header_navigation_and_hero_components() {
                     ProjectHeroActions::<TestRoute> {
                         book: "/shared/book/",
                         docs: "https://docs.rs/shared",
-                        demos: LinkTarget::route(TestRoute::Demos {}),
+                        demos: NavigationTarget::Internal(TestRoute::Demos {}),
                     }
                 },
                 side: rsx! {
@@ -215,7 +195,8 @@ fn renders_project_header_navigation_and_hero_components() {
         }
     });
 
-    assert!(html.contains("Choose project"));
+    assert!(html.contains("href=\"/shared/\""));
+    assert!(html.contains("Shared crates"));
     assert!(html.contains("Shared Rust crates"));
     assert!(html.contains("<ol"));
     assert!(html.contains("Read the book"));
@@ -224,47 +205,14 @@ fn renders_project_header_navigation_and_hero_components() {
 }
 
 #[test]
-fn renders_remaining_layout_metadata_and_style_components() {
+fn renders_remaining_layout_metadata_and_portal_components() {
     let html = render(rsx! {
         ProjectPageMetadata {
             site_name: "shared",
             page_title: "Components",
             description: "Shared project components",
         }
-        DioxusComponentsTheme {}
         SharedStyles {}
-        ShaderBackground {
-            canvas_id: "background",
-            extra_class: CssClass::new("custom-background"),
-            grid_opacity: 0.2,
-        }
-        ProjectSiteHeader {
-            project_lockup: rsx! { BrandLockup {
-                href: "/",
-                mark: "SH",
-                kicker: "stayhydated",
-                title: "shared",
-            } },
-            HeaderCluster {
-                HeaderNav { label: "Secondary navigation",
-                    NavLink::<TestRoute> {
-                        target: LinkTarget::href("/plain/"),
-                        label: "Plain",
-                    }
-                    ExternalNavLink { href: "https://example.com", label: "External" }
-                }
-            }
-        }
-        PageTitleBand {
-            label: "Components",
-            title: "Layout",
-            lead: "Composable surfaces",
-        }
-        Hero {
-            extra_class: "standalone-hero",
-            side: rsx! { HeroSidePanel { "Side" } },
-            "Hero content"
-        }
         HeroListPanel {
             label: "Items",
             items: vec![HeroPanelItem::new("One", "First")],
@@ -273,27 +221,61 @@ fn renders_remaining_layout_metadata_and_style_components() {
             style: "--motion-delay: 370ms;",
             "Contribute"
         }
-        MotionReveal { style: page_entry_reveal_style(), "Revealed" }
         FullscreenDemoFrame {
             src: "/demo/",
             title: "Demo frame",
             allowfullscreen: true,
         }
         FullscreenDemoPage::<TestRoute> {
-            back_target: LinkTarget::route(TestRoute::Demos {}),
+            back_target: NavigationTarget::Internal(TestRoute::Demos {}),
             back_label: "Back",
             src: "/other-demo/",
             title: "Other demo",
             allowfullscreen: false,
         }
+        ProjectPortalShell::<TestRoute> {
+            project_name: "shared",
+            version: "0.1.0",
+            tagline: "Shared project components",
+            home: NavigationTarget::Internal(TestRoute::Home {}),
+            title_extra: Some(rsx! { span { class: "title-extra", "Extra" } }),
+            section { class: "portal-content", "Portal content" }
+        }
     });
 
-    assert!(html.contains("custom-background"));
-    assert!(html.contains("Secondary navigation"));
-    assert!(html.contains("Composable surfaces"));
     assert!(html.contains("<ul"));
     assert!(html.contains("fullscreen-demo-frame"));
-    assert!(html.contains("--motion-delay: 0ms"));
+    assert!(html.contains("portal-title-copy"));
+    assert!(html.contains("title-extra"));
+    assert!(html.contains("portal-content"));
+    assert!(html.contains("aria-label=\"Home\""));
+    assert!(!html.contains("portal-telemetry"));
+    assert!(!html.contains("project-portal is-root"));
+}
+
+#[test]
+fn project_portal_renders_unique_shader_canvases() {
+    let html = render(rsx! {
+        ProjectPortal::<TestRoute> {
+            project_name: "shared",
+            version: "0.1.0",
+            tagline: "Shared project components",
+            home: NavigationTarget::Internal(TestRoute::Home {}),
+            shader_id_prefix: "shared-portal",
+            destinations: vec![
+                PortalDestination::href("/book/", "Book", PortalAccent::Yellow),
+                PortalDestination::route(TestRoute::Demos {}, "Demos", PortalAccent::Cyan),
+            ],
+        }
+    });
+
+    assert!(html.contains("id=\"shared-portal-0\""));
+    assert!(html.contains("id=\"shared-portal-1\""));
+    assert_eq!(
+        html.matches("data-shader-background=\"loading\"").count(),
+        2
+    );
+    assert_eq!(html.matches("portal-destination-shader").count(), 2);
 }
 
 #[test]
@@ -370,13 +352,9 @@ fn newtypes_and_constructor_variants_preserve_values() {
     assert_eq!(<InlineStyle as AsRef<str>>::as_ref(&style), "color: red;");
     assert_eq!(style.into_string(), "color: red;");
 
-    let card = FeatureCardItem::new("label", "title", "body");
-    assert_eq!(card.label.as_str(), "label");
-
-    let project = ProjectOption::new("id", "ID", "Project", "/project/");
+    let project = ProjectIdentity::new("Project", "/project/");
     assert!(project.description.is_none());
-    assert_eq!(ProjectId::new("id").as_str(), "id");
-    assert_eq!(ProjectMark::new("ID").as_str(), "ID");
+    assert_eq!(project.href.as_str(), "/project/");
 
     assert!(ProjectNavItem::Home.is_home());
     assert!(!ProjectNavItem::Home.is_demos());

@@ -2,69 +2,49 @@ use bon::Builder;
 use dioxus::prelude::*;
 
 use crate::{
-    CssClass, DisplayText, Href, InlineStyle,
-    layout::{ButtonLink, ButtonVariant, GridColumns, GridSection, HeaderNav, ProjectHeader},
-    projects::ProjectOption,
+    CssClass, DisplayText, Href, OptionalDisplayText,
+    layout::{ButtonLink, ButtonVariant, HeaderNav, ProjectHeader},
+    projects::ProjectIdentity,
 };
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum LinkTarget<R> {
-    Route(R),
-    Href(Href),
-}
-
-impl<R> LinkTarget<R> {
-    pub fn route(route: R) -> Self {
-        Self::Route(route)
-    }
-
-    pub fn href(href: impl Into<Href>) -> Self {
-        Self::Href(href.into())
-    }
-}
-
-impl<R: Routable> LinkTarget<R> {
-    fn key(&self) -> String {
-        match self {
-            Self::Route(route) => route.to_string(),
-            Self::Href(href) => href.to_string(),
-        }
-    }
-}
 
 #[component]
 pub fn RouteLink<R: Routable + Clone + PartialEq + 'static>(
-    target: LinkTarget<R>,
+    target: NavigationTarget<R>,
     #[props(into)] class: CssClass,
     #[props(into)] label: DisplayText,
+    #[props(default, into)] aria_label: OptionalDisplayText,
 ) -> Element {
     let class = class.into_string();
+    let aria_label = aria_label.into_option().map(DisplayText::into_string);
 
     match target {
-        LinkTarget::Route(route) if try_router().is_some() => {
+        NavigationTarget::Internal(route) if try_router().is_some() => {
             rsx! {
                 Link {
                     class,
                     to: route,
+                    aria_label,
                     "{label}"
                 }
             }
         },
-        LinkTarget::Route(route) => {
+        NavigationTarget::Internal(route) => {
             let href = route.to_string();
             rsx! {
                 a {
                     class,
                     href,
+                    aria_label,
                     "{label}"
                 }
             }
         },
-        LinkTarget::Href(href) => {
+        NavigationTarget::External(href) => {
             rsx! {
                 a {
                     class,
-                    href: href.as_str(),
+                    href,
+                    aria_label,
                     "{label}"
                 }
             }
@@ -74,7 +54,7 @@ pub fn RouteLink<R: Routable + Clone + PartialEq + 'static>(
 
 #[component]
 pub fn NavLink<R: Routable + Clone + PartialEq + 'static>(
-    target: LinkTarget<R>,
+    target: NavigationTarget<R>,
     #[props(into)] label: DisplayText,
     #[props(default)] active: bool,
 ) -> Element {
@@ -168,15 +148,9 @@ impl ProjectNavLabels {
 
 #[derive(Builder, Clone, Debug, Eq, PartialEq)]
 pub struct ProjectNavConfig<R> {
-    pub project: ProjectOption,
-    #[builder(default)]
-    pub project_options: Vec<ProjectOption>,
-    #[builder(default = DisplayText::new("Project selector"))]
-    pub project_label: DisplayText,
-    #[builder(default = DisplayText::new("Projects"))]
-    pub project_list_label: DisplayText,
-    pub home: LinkTarget<R>,
-    pub demos: LinkTarget<R>,
+    pub project: ProjectIdentity,
+    pub home: NavigationTarget<R>,
+    pub demos: NavigationTarget<R>,
     pub book: Href,
     pub docs: Href,
     pub source: Href,
@@ -194,27 +168,12 @@ impl<R> ProjectNavConfig<R> {
         self.active = active;
         self
     }
-
-    pub fn with_project_options(mut self, project_options: Vec<ProjectOption>) -> Self {
-        self.project_options = project_options;
-        self
-    }
-
-    pub fn with_project_labels(
-        mut self,
-        label: impl Into<DisplayText>,
-        list_label: impl Into<DisplayText>,
-    ) -> Self {
-        self.project_label = label.into();
-        self.project_list_label = list_label.into();
-        self
-    }
 }
 
 #[component]
 pub fn ProjectNav<R: Routable + Clone + PartialEq + 'static>(
-    home: LinkTarget<R>,
-    demos: LinkTarget<R>,
+    home: NavigationTarget<R>,
+    demos: NavigationTarget<R>,
     #[props(into)] book: Href,
     #[props(into)] docs: Href,
     #[props(into)] source: Href,
@@ -234,7 +193,7 @@ pub fn ProjectNav<R: Routable + Clone + PartialEq + 'static>(
                 active: active == ProjectNavItem::Demos,
             }
             NavLink::<R> {
-                target: LinkTarget::href(book),
+                target: NavigationTarget::External(book.into_string()),
                 label: labels.book,
             }
             ExternalNavLink {
@@ -257,9 +216,6 @@ pub fn ProjectNavigationHeader<R: Routable + Clone + PartialEq + 'static>(
     rsx! {
         ProjectNavHeader::<R> {
             project: nav.project,
-            project_options: nav.project_options,
-            project_label: nav.project_label,
-            project_list_label: nav.project_list_label,
             home: nav.home,
             demos: nav.demos,
             book: nav.book,
@@ -274,12 +230,9 @@ pub fn ProjectNavigationHeader<R: Routable + Clone + PartialEq + 'static>(
 
 #[component]
 pub fn ProjectNavHeader<R: Routable + Clone + PartialEq + 'static>(
-    project: ProjectOption,
-    #[props(default)] project_options: Vec<ProjectOption>,
-    #[props(default = DisplayText::new("Project selector"), into)] project_label: DisplayText,
-    #[props(default = DisplayText::new("Projects"), into)] project_list_label: DisplayText,
-    home: LinkTarget<R>,
-    demos: LinkTarget<R>,
+    project: ProjectIdentity,
+    home: NavigationTarget<R>,
+    demos: NavigationTarget<R>,
     #[props(into)] book: Href,
     #[props(into)] docs: Href,
     #[props(into)] source: Href,
@@ -290,9 +243,6 @@ pub fn ProjectNavHeader<R: Routable + Clone + PartialEq + 'static>(
     rsx! {
         ProjectHeader {
             project,
-            project_options,
-            project_label,
-            project_list_label,
             ProjectNav::<R> {
                 home,
                 demos,
@@ -309,7 +259,7 @@ pub fn ProjectNavHeader<R: Routable + Clone + PartialEq + 'static>(
 
 #[component]
 pub fn BackLink<R: Routable + Clone + PartialEq + 'static>(
-    target: LinkTarget<R>,
+    target: NavigationTarget<R>,
     #[props(into)] label: DisplayText,
 ) -> Element {
     rsx! {
@@ -323,7 +273,7 @@ pub fn BackLink<R: Routable + Clone + PartialEq + 'static>(
 
 #[component]
 pub fn ButtonRouteLink<R: Routable + Clone + PartialEq + 'static>(
-    target: LinkTarget<R>,
+    target: NavigationTarget<R>,
     #[props(into)] label: DisplayText,
     #[props(default)] variant: ButtonVariant,
 ) -> Element {
@@ -342,7 +292,7 @@ pub fn ButtonRouteLink<R: Routable + Clone + PartialEq + 'static>(
 pub fn ProjectHeroActions<R: Routable + Clone + PartialEq + 'static>(
     #[props(into)] book: Href,
     #[props(into)] docs: Href,
-    demos: LinkTarget<R>,
+    demos: NavigationTarget<R>,
     #[props(default = DisplayText::new("Read the book"), into)] book_label: DisplayText,
     #[props(default = DisplayText::new("Read the docs"), into)] docs_label: DisplayText,
     #[props(default = DisplayText::new("View demos"), into)] demos_label: DisplayText,
@@ -362,145 +312,5 @@ pub fn ProjectHeroActions<R: Routable + Clone + PartialEq + 'static>(
             label: demos_label,
             variant: ButtonVariant::Secondary,
         }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct DemoCard<R> {
-    pub target: LinkTarget<R>,
-    pub label: DisplayText,
-    pub title: DisplayText,
-    pub body: DisplayText,
-    pub action: DisplayText,
-    pub body_class: Option<CssClass>,
-}
-
-impl<R> DemoCard<R> {
-    pub fn new(
-        target: LinkTarget<R>,
-        label: impl Into<DisplayText>,
-        title: impl Into<DisplayText>,
-        body: impl Into<DisplayText>,
-        action: impl Into<DisplayText>,
-    ) -> Self {
-        Self {
-            target,
-            label: label.into(),
-            title: title.into(),
-            body: body.into(),
-            action: action.into(),
-            body_class: None,
-        }
-    }
-
-    pub fn route(
-        route: R,
-        label: impl Into<DisplayText>,
-        title: impl Into<DisplayText>,
-        body: impl Into<DisplayText>,
-        action: impl Into<DisplayText>,
-    ) -> Self {
-        Self::new(LinkTarget::route(route), label, title, body, action)
-    }
-
-    pub fn href(
-        href: impl Into<Href>,
-        label: impl Into<DisplayText>,
-        title: impl Into<DisplayText>,
-        body: impl Into<DisplayText>,
-        action: impl Into<DisplayText>,
-    ) -> Self {
-        Self::new(LinkTarget::href(href), label, title, body, action)
-    }
-
-    pub fn with_body_class(mut self, body_class: impl Into<CssClass>) -> Self {
-        self.body_class = Some(body_class.into());
-        self
-    }
-}
-
-#[component]
-pub fn DemoCardGrid<R: Routable + Clone + PartialEq + 'static>(
-    cards: Vec<DemoCard<R>>,
-    #[props(default)] columns: Option<GridColumns>,
-    #[props(default, into)] extra_class: CssClass,
-    #[props(default, into)] style: InlineStyle,
-    #[props(default, into)] body_class: CssClass,
-) -> Element {
-    rsx! {
-        GridSection {
-            columns,
-            extra_class,
-            style,
-            for card in cards {
-                {
-                    let key = card.target.key();
-
-                    rsx! {
-                        RouteCardLink::<R> {
-                            key: "{key}",
-                            target: card.target,
-                            label: card.label,
-                            title: card.title,
-                            body: card.body,
-                            body_class: card.body_class.unwrap_or_else(|| body_class.clone()),
-                            action: card.action,
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[component]
-pub fn RouteCardLink<R: Routable + Clone + PartialEq + 'static>(
-    target: LinkTarget<R>,
-    #[props(into)] label: DisplayText,
-    #[props(into)] title: DisplayText,
-    #[props(into)] body: DisplayText,
-    #[props(into)] body_class: CssClass,
-    #[props(into)] action: DisplayText,
-) -> Element {
-    let body_class = body_class.into_string();
-
-    match target {
-        LinkTarget::Route(route) if try_router().is_some() => {
-            rsx! {
-                Link {
-                    class: "demo-card",
-                    to: route,
-                    div { class: "card-label", "{label}" }
-                    h2 { "{title}" }
-                    p { class: body_class, "{body}" }
-                    span { class: "card-link", "{action}" }
-                }
-            }
-        },
-        LinkTarget::Route(route) => {
-            let href = route.to_string();
-            rsx! {
-                a {
-                    class: "demo-card",
-                    href,
-                    div { class: "card-label", "{label}" }
-                    h2 { "{title}" }
-                    p { class: body_class, "{body}" }
-                    span { class: "card-link", "{action}" }
-                }
-            }
-        },
-        LinkTarget::Href(href) => {
-            rsx! {
-                a {
-                    class: "demo-card",
-                    href: href.as_str(),
-                    div { class: "card-label", "{label}" }
-                    h2 { "{title}" }
-                    p { class: body_class, "{body}" }
-                    span { class: "card-link", "{action}" }
-                }
-            }
-        },
     }
 }

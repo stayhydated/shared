@@ -32,6 +32,7 @@ wgpu = { default-features = false, features = [ "std", "webgpu", "wgsl" ], versi
 
 [dev-dependencies]
 dioxus = { features = [ "ssr" ], workspace = true }
+naga = { features = [ "wgsl-in" ], version = "30.0.0" }
 trybuild = { workspace = true }
 
 [lints]

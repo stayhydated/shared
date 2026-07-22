@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use stayhydated_dioxus_core::{FullscreenDemoFrame, FullscreenDemoPage, LinkTarget};
+use stayhydated_dioxus_core::{FullscreenDemoFrame, FullscreenDemoPage, NavigationTarget};
 
 #[derive(Clone, Debug, PartialEq, Routable)]
 enum AppRoute {
@@ -25,7 +25,7 @@ fn frame() -> Element {
 fn page() -> Element {
     rsx! {
         FullscreenDemoPage::<AppRoute> {
-            back_target: LinkTarget::route(AppRoute::Demos {}),
+            back_target: NavigationTarget::Internal(AppRoute::Demos {}),
             back_label: "Back to demos",
             src: "../gpui-demo/",
             title: "GPUI demo",

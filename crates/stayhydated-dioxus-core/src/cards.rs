@@ -2,27 +2,6 @@ use dioxus::prelude::*;
 
 use crate::{CssClass, DisplayText, InlineStyle, OptionalDisplayText};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct FeatureCardItem {
-    pub label: DisplayText,
-    pub title: DisplayText,
-    pub body: DisplayText,
-}
-
-impl FeatureCardItem {
-    pub fn new(
-        label: impl Into<DisplayText>,
-        title: impl Into<DisplayText>,
-        body: impl Into<DisplayText>,
-    ) -> Self {
-        Self {
-            label: label.into(),
-            title: title.into(),
-            body: body.into(),
-        }
-    }
-}
-
 #[component]
 pub fn FeatureCard(
     #[props(into)] label: DisplayText,

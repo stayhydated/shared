@@ -10,6 +10,7 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
+bon = { workspace = true }
 dioxus = { features = [ "lib", "router" ], workspace = true }
 dioxus-free-icons = { features = [ "lucide" ], workspace = true }
 dioxus-primitives = { workspace = true }

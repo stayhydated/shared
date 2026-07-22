@@ -11,12 +11,9 @@
 
 .hero,
 .section-band,
-.code-band,
 .page-title-band,
 .contribute-panel,
-.hero-panel,
-.section-panel,
-.code-panel {
+.hero-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-bg);
@@ -69,8 +66,6 @@
 .feature-copy,
 .card-copy,
 .contribute-panel p,
-.footer-copy,
-.footer-text,
 .workflow-list span {
   color: var(--text-muted);
   line-height: 1.65;
@@ -133,10 +128,7 @@
 }
 
 .section-band,
-.code-band,
-.page-title-band,
-.section-panel,
-.code-panel {
+.page-title-band {
   padding: 1.25rem;
 }
 
@@ -253,8 +245,7 @@
   min-width: 0;
 }
 
-.site-footer p,
-.footer-copy {
+.site-footer p {
   display: grid;
   gap: 0.35rem;
   margin: 0;
@@ -294,7 +285,7 @@
   text-underline-offset: 0.18em;
 }
 
-.footer-copy-tooltip {
+.skills-copy-tooltip {
   position: relative;
   display: inline-flex;
   max-width: 0;
@@ -309,15 +300,15 @@
     transform 180ms ease;
 }
 
-.footer-skill-resource:hover .footer-copy-tooltip,
-.footer-skill-resource:focus-within .footer-copy-tooltip {
+.footer-skill-resource:hover .skills-copy-tooltip,
+.footer-skill-resource:focus-within .skills-copy-tooltip {
   max-width: 3rem;
   opacity: 1;
   pointer-events: auto;
   transform: translateX(0) scale(1);
 }
 
-.footer-copy-button {
+.skills-copy-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -336,18 +327,18 @@
   box-shadow: var(--glow-cyan);
 }
 
-.footer-copy-button:hover,
-.footer-copy-button.is-copied {
+.skills-copy-button:hover,
+.skills-copy-button.is-copied {
   border-color: rgba(182, 255, 0, 0.74);
   color: var(--lime);
   box-shadow: var(--glow-lime);
 }
 
-.footer-copy-icon {
+.skills-copy-icon {
   flex: 0 0 auto;
 }
 
-.footer-copy-status {
+.skills-copy-status {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -356,7 +347,7 @@
   white-space: nowrap;
 }
 
-.footer-command-tooltip {
+.skills-command-tooltip {
   position: absolute;
   z-index: 1000;
   bottom: 100%;
@@ -373,7 +364,7 @@
   animation: footer-tooltip-in 140ms ease both;
 }
 
-.footer-command-tooltip code {
+.skills-command-tooltip code {
   display: block;
   overflow-x: auto;
   font-family: "SFMono-Regular", Consolas, monospace;
@@ -382,7 +373,7 @@
   white-space: nowrap;
 }
 
-.footer-command-tooltip::after {
+.skills-command-tooltip::after {
   position: absolute;
   top: calc(100% - 0.25rem);
   left: 50%;
@@ -497,9 +488,6 @@
 
   .contribute-panel,
   .section-band,
-  .section-panel,
-  .code-band,
-  .code-panel,
   .page-title-band,
   .demo-card,
   .feature-card {

@@ -1,45 +1,34 @@
-use crate::components::{FooterPanel, PageHeader};
-use crate::site::routing::PageKind;
-use crate::terminal;
 use dioxus::prelude::*;
-use stayhydated_dioxus::{
-    PageTitleBand, ProjectPageShell, ProjectSurfaceSection, surface_reveal_style,
+use stayhydated_dioxus::{NavigationTarget, StayhydatedProjectPortalShell};
+
+use crate::{
+    site::{
+        constants::{PROJECT, VERSION},
+        routing::PageKind,
+    },
+    terminal,
 };
 
 #[component]
 pub(crate) fn TerminalDemoPage() -> Element {
-    let terminal_style = surface_reveal_style();
-
     use_effect(move || {
         terminal::launch_terminal_demo();
     });
 
     rsx! {
-        ProjectPageShell {
-            header: rsx!(PageHeader { current_page: PageKind::TerminalDemo }),
-            footer: Some(rsx!(FooterPanel {})),
-            PageTitleBand {
-                label: "Operator CLI",
-                title: "A terminal view of the same request contract",
-                lead: "Type commands such as [1,2,3], sum [4, 5, 6], or help. The terminal renders the provider-style evidence a support or platform team would inspect.",
-            }
-            ProjectSurfaceSection {
-                label: "Ratzilla terminal",
-                title: "Command-line workflow",
-                lead: "The CLI accepts bracket-list workloads and returns request identity, verification state, provider metadata, and trace events from the local crate.",
-                content_class: "sum-terminal-grid",
-                style: terminal_style,
+        StayhydatedProjectPortalShell {
+            project: PROJECT,
+            version: VERSION,
+            home: NavigationTarget::Internal(crate::site::routing::app_route(PageKind::Home)),
+            div { class: "demo-page sum-terminal-demo",
                 div {
-                    class: "sum-terminal-focus-shell",
+                    id: terminal::TERMINAL_MOUNT_ID,
+                    class: "sum-ratzilla-terminal",
+                    role: "img",
+                    aria_label: "Terminal rendering of the sum-numbers-ai API response",
                     onkeydown: move |event: KeyboardEvent| {
                         trap_terminal_keydown(event);
                     },
-                    div {
-                        id: terminal::TERMINAL_MOUNT_ID,
-                        class: "sum-ratzilla-terminal",
-                        role: "img",
-                        aria_label: "Terminal rendering of the sum-numbers-ai API response",
-                    }
                 }
             }
         }
@@ -49,4 +38,28 @@ pub(crate) fn TerminalDemoPage() -> Element {
 fn trap_terminal_keydown(event: KeyboardEvent) {
     event.prevent_default();
     event.stop_propagation();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn terminal_demo_expands_the_terminal_inside_the_portal() {
+        let html = dioxus::ssr::render_element(rsx! { TerminalDemoPage {} });
+
+        assert!(html.contains("demo-page sum-terminal-demo"));
+        assert!(html.contains("class=\"sum-ratzilla-terminal\""));
+        assert!(html.contains(terminal::TERMINAL_MOUNT_ID));
+        assert!(!html.contains("sum-terminal-grid"));
+        assert!(!html.contains("sum-terminal-focus-shell"));
+        assert!(html.contains("class=\"project-portal\""));
+        assert!(html.contains("portal-header"));
+        assert!(html.contains("portal-skills-copy"));
+        assert!(!html.contains("project-portal is-root"));
+        assert!(!html.contains("page-header"));
+        assert!(!html.contains("page-title-band"));
+        assert!(!html.contains("project-surface-header"));
+        assert!(!html.contains("site-footer"));
+    }
 }

@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
 use stayhydated_dioxus_core::{
-    DisplayText, Href, LinkTarget, ProjectNavConfig, ProjectNavItem, ProjectNavLabels,
-    ProjectNavigationHeader, ProjectOption,
+    Href, ProjectIdentity, ProjectNavConfig, ProjectNavItem, ProjectNavLabels,
+    ProjectNavigationHeader,
 };
 use strum::{Display, IntoStaticStr};
 
-use crate::{Project, stayhydated_project_options};
+use crate::Project;
 
 #[derive(Clone, Copy, Debug, Display, Eq, IntoStaticStr, PartialEq)]
 #[strum(const_into_str)]
@@ -20,12 +20,6 @@ pub enum HeaderMessage {
     NavDocs,
     #[strum(to_string = "Source")]
     NavSource,
-    #[strum(to_string = "Project selector")]
-    ProjectSelector,
-    #[strum(to_string = "Projects")]
-    Projects,
-    #[strum(to_string = "Language")]
-    Language,
 }
 
 impl HeaderMessage {
@@ -52,12 +46,9 @@ pub fn stayhydated_header_labels_with(
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StayhydatedProjectHeaderConfig<R> {
-    pub project: ProjectOption,
-    pub project_options: Vec<ProjectOption>,
-    pub project_label: DisplayText,
-    pub project_list_label: DisplayText,
-    pub home: LinkTarget<R>,
-    pub demos: LinkTarget<R>,
+    pub project: ProjectIdentity,
+    pub home: NavigationTarget<R>,
+    pub demos: NavigationTarget<R>,
     pub book: Href,
     pub docs: Href,
     pub source: Href,
@@ -65,64 +56,30 @@ pub struct StayhydatedProjectHeaderConfig<R> {
     pub active: ProjectNavItem,
 }
 
+#[bon::bon]
 impl<R> StayhydatedProjectHeaderConfig<R> {
+    #[builder]
     pub fn new(
-        project: Project,
-        project_href: impl Into<Href>,
-        home: LinkTarget<R>,
-        demos: LinkTarget<R>,
-        book: impl Into<Href>,
-        labels: ProjectNavLabels,
-        active: ProjectNavItem,
+        #[builder(start_fn)] project: Project,
+        #[builder(default = Href::new(project.href()), into)] project_href: Href,
+        home: NavigationTarget<R>,
+        demos: NavigationTarget<R>,
+        #[builder(default = project.book_href(), into)] book: Href,
+        #[builder(default = Href::new(project.rustdoc_href()), into)] docs: Href,
+        #[builder(default = Href::new(project.source_href()), into)] source: Href,
+        #[builder(default = stayhydated_header_labels())] labels: ProjectNavLabels,
+        #[builder(default = ProjectNavItem::Home)] active: ProjectNavItem,
     ) -> Self {
         Self {
-            project: project.option_with_href(project_href),
-            project_options: stayhydated_project_options(),
-            project_label: DisplayText::new(HeaderMessage::ProjectSelector.as_str()),
-            project_list_label: DisplayText::new(HeaderMessage::Projects.as_str()),
+            project: project.identity_with_href(project_href),
             home,
             demos,
-            book: book.into(),
-            docs: Href::new(project.rustdoc_href()),
-            source: Href::new(project.source_href()),
+            book,
+            docs,
+            source,
             labels,
             active,
         }
-    }
-
-    pub fn with_project_options(mut self, project_options: Vec<ProjectOption>) -> Self {
-        self.project_options = project_options;
-        self
-    }
-
-    pub fn with_source(mut self, source: impl Into<Href>) -> Self {
-        self.source = source.into();
-        self
-    }
-
-    pub fn with_docs(mut self, docs: impl Into<Href>) -> Self {
-        self.docs = docs.into();
-        self
-    }
-
-    pub fn with_project_labels(
-        mut self,
-        label: impl Into<DisplayText>,
-        list_label: impl Into<DisplayText>,
-    ) -> Self {
-        self.project_label = label.into();
-        self.project_list_label = list_label.into();
-        self
-    }
-
-    pub fn with_labels(mut self, labels: ProjectNavLabels) -> Self {
-        self.labels = labels;
-        self
-    }
-
-    pub fn with_active(mut self, active: ProjectNavItem) -> Self {
-        self.active = active;
-        self
     }
 
     pub fn into_nav_config(self) -> ProjectNavConfig<R> {
@@ -136,8 +93,6 @@ impl<R> StayhydatedProjectHeaderConfig<R> {
             .labels(self.labels)
             .active(self.active)
             .build()
-            .with_project_options(self.project_options)
-            .with_project_labels(self.project_label, self.project_list_label)
     }
 }
 
@@ -159,6 +114,7 @@ pub fn StayhydatedProjectHeader<R: Routable + Clone + PartialEq + 'static>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use stayhydated_dioxus_core::DisplayText;
     #[test]
     fn header_labels_use_shared_book_slot() {
         let labels = stayhydated_header_labels_with(|message| format!("{message:?}"));
@@ -174,43 +130,31 @@ mod tests {
     fn header_message_display_is_english() {
         assert_eq!(HeaderMessage::NavHome.to_string(), "Home");
         assert_eq!(HeaderMessage::NavDocs.to_string(), "Docs");
-        assert_eq!(
-            HeaderMessage::ProjectSelector.to_string(),
-            "Project selector"
-        );
     }
 
     #[test]
     fn config_uses_project_registry_defaults() {
-        let config = StayhydatedProjectHeaderConfig::<()>::new(
-            Project::Koruma,
-            "/koruma/",
-            LinkTarget::href("/"),
-            LinkTarget::href("/demos/"),
-            "/book/",
-            stayhydated_header_labels_with(|message| format!("{message:?}")),
-            ProjectNavItem::Home,
-        );
+        let config = StayhydatedProjectHeaderConfig::<()>::builder(Project::Koruma)
+            .home(NavigationTarget::External("/".to_owned()))
+            .demos(NavigationTarget::External("/demos/".to_owned()))
+            .build();
 
-        assert_eq!(config.project.id.as_str(), "koruma");
+        assert_eq!(config.project.name.as_str(), "koruma");
         assert_eq!(config.project.href.as_str(), "/koruma/");
         assert_eq!(
             config.project.description.as_ref().map(DisplayText::as_str),
             Some("Rust validation")
         );
-        assert_eq!(config.project_options.len(), Project::ALL.len());
-        assert_eq!(config.project_label.as_str(), "Project selector");
-        assert_eq!(config.project_list_label.as_str(), "Projects");
         assert_eq!(config.source.as_str(), Project::Koruma.source_href());
         assert_eq!(config.docs.as_str(), Project::Koruma.rustdoc_href());
-        assert_eq!(config.labels.book.as_str(), "NavBook");
-        assert_eq!(config.labels.docs.as_str(), "NavDocs");
+        assert_eq!(config.book.as_str(), Project::Koruma.book_href().as_str());
+        assert_eq!(config.labels.book.as_str(), "Book");
+        assert_eq!(config.labels.docs.as_str(), "Docs");
 
         let nav = config.into_nav_config();
-        assert_eq!(nav.book.as_str(), "/book/");
+        assert_eq!(nav.book.as_str(), Project::Koruma.book_href().as_str());
         assert_eq!(nav.docs.as_str(), Project::Koruma.rustdoc_href());
-        assert_eq!(nav.project_label.as_str(), "Project selector");
-        assert_eq!(nav.project_list_label.as_str(), "Projects");
+        assert_eq!(nav.project.href.as_str(), "/koruma/");
         assert_eq!(nav.active, ProjectNavItem::Home);
     }
 }

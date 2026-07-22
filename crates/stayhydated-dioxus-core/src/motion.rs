@@ -1,5 +1,3 @@
-use dioxus::prelude::*;
-
 use crate::InlineStyle;
 
 pub fn use_reveal_style(delay_ms: u64, distance_px: f32) -> InlineStyle {
@@ -26,14 +24,6 @@ pub fn feature_card_reveal_style(index: usize) -> InlineStyle {
 
 pub fn contribute_reveal_style() -> InlineStyle {
     use_reveal_style(370, 16.0)
-}
-
-#[component]
-pub fn MotionReveal(children: Element, #[props(default, into)] style: InlineStyle) -> Element {
-    let style = style.into_string();
-    rsx! {
-        div { class: "motion-reveal", style, {children} }
-    }
 }
 
 #[cfg(test)]
