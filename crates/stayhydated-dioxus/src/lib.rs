@@ -8,6 +8,6 @@ pub use app::{
 pub use portal::{StayhydatedProjectPortal, StayhydatedProjectPortalShell};
 pub use projects::{Project, StayhydatedProjectPageMetadata};
 pub use stayhydated_dioxus_core::{
-    CodeBlock, FullscreenDemoFrame, Href, NavigationTarget, TabContent, TabList, TabTrigger, Tabs,
-    TabsOrientation, page_entry_reveal_style, select, surface_reveal_style,
+    CodeBlock, FullscreenDemoFrame, Href, NavigationTarget, ShaderBackground, TabContent, TabList,
+    TabTrigger, Tabs, TabsOrientation, page_entry_reveal_style, select, surface_reveal_style,
 };

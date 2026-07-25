@@ -110,7 +110,7 @@
 }
 
 .demo-example-cards .demo-card::before {
-  z-index: -2;
+  z-index: 2;
   inset: 1px;
   background:
     linear-gradient(
@@ -133,13 +133,12 @@
       circle at 82% 12%,
       color-mix(in srgb, var(--demo-card-accent) 11%, transparent),
       transparent 42%
-    ),
-    #010202;
+    );
   clip-path: inherit;
 }
 
 .demo-example-cards .demo-card::after {
-  z-index: -1;
+  z-index: 3;
   inset: 0.85rem;
   border-top: 1px solid color-mix(in srgb, var(--demo-card-accent) 66%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--demo-card-accent) 48%, transparent);
@@ -149,7 +148,29 @@
 
 .demo-example-cards .demo-card > * {
   position: relative;
+  z-index: 4;
+}
+
+.demo-example-cards .demo-card > .shader-background.demo-card-shader {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 0;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  filter: contrast(1.7) brightness(0.78);
+  opacity: 0.88;
+}
+
+.demo-example-cards .demo-card > .demo-card-tint {
+  position: absolute;
+  inset: 1px;
   z-index: 1;
+  background: var(--demo-card-accent);
+  mix-blend-mode: color;
+  opacity: 0.92;
+  pointer-events: none;
+  clip-path: inherit;
 }
 
 .demo-example-cards .demo-card .demo-card-title {

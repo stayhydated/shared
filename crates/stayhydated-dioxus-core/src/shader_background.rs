@@ -8,11 +8,13 @@ const SHADER_BACKGROUND_PREPAINT_STYLE: &str =
     "html, body, #main { background: #000; }\n#main { min-height: 100vh; }";
 const SHADER_BACKGROUND_CANVAS_PREPAINT_STYLE: &str = "background-color: #000;";
 
+/// Animated WebGPU background canvas with a CSS fallback.
+///
+/// `canvas_id` must be unique within the rendered document.
 #[component]
-pub(crate) fn ShaderBackground(
-    #[props(default = DEFAULT_SHADER_BACKGROUND_CANVAS_ID.to_owned())] canvas_id: String,
-    #[props(default)] extra_class: CssClass,
-    #[props(default = 0.08)] grid_opacity: f32,
+pub fn ShaderBackground(
+    #[props(default = DEFAULT_SHADER_BACKGROUND_CANVAS_ID.to_owned(), into)] canvas_id: String,
+    #[props(default, into)] extra_class: CssClass,
     #[props(default)] time_offset: f32,
 ) -> Element {
     #[cfg(target_arch = "wasm32")]
@@ -24,7 +26,6 @@ pub(crate) fn ShaderBackground(
         use_effect(move || {
             renderer_handle.set(Some(crate::shader_background_renderer::start(
                 canvas_id.clone(),
-                grid_opacity,
                 time_offset,
             )));
         });

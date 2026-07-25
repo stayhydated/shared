@@ -7,15 +7,9 @@
   height: 100%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.86) 0 1px, transparent 2px),
-    radial-gradient(circle at 72% 66%, rgba(255, 255, 255, 0.68) 0 1px, transparent 2px),
     linear-gradient(125deg, transparent 38%, rgba(255, 255, 255, 0.22) 50%, transparent 62%), #000;
   background-position: center;
-  background-size:
-    4.8rem 4.8rem,
-    7.2rem 7.2rem,
-    100% 100%,
-    auto;
+  background-size: 100% 100%;
 }
 
 .shader-background[data-shader-background="ready"] {
