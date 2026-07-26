@@ -3,8 +3,8 @@
 The API has one operation: sum an ordered list of integers through a
 provider-shaped request and return the verified answer with evidence.
 
-The crate exposes a Rust boundary. The web and terminal demos project that
-boundary into buyer-facing request and response examples.
+The crate exposes a Rust boundary. The Dioxus, terminal, Bevy UI, and GPUI demos
+project that boundary into buyer-facing request and response examples.
 
 ## Rust Boundary
 
@@ -86,8 +86,9 @@ ai.response.verify  Parsed provider answer 42 and matched local guardrail
 
 ## Caller Validation
 
-The web and terminal clients validate caller input before constructing a
-`SumRequest`. Invalid numeric input uses a small error envelope:
+Every demo client validates caller input before constructing a `SumRequest` and
+limits its interactive workload to three operands. Invalid numeric input uses a
+small error envelope:
 
 ```json
 {
@@ -120,3 +121,4 @@ caller validation failures:
 4. Return token and latency fields as first-class metadata.
 5. Attach trace events in the order a reviewer should read them.
 6. Use one local crate boundary for every demo client.
+7. Keep demo inputs capped at three without input reordering controls.

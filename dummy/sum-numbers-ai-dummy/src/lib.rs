@@ -3,6 +3,8 @@ use std::hash::{Hash as _, Hasher as _};
 
 pub const DEFAULT_ENDPOINT: &str = "https://api.sum-numbers-ai.invalid/v1/responses";
 pub const DEFAULT_MODEL: &str = "sum-numbers-ai/addition-router-2026-07";
+/// Maximum operand count exposed by each interactive dummy client.
+pub const MAX_DEMO_INPUTS: usize = 3;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SumRequest {

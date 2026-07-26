@@ -20,23 +20,33 @@ Use it to decide:
 
 - `crates/stayhydated-dioxus-core`
   Audience: Public integration.
-  Role: generic Dioxus portal, full-screen demo frame, code block, tab, select, metadata, shared value types, styles, and shader background assets.
+  Role: generic Dioxus landing page, portal, shader demo card, full-screen demo frame, code block, tab, select, metadata, shared value types, styles, and shader background assets.
   Sync: component API changes may need `src/lib.rs`, adjacent `*.css` or `*.wgsl` assets, and the trybuild fixtures under `crates/stayhydated-dioxus-core/tests/`.
 
 - `crates/stayhydated-dioxus`
   Audience: Public integration.
-  Role: stayhydated project-site wrapper, shared project registry, portal helpers, page metadata, and selected re-exports from `stayhydated-dioxus-core`.
-  Sync: project identity, site/docs/source URLs, book paths, and skill commands are tested in `src/projects.rs` and `tests/render_components.rs`; asset path behavior is tested in `src/app.rs`.
+  Role: stayhydated project-site wrapper, landing and portal helpers, page metadata, and selected re-exports from `stayhydated-dioxus-core`.
+  Sync: project-specific landing, portal, and page-metadata behavior is tested in adjacent module tests and `tests/render_components.rs`; asset path behavior is tested in `src/app.rs`.
 
 - `dummy/sum-numbers-ai-dummy`
   Audience: Local validation.
   Role: real dummy library crate for the sum-numbers-ai concept, including local sum behavior and provider-style trace data.
-  Sync: API or positioning changes may need `src/lib.rs`, pages under `dummy/web-dummy/src/pages/`, `dummy/web-dummy/src/terminal.rs`, `dummy/book-dummy/src/`, and project registry data in `crates/stayhydated-dioxus/src/projects.rs`.
+  Sync: API or positioning changes may need `src/lib.rs`, all four dummy clients, `dummy/book-dummy/src/`, and project registry data in `crates/stayhydated-site/src/project.rs`.
 
 - `dummy/web-dummy`
   Audience: Local validation.
-  Role: runnable Dioxus web crate for the sum-numbers-ai dummy project, including a Ratzilla terminal demo and Bun preview script.
-  Sync: generated static output is built by `dummy/xtask-dummy`; preview behavior is owned by `preview.ts`; project cards in `src/pages/demos.rs` should stay aligned with `dummy/book-dummy`.
+  Role: runnable Dioxus web crate and demo gallery for the sum-numbers-ai dummy project, including a Ratzilla terminal demo and links to the two static WebAssembly examples.
+  Sync: generated static output and preview behavior are invoked by `dummy/xtask-dummy`; project cards in `src/pages/demos.rs`, static demo sitemap entries, and `dummy/book-dummy` should stay aligned.
+
+- `dummy/bevy-demo`
+  Audience: Local validation.
+  Role: Bevy UI WebAssembly example with three editable operands for the dummy sum contract.
+  Sync: Trunk input lives beside `src/main.rs`; build output ownership is in `dummy/xtask-dummy/src/commands/build_bevy_demo.rs`, and gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
+
+- `dummy/gpui-demo`
+  Audience: Local validation.
+  Role: GPUI WebAssembly example using gpui-component inputs for the dummy sum contract.
+  Sync: Trunk input lives beside `src/main.rs`; build output ownership is in `dummy/xtask-dummy/src/commands/build_gpui_demo.rs`, and gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
 
 - `dummy/book-dummy`
   Audience: Documentation fixture.
@@ -45,18 +55,18 @@ Use it to decide:
 
 - `dummy/xtask-dummy`
   Audience: Internal workflow.
-  Role: local build commands for dummy book, llms output, and Dioxus static-site output under `dummy/web-dummy`.
-  Sync: path changes under `dummy/book-dummy` or `dummy/web-dummy` may need command updates under `src/commands/` and in `dummy.just`, which the root `justfile` imports.
+  Role: local build and preview commands for dummy book, llms output, Bevy and GPUI Trunk output, and Dioxus static-site output under `dummy/web-dummy`.
+  Sync: path changes under any dummy client, `dummy/book-dummy`, or `dummy/web-dummy` may need command updates under `src/commands/` and in `dummy.just`, which the root `justfile` imports.
 
 - `crates/stayhydated-site`
   Audience: Public integration.
-  Role: base-path, href, sitemap, and generated route-cache helpers for static project sites.
-  Sync: route path, sitemap static output, and route-cache cleanup behavior is encoded in module tests next to `src/routing.rs`, `src/sitemap.rs`, and `src/route_cache.rs`.
+  Role: UI-neutral project metadata plus base-path, href, sitemap, and generated route-cache helpers for static project sites.
+  Sync: project identity and destinations are tested in `src/project.rs`; route path, sitemap static output, and route-cache cleanup behavior is encoded in module tests next to `src/routing.rs`, `src/sitemap.rs`, and `src/route_cache.rs`.
 
 - `crates/stayhydated-xtask`
   Audience: Internal workflow and public repository tooling.
-  Role: helper APIs for mdBook output, llms output, Dioxus static-site builds, and release publishing.
-  Sync: web output paths and copied assets are owned by `src/book.rs`, `src/llms.rs`, and `src/web.rs`; release order and `cargo publish` behavior are owned by `src/release.rs` and its tests.
+  Role: helper APIs for mdBook output, llms output, Dioxus static-site builds, Trunk demos, static preview serving, and release publishing.
+  Sync: generated web behavior is owned by `src/book.rs`, `src/llms.rs`, `src/web.rs`, `src/trunk.rs`, and `src/preview.rs`; keep their embedded JavaScript assets and module tests aligned. Release order and `cargo publish` behavior are owned by `src/release.rs` and its tests.
 
 - `xtask`
   Audience: Internal workflow.
@@ -72,9 +82,9 @@ Use it to decide:
 
 - When changing a public Rust type, function, component prop, route helper, or exported constant, update the owning module, the crate `src/lib.rs` export surface, and any tests or trybuild fixtures that name the changed API.
 - When changing `dx-components-theme.css` or `DX_COMPONENTS_THEME_FILE_NAME`, keep `crates/stayhydated-dioxus-core/src/styles.rs` and `crates/stayhydated-xtask/src/web.rs` aligned.
-- When changing project registry data in `stayhydated-dioxus/src/projects.rs`, update tests for project identity, site/docs/source URLs, book paths, and skill commands in the same module.
-- When changing sum-numbers-ai positioning, keep the library behavior in `dummy/sum-numbers-ai-dummy/src/lib.rs`, website pages under `dummy/web-dummy/src/pages/`, terminal rendering in `dummy/web-dummy/src/terminal.rs`, and book chapters under `dummy/book-dummy/src/` aligned.
-- When changing sitemap, route-cache, book, llms, or static-site output behavior, update the helper that owns the output path plus the tests that encode the path or copied file list.
+- When changing project registry data in `stayhydated-site/src/project.rs`, update its tests for project identity, site/docs/source URLs, book paths, demo paths, and skill commands; update `stayhydated-dioxus` only when presentation behavior changes.
+- When changing sum-numbers-ai positioning, keep the library behavior in `dummy/sum-numbers-ai-dummy/src/lib.rs`, all four demo clients, website pages under `dummy/web-dummy/src/pages/`, book chapters under `dummy/book-dummy/src/`, and registry data in `crates/stayhydated-site/src/project.rs` aligned. Interactive demos expose at most three operands and do not provide operand reordering.
+- When changing sitemap, route-cache, book, llms, Dioxus build, Trunk build, generated loader, or preview behavior, update the owning `stayhydated-site` or `stayhydated-xtask` module plus tests that encode its output or command contract.
 - When changing release publishing behavior in `stayhydated-xtask/src/release.rs`, update tests for publish order, command arguments, dirty-worktree guards, resume points, and registry handling.
 - When changing downstream revision-update behavior, keep `xtask/src/commands/update_shared_revisions.rs`, its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
 
@@ -82,7 +92,7 @@ Use it to decide:
 
 - Use `just --list` for the local recipe index.
 - Local recipes currently include `just fmt`, `just clippy`, `just check`, `just test`, and `just cov`.
-- CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with `cargo llvm-cov --workspace --all-features --all-targets --cobertura --output-path=target/cobertura.xml --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy`.
+- CI runs `cargo fmt --all -- --check`, `cargo clippy --workspace --all-features --all-targets -- -D warnings`, `cargo test --workspace --all-features` on Linux/macOS/Windows, `cargo-machete`, and coverage with dummy applications and xtasks excluded from instrumentation.
 - For trybuild changes, run `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass` for `tests/pass/*` fixtures before broad workspace validation.
 - For downstream revision-update changes, run `cargo test -p xtask` before broad workspace validation.
 - For README-only or AGENTS.md-only changes, static review is sufficient unless a repository command directly covers the edited Markdown.

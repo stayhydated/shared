@@ -1,0 +1,24 @@
+[package]
+name = "sum-numbers-ai-gpui-demo"
+description = "GPUI and gpui-component browser demo for the sum-numbers-ai dummy project"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+repository.workspace = true
+autobins = false
+
+[[example]]
+name = "gpui-demo"
+path = "src/main.rs"
+
+[dependencies]
+gpui = { workspace = true }
+gpui-component = { workspace = true }
+gpui_platform = { workspace = true }
+sum-numbers-ai-dummy = { workspace = true }
+wasm-bindgen = { workspace = true }
+
+[lints]
+workspace = true

@@ -19,14 +19,29 @@ pub enum Command {
         #[command(subcommand)]
         target: BuildCommand,
     },
+    /// Preview generated dummy project artifacts.
+    Preview {
+        #[command(subcommand)]
+        target: PreviewCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
 pub enum BuildCommand {
+    /// Build the Bevy UI wasm example into the Dioxus public tree.
+    BevyDemo,
     /// Build mdBook documentation to dummy/web-dummy/public/book.
     Book,
+    /// Build the GPUI and gpui-component wasm example into the Dioxus public tree.
+    GpuiDemo,
     /// Build llms.txt from mdBook sources to dummy/web-dummy/public/llms.txt.
     LlmsTxt,
     /// Build the Dioxus site into dummy/web-dummy/dist.
+    Web,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum PreviewCommand {
+    /// Preview the generated static site with its GitHub Pages base path.
     Web,
 }

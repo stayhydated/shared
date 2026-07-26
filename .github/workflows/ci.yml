@@ -108,7 +108,7 @@ jobs:
         shell: bash
         run: |
           cargo llvm-cov clean --workspace
-          cargo llvm-cov --workspace --all-features --all-targets --cobertura --output-path=target/cobertura.xml --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy
+          cargo llvm-cov --workspace --all-features --all-targets --cobertura --output-path=target/cobertura.xml --exclude xtask --exclude xtask-dummy --exclude web-dummy --exclude sum-numbers-ai-dummy --exclude sum-numbers-ai-bevy-demo --exclude sum-numbers-ai-gpui-demo
 
       - name: Codecov publish
         uses: codecov/codecov-action@v7

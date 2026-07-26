@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+use derive_more::From;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BasePath(String);
 
@@ -89,12 +91,13 @@ impl AsRef<str> for OutputDir {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, From, PartialEq)]
+#[from(String, &str)]
 pub struct Href(String);
 
 impl Href {
-    pub fn new(value: impl AsRef<str>) -> Self {
-        Self(value.as_ref().to_owned())
+    pub fn new(value: impl Into<String>) -> Self {
+        Self(value.into())
     }
 
     pub fn from_route(base_href: &BaseHref, route: &RoutePath) -> Self {

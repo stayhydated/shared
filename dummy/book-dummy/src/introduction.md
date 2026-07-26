@@ -18,7 +18,7 @@ keeps every demo deterministic while exercising the shape of an AI-backed API:
   route.
 - `sum_with_request` returns a `SumResponse` with the numeric answer, provider
   metadata, verification status, and trace events.
-- The web console and terminal CLI call the same library boundary.
+- The Dioxus, terminal, Bevy UI, and GPUI clients call the same library boundary.
 - The mdBook, llms output, sitemap, and static web build all document the same
   current behavior.
 
@@ -31,7 +31,8 @@ the parts of the product that matter operationally:
   domain model.
 - API reviewers can see the full contract in one page.
 - Documentation reviewers can compare examples against the actual Rust types.
-- Demo reviewers can verify that the Dioxus and terminal clients agree.
+- Demo reviewers can verify that all four clients agree on the same three-input
+  workload.
 
 The focused workload keeps the contract easy to inspect while preserving the
 same evidence model expected from a larger AI-backed service.

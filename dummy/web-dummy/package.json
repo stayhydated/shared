@@ -1,7 +1,0 @@
-{
-  "name": "web-dummy",
-  "private": true,
-  "scripts": {
-    "preview": "bun preview.ts"
-  }
-}

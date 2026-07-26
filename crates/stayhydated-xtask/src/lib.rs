@@ -5,7 +5,9 @@ use cargo_metadata::MetadataCommand;
 
 pub mod book;
 pub mod llms;
+pub mod preview;
 pub mod release;
+pub mod trunk;
 pub mod web;
 
 pub fn workspace_root_from_xtask_manifest() -> anyhow::Result<PathBuf> {
