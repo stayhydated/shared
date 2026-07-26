@@ -15,6 +15,7 @@ web = [ "dep:dioxus", "dioxus/launch", "dioxus/web" ]
 
 [dependencies]
 bon = { workspace = true }
+derive_more = { features = [ "from" ], workspace = true }
 dioxus = { optional = true, workspace = true }
 
 [dev-dependencies]

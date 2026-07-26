@@ -1,7 +1,7 @@
 use std::fmt;
 
 use clap::{Parser, Subcommand, error::ErrorKind};
-use sum_numbers_ai_dummy::{SumRequest, sum_with_request};
+use sum_numbers_ai_dummy::{MAX_DEMO_INPUTS, SumRequest, sum_with_request};
 
 use crate::site::constants::PROJECT;
 
@@ -149,7 +149,7 @@ fn parse_number_list(input: &str) -> Result<Vec<i64>, NumberListError> {
         return Err(NumberListError::EmptyList);
     }
 
-    inner
+    let numbers = inner
         .split(',')
         .map(|part| {
             let value = part.trim();
@@ -160,7 +160,13 @@ fn parse_number_list(input: &str) -> Result<Vec<i64>, NumberListError> {
                 .parse::<i64>()
                 .map_err(|_| NumberListError::InvalidNumber(value.to_owned()))
         })
-        .collect()
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if numbers.len() > MAX_DEMO_INPUTS {
+        return Err(NumberListError::TooManyValues);
+    }
+
+    Ok(numbers)
 }
 
 fn format_numbers(numbers: &[i64]) -> String {
@@ -177,6 +183,7 @@ enum NumberListError {
     EmptyList,
     EmptyValue,
     InvalidNumber(String),
+    TooManyValues,
 }
 
 impl fmt::Display for NumberListError {
@@ -186,6 +193,10 @@ impl fmt::Display for NumberListError {
             Self::EmptyList => write!(formatter, "number list must contain at least one value"),
             Self::EmptyValue => write!(formatter, "number list contains an empty value"),
             Self::InvalidNumber(value) => write!(formatter, "`{value}` is not a valid i64"),
+            Self::TooManyValues => write!(
+                formatter,
+                "number list supports at most {MAX_DEMO_INPUTS} values"
+            ),
         }
     }
 }
@@ -230,6 +241,19 @@ mod tests {
                 .lines
                 .iter()
                 .any(|line| line.contains("not a valid i64"))
+        );
+    }
+
+    #[test]
+    fn list_rejects_more_than_three_inputs() {
+        let output = run_terminal_command("[1,2,3,4]");
+
+        assert_eq!(output.status, TerminalCommandStatus::Error);
+        assert!(
+            output
+                .lines
+                .iter()
+                .any(|line| line.contains("supports at most 3 values"))
         );
     }
 }

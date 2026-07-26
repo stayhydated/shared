@@ -75,11 +75,14 @@
   max-width: min(34rem, calc(100vw - 2rem));
   margin-bottom: 0.55rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid rgba(255, 0, 230, 0.58);
+  border: 1px solid rgba(255, 255, 0, 0.72);
   border-radius: var(--radius);
   background: #000;
   color: #d9feff;
-  box-shadow: var(--shadow-strong);
+  box-shadow:
+    0 0 18px rgba(255, 255, 0, 0.34),
+    0 0 44px rgba(255, 255, 0, 0.16),
+    0 18px 72px rgba(0, 0, 0, 0.92);
   transform: translateX(-50%);
   animation: skills-tooltip-in 140ms ease both;
 }
@@ -99,8 +102,8 @@
   left: 50%;
   width: 0.5rem;
   height: 0.5rem;
-  border-right: 1px solid rgba(255, 0, 230, 0.58);
-  border-bottom: 1px solid rgba(255, 0, 230, 0.58);
+  border-right: 1px solid rgba(255, 255, 0, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 0, 0.72);
   background: #000;
   content: "";
   transform: translateX(-50%) rotate(45deg);

@@ -25,4 +25,14 @@ mod tests {
         assert!(DX_COMPONENTS_THEME_CSS.contains("--primary-color"));
         assert!(DX_COMPONENTS_THEME_CSS.contains("--focused-border-color"));
     }
+
+    #[test]
+    fn skills_command_tooltip_uses_a_yellow_border() {
+        let layout_css = include_str!("layout.css");
+
+        assert!(layout_css.contains("border: 1px solid rgba(255, 255, 0, 0.72)"));
+        assert!(layout_css.contains("0 0 18px rgba(255, 255, 0, 0.34)"));
+        assert!(layout_css.contains("0 0 44px rgba(255, 255, 0, 0.16)"));
+        assert!(!layout_css.contains("rgba(255, 0, 230, 0.58)"));
+    }
 }

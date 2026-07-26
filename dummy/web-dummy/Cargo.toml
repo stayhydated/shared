@@ -1,6 +1,6 @@
 [package]
 name = "web-dummy"
-description = "Professional Dioxus and Ratzilla demo site for the sum-numbers-ai API"
+description = "Dioxus, terminal, Bevy UI, and GPUI demo site for the sum-numbers-ai API"
 version.workspace = true
 rust-version.workspace = true
 edition.workspace = true
@@ -16,7 +16,6 @@ web = [ "dioxus/web", "stayhydated-site/web" ]
 clap = { features = [ "derive" ], workspace = true }
 dioxus = { features = [ "launch", "lib", "router" ], workspace = true }
 dioxus-free-icons = { features = [ "lucide" ], workspace = true }
-dioxus-primitives = { workspace = true }
 stayhydated-dioxus = { workspace = true }
 stayhydated-site = { workspace = true }
 sum-numbers-ai-dummy = { workspace = true }

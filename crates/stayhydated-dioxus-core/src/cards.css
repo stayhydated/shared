@@ -66,7 +66,6 @@
 }
 
 .demo-example-cards .demo-card {
-  --demo-card-accent: #00cfff;
   position: relative;
   place-items: center;
   align-content: center;
@@ -94,12 +93,28 @@
     transform 180ms ease;
 }
 
-.demo-example-cards .demo-card:nth-child(2) {
-  --demo-card-accent: #ff168f;
+.demo-card-accent-red {
+  --demo-card-accent: rgb(255 0 0);
 }
 
-.demo-example-cards .demo-card:nth-child(3) {
-  --demo-card-accent: #b6ff00;
+.demo-card-accent-yellow {
+  --demo-card-accent: rgb(255 255 0);
+}
+
+.demo-card-accent-green {
+  --demo-card-accent: rgb(0 255 0);
+}
+
+.demo-card-accent-cyan {
+  --demo-card-accent: rgb(0 255 255);
+}
+
+.demo-card-accent-blue {
+  --demo-card-accent: rgb(0 0 255);
+}
+
+.demo-card-accent-magenta {
+  --demo-card-accent: rgb(255 0 255);
 }
 
 .demo-example-cards .demo-card::before,

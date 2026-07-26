@@ -36,7 +36,7 @@ impl PageKind {
             },
             Self::Demos => PageMetadata {
                 title: "Demos",
-                description: "Dioxus and terminal clients for inspecting the sum-numbers-ai API contract.",
+                description: "Dioxus, terminal, Bevy UI, and GPUI clients for inspecting the sum-numbers-ai API contract.",
             },
             Self::DioxusDemo => PageMetadata {
                 title: "Dioxus Demo",
@@ -85,6 +85,10 @@ pub(crate) fn app_base_href() -> BaseHref {
 
 pub(crate) fn book_href() -> Href {
     stayhydated_site::routing::href(&app_base_href(), &RoutePath::new("book"))
+}
+
+pub(crate) fn static_demo_href(path: &str) -> Href {
+    stayhydated_site::routing::href(&app_base_href(), &RoutePath::new(path))
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Routable)]
@@ -136,6 +140,12 @@ mod tests {
             SiteRoute::new(PageKind::TerminalDemo).path().as_str(),
             "/demos/terminal/"
         );
+    }
+
+    #[test]
+    fn static_demo_paths_follow_the_application_base_href() {
+        assert_eq!(static_demo_href("bevy-demo").as_str(), "/bevy-demo/");
+        assert_eq!(static_demo_href("gpui-demo").as_str(), "/gpui-demo/");
     }
 }
 

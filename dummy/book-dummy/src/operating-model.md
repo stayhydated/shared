@@ -45,8 +45,8 @@ calling a network service.
 
 ### Dioxus console
 
-The Dioxus page owns editable operand state, validates each input, and renders
-three review panels:
+The Dioxus page owns up to three editable operands, validates each input, and
+renders three review panels:
 
 - Request facade
 - Verified response envelope
@@ -65,12 +65,31 @@ sum [4, 5, 6]
 The terminal returns the same request identity, sum, verification status, model,
 latency, and trace lines as the web console.
 
+The terminal parser accepts no more than three operands so its interactive
+contract stays aligned with every visual demo.
+
+### Bevy UI
+
+The Bevy WebAssembly example uses Bevy's UI text editing components for three
+operand fields. It updates the verified total through the same
+`sum-numbers-ai-dummy` request boundary as the Dioxus and terminal clients.
+
+### GPUI + gpui-component
+
+The GPUI WebAssembly example renders three `gpui-component` inputs and a reset
+button. Input changes immediately recompute the verified total through the
+shared Rust request boundary.
+
 ## Generated Outputs
 
 `xtask-dummy` owns the generated project artifacts:
 
+- `cargo run -p xtask-dummy -- build bevy-demo` writes the Bevy UI WebAssembly
+  example into `dummy/web-dummy/public/bevy-demo`.
 - `cargo run -p xtask-dummy -- build book` writes the mdBook output into
   `dummy/web-dummy/public/book`.
+- `cargo run -p xtask-dummy -- build gpui-demo` writes the GPUI WebAssembly
+  example into `dummy/web-dummy/public/gpui-demo`.
 - `cargo run -p xtask-dummy -- build llms-txt` writes the llms text output into
   `dummy/web-dummy/public/llms.txt`.
 - `cargo run -p xtask-dummy -- build web` writes the static Dioxus site into
@@ -86,5 +105,6 @@ Use this checklist when changing the product story:
 
 1. The home page pitch explains the focused addition workflow.
 2. The book examples name the same fields returned by `SumResponse`.
-3. The Dioxus console and terminal client call `sum-numbers-ai-dummy` directly.
+3. All four demo clients call `sum-numbers-ai-dummy` directly and expose no
+   more than three operands.
 4. The generated book, llms text, sitemap, and static site remain aligned.

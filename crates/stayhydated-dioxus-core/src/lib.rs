@@ -1,6 +1,7 @@
 pub mod base;
 mod cards;
 mod classes;
+mod landing;
 mod layout;
 mod links;
 mod metadata;
@@ -14,8 +15,9 @@ mod tabs;
 mod types;
 
 pub use base::select;
-pub use cards::CodeBlock;
+pub use cards::{CodeBlock, DemoCard, DemoCardAccent};
 pub use dioxus::prelude::NavigationTarget;
+pub use landing::{LandingLink, LandingTheme, ProjectLanding};
 pub use layout::FullscreenDemoFrame;
 pub use metadata::{ProjectPageMetadata, project_document_title};
 pub use motion::{page_entry_reveal_style, surface_reveal_style};

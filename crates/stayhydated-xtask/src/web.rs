@@ -232,10 +232,6 @@ impl WebBuildConfigBuilder {
 
         let mut copy_files = vec![
             CopyPath {
-                source: self.workspace_root.join("web/public/.nojekyll"),
-                destination: dist_dir.join(".nojekyll"),
-            },
-            CopyPath {
                 source: self.workspace_root.join("web/public/llms.txt"),
                 destination: dist_dir.join("llms.txt"),
             },
@@ -246,10 +242,16 @@ impl WebBuildConfigBuilder {
         ];
         copy_files.extend(self.extra_copy_files);
 
-        let write_files = vec![WriteFile {
-            destination: dist_dir.join(DX_COMPONENTS_THEME_FILE_NAME),
-            contents: DX_COMPONENTS_THEME_CSS,
-        }];
+        let write_files = vec![
+            WriteFile {
+                destination: dist_dir.join(".nojekyll"),
+                contents: "",
+            },
+            WriteFile {
+                destination: dist_dir.join(DX_COMPONENTS_THEME_FILE_NAME),
+                contents: DX_COMPONENTS_THEME_CSS,
+            },
+        ];
 
         WebBuildConfig::builder()
             .command_current_dir(
@@ -694,7 +696,6 @@ mod tests {
         write(&public.join("assets/site.css"), "body {}");
         write(&public.join("book/index.html"), "Book");
         write(&public.join("llms/intro.md"), "Intro");
-        write(&public.join(".nojekyll"), "");
         write(&public.join("llms.txt"), "Index");
         write(&public.join("llms-full.txt"), "Full");
 
@@ -718,6 +719,7 @@ mod tests {
 
         let dist = temp.path().join("web/dist");
         assert!(dist.join("index.html").is_file());
+        assert!(dist.join(".nojekyll").is_file());
         assert!(dist.join("404.html").is_file());
         assert!(dist.join("demos/index.html").is_file());
         assert!(dist.join("assets/site.css").is_file());

@@ -7,87 +7,8 @@ use dioxus_primitives::{
     ContentSide,
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
 };
-use stayhydated_dioxus_core::{DisplayText, Href, ProjectPageMetadata};
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Project {
-    Koruma,
-    EsFluent,
-    SumNumbersAi,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct ProjectMetadata {
-    name: &'static str,
-    description: &'static str,
-    href: &'static str,
-    site_url: &'static str,
-    rustdoc_href: &'static str,
-    source_href: &'static str,
-    skill_command: &'static str,
-}
-
-macro_rules! published_project_metadata {
-    ($slug:literal, $description:literal) => {
-        ProjectMetadata {
-            name: $slug,
-            description: $description,
-            href: concat!("/", $slug, "/"),
-            site_url: concat!("https://stayhydated.github.io/", $slug, "/"),
-            rustdoc_href: concat!("https://docs.rs/", $slug, "/"),
-            source_href: concat!("https://github.com/stayhydated/", $slug),
-            skill_command: concat!("npx skills add stayhydated/", $slug),
-        }
-    };
-}
-
-const DISABLED_PROJECT_HREF: &str = "about:blank";
-const KORUMA_METADATA: ProjectMetadata = published_project_metadata!("koruma", "Rust validation");
-const ES_FLUENT_METADATA: ProjectMetadata =
-    published_project_metadata!("es-fluent", "Rust localization");
-const SUM_NUMBERS_AI_METADATA: ProjectMetadata = ProjectMetadata {
-    rustdoc_href: DISABLED_PROJECT_HREF,
-    source_href: DISABLED_PROJECT_HREF,
-    ..published_project_metadata!("sum-numbers-ai", "An auditable AI addition API")
-};
-
-impl Project {
-    const fn metadata(self) -> ProjectMetadata {
-        match self {
-            Self::Koruma => KORUMA_METADATA,
-            Self::EsFluent => ES_FLUENT_METADATA,
-            Self::SumNumbersAi => SUM_NUMBERS_AI_METADATA,
-        }
-    }
-
-    pub const fn as_str(self) -> &'static str {
-        self.metadata().name
-    }
-
-    pub const fn site_url(self) -> &'static str {
-        self.metadata().site_url
-    }
-
-    pub(crate) const fn description(self) -> &'static str {
-        self.metadata().description
-    }
-
-    pub(crate) const fn source_href(self) -> &'static str {
-        self.metadata().source_href
-    }
-
-    pub(crate) const fn rustdoc_href(self) -> &'static str {
-        self.metadata().rustdoc_href
-    }
-
-    pub(crate) const fn skill_command(self) -> &'static str {
-        self.metadata().skill_command
-    }
-
-    pub(crate) fn book_href(self) -> Href {
-        Href::new(format!("{}book/", self.metadata().href))
-    }
-}
+use stayhydated_dioxus_core::{DisplayText, ProjectPageMetadata};
+use stayhydated_site::Project;
 
 #[component]
 pub fn StayhydatedProjectPageMetadata(
@@ -195,11 +116,12 @@ mod tests {
             "https://github.com/stayhydated/es-fluent"
         );
         assert_eq!(Project::EsFluent.book_href().as_str(), "/es-fluent/book/");
-        assert_eq!(Project::SumNumbersAi.rustdoc_href(), DISABLED_PROJECT_HREF);
-        assert_eq!(Project::SumNumbersAi.source_href(), DISABLED_PROJECT_HREF);
+        assert_eq!(Project::SumNumbersAi.rustdoc_href(), "about:blank");
+        assert_eq!(Project::SumNumbersAi.source_href(), "about:blank");
         assert_eq!(
             Project::Koruma.skill_command(),
             "npx skills add stayhydated/koruma"
         );
+        assert_eq!(Project::GpuiForm.demo_path(), Some("gpui-demo/"));
     }
 }

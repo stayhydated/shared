@@ -129,6 +129,26 @@ fn renders_project_portal_shell_and_destinations() {
 }
 
 #[test]
+fn renders_shader_demo_card_for_external_destination() {
+    let html = render(rsx! {
+        section { class: "demo-example-cards",
+            DemoCard::<TestRoute> {
+                target: NavigationTarget::External("/demos/example/".to_owned()),
+                accent: DemoCardAccent::Yellow,
+                title: "Example",
+                shader_id: "example-demo-shader",
+                time_offset: 8.0,
+            }
+        }
+    });
+
+    assert!(html.contains("href=\"/demos/example/\""));
+    assert!(html.contains("class=\"demo-card demo-card-accent-yellow\""));
+    assert!(html.contains("id=\"example-demo-shader\""));
+    assert!(html.contains("class=\"demo-card-title\">Example"));
+}
+
+#[test]
 fn renders_tab_and_select_primitives() {
     let html = render(rsx! { PrimitiveApp {} });
 

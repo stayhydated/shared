@@ -107,6 +107,7 @@
   transform: translateY(-1px);
 }
 
+.sum-action-button:disabled,
 .sum-icon-button:disabled {
   cursor: not-allowed;
   opacity: 0.4;
@@ -116,32 +117,11 @@
   flex: 0 0 auto;
 }
 
-.sum-number-dnd ul {
+.sum-number-list {
   display: grid;
   gap: 0.6rem;
   padding: 0;
   margin: 0;
-  list-style: none;
-}
-
-.sum-number-dnd li {
-  min-height: 3.6rem;
-  border: 1px solid rgba(0, 246, 255, 0.28);
-  border-radius: var(--radius);
-  background: var(--field-bg);
-}
-
-.sum-number-dnd li[data-is-grabbing="true"],
-.sum-number-dnd li[data-focus-visible="true"] {
-  border-color: rgba(182, 255, 0, 0.78);
-  box-shadow: var(--glow-lime);
-}
-
-.sum-number-dnd [data-position] {
-  height: 0.35rem;
-  border-radius: 999px;
-  background: var(--lime);
-  box-shadow: var(--glow-lime);
 }
 
 .sum-number-row {
@@ -151,6 +131,9 @@
   align-items: center;
   min-height: 3.6rem;
   padding: 0.55rem;
+  border: 1px solid rgba(0, 246, 255, 0.28);
+  border-radius: var(--radius);
+  background: var(--field-bg);
 }
 
 .sum-number-position {

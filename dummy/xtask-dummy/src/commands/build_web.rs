@@ -27,15 +27,19 @@ pub fn run() -> anyhow::Result<()> {
                     destination: dist_dir.join("book"),
                 },
                 CopyPath {
+                    source: public_dir.join("bevy-demo"),
+                    destination: dist_dir.join("bevy-demo"),
+                },
+                CopyPath {
+                    source: public_dir.join("gpui-demo"),
+                    destination: dist_dir.join("gpui-demo"),
+                },
+                CopyPath {
                     source: public_dir.join("llms"),
                     destination: dist_dir.join("llms"),
                 },
             ])
             .copy_files(vec![
-                CopyPath {
-                    source: public_dir.join(".nojekyll"),
-                    destination: dist_dir.join(".nojekyll"),
-                },
                 CopyPath {
                     source: public_dir.join("llms.txt"),
                     destination: dist_dir.join("llms.txt"),
@@ -45,10 +49,16 @@ pub fn run() -> anyhow::Result<()> {
                     destination: dist_dir.join("llms-full.txt"),
                 },
             ])
-            .write_files(vec![WriteFile {
-                destination: dist_dir.join(DX_COMPONENTS_THEME_FILE_NAME),
-                contents: DX_COMPONENTS_THEME_CSS,
-            }])
+            .write_files(vec![
+                WriteFile {
+                    destination: dist_dir.join(".nojekyll"),
+                    contents: "",
+                },
+                WriteFile {
+                    destination: dist_dir.join(DX_COMPONENTS_THEME_FILE_NAME),
+                    contents: DX_COMPONENTS_THEME_CSS,
+                },
+            ])
             .route_fallback_paths(web_dummy::route_paths())
             .write_404_from_index(true)
             .sitemap_xml(web_dummy::sitemap_xml())

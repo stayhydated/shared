@@ -1,5 +1,7 @@
 [workspace]
 members = [
+  "dummy/bevy-demo",
+  "dummy/gpui-demo",
   "dummy/sum-numbers-ai-dummy",
   "dummy/web-dummy",
   "dummy/xtask-dummy",
@@ -22,6 +24,7 @@ version = "0.1.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
+bevy = { default-features = false, features = [ "ui" ], version = "0.19" }
 bon = "3.9.3"
 cargo_metadata = "0.23"
 clap = { features = [ "derive" ], version = "4.6" }
@@ -30,6 +33,14 @@ derive_more = "2.1"
 dioxus = { default-features = false, version = "0.7" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
+gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "87103d0e73b240bdbee9ee4fe8604f92c1e9590a" }
+gpui_platform = { branch = "linux-headless-renderer", features = [
+  "font-kit",
+  "runtime_shaders",
+  "wayland",
+  "x11",
+], git = "https://github.com/stayhydated/zed" }
 js-sys = "0.3"
 mdbook-driver = "0.5"
 path-slash = "0.2"
@@ -45,8 +56,13 @@ toml_edit = "0.25"
 tracing = "0.1"
 trybuild = "1.0"
 walkdir = "2.5"
+wasm-bindgen = "0.2"
 web-dummy = { path = "dummy/web-dummy", version = "0.1.0" }
 web-sys = "0.3"
+
+[patch."https://github.com/zed-industries/zed"]
+gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "=0.2.2" }
+gpui_macros = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.1.0" }
 
 [profile.dev]
 codegen-units = 16

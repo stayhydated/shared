@@ -1,0 +1,21 @@
+[package]
+name = "sum-numbers-ai-bevy-demo"
+description = "Bevy UI browser demo for the sum-numbers-ai dummy project"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+repository.workspace = true
+autobins = false
+
+[[example]]
+name = "bevy-demo"
+path = "src/main.rs"
+
+[dependencies]
+bevy = { workspace = true }
+sum-numbers-ai-dummy = { workspace = true }
+
+[lints]
+workspace = true
