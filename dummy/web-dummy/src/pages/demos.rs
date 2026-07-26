@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use stayhydated_dioxus::{
-    NavigationTarget, StayhydatedProjectPortalShell, page_entry_reveal_style,
+    NavigationTarget, ShaderBackground, StayhydatedProjectPortalShell, page_entry_reveal_style,
 };
 
 use crate::site::{
@@ -9,7 +9,25 @@ use crate::site::{
 };
 
 #[component]
-fn DemoCardLink(route: AppRoute, title: &'static str) -> Element {
+fn DemoCardContents(title: &'static str, shader_id: &'static str, time_offset: f32) -> Element {
+    rsx! {
+        ShaderBackground {
+            canvas_id: shader_id,
+            extra_class: "demo-card-shader",
+            time_offset,
+        }
+        span { class: "demo-card-tint", aria_hidden: "true" }
+        h2 { class: "demo-card-title", "{title}" }
+    }
+}
+
+#[component]
+fn DemoCardLink(
+    route: AppRoute,
+    title: &'static str,
+    shader_id: &'static str,
+    time_offset: f32,
+) -> Element {
     let aria_label = format!("Open {title} demo");
 
     if try_router().is_some() {
@@ -18,7 +36,7 @@ fn DemoCardLink(route: AppRoute, title: &'static str) -> Element {
                 class: "demo-card",
                 to: route,
                 aria_label,
-                h2 { class: "demo-card-title", "{title}" }
+                DemoCardContents { title, shader_id, time_offset }
             }
         }
     } else {
@@ -27,7 +45,7 @@ fn DemoCardLink(route: AppRoute, title: &'static str) -> Element {
                 class: "demo-card",
                 href: route.to_string(),
                 aria_label,
-                h2 { class: "demo-card-title", "{title}" }
+                DemoCardContents { title, shader_id, time_offset }
             }
         }
     }
@@ -49,10 +67,14 @@ pub(crate) fn DemosPage() -> Element {
                     DemoCardLink {
                         route: crate::site::routing::app_route(PageKind::DioxusDemo),
                         title: "Dioxus",
+                        shader_id: "dioxus-demo-card-shader",
+                        time_offset: 0.0,
                     }
                     DemoCardLink {
                         route: crate::site::routing::app_route(PageKind::TerminalDemo),
                         title: "Terminal",
+                        shader_id: "terminal-demo-card-shader",
+                        time_offset: 13.0,
                     }
                 }
             }
@@ -72,6 +94,13 @@ mod tests {
         assert!(html.contains("demo-example-cards"));
         assert_eq!(html.matches("class=\"demo-card\"").count(), 2);
         assert_eq!(html.matches("class=\"demo-card-title\"").count(), 2);
+        assert_eq!(html.matches("class=\"demo-card-tint\"").count(), 2);
+        assert_eq!(
+            html.matches("data-shader-background=\"loading\"").count(),
+            2
+        );
+        assert!(html.contains("id=\"dioxus-demo-card-shader\""));
+        assert!(html.contains("id=\"terminal-demo-card-shader\""));
         assert!(html.contains("Dioxus"));
         assert!(html.contains("Terminal"));
         assert!(!html.contains("Product console"));

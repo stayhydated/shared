@@ -16,10 +16,11 @@ use wgpu::{
     SurfaceConfiguration, SurfaceTarget, TextureUsages, TextureViewDescriptor, VertexState,
 };
 
-const TARGET_FRAME_MS: f64 = 1000.0 / 30.0;
-const MAX_CANVAS_PIXELS: f64 = 1280.0 * 720.0;
-const MIN_CANVAS_SCALE: f64 = 0.4;
-const MAX_CANVAS_SCALE: f64 = 1.25;
+const TARGET_FRAME_MS: f64 = 1000.0 / 20.0;
+const ANIMATION_TIME_SCALE: f64 = 0.5;
+const MAX_CANVAS_PIXELS: f64 = 480.0 * 270.0;
+const MIN_CANVAS_SCALE: f64 = 0.35;
+const MAX_CANVAS_SCALE: f64 = 0.75;
 const SHADER_BACKGROUND_STATUS_ATTRIBUTE: &str = "data-shader-background";
 const SHADER_BACKGROUND_STATUS_READY: &str = "ready";
 
@@ -43,14 +44,10 @@ impl Drop for ShaderBackgroundHandle {
 struct Uniforms {
     resolution: [f32; 2],
     time: f32,
-    grid_opacity: f32,
+    _padding: f32,
 }
 
-pub(crate) fn start(
-    canvas_id: String,
-    grid_opacity: f32,
-    time_offset: f32,
-) -> ShaderBackgroundHandle {
+pub(crate) fn start(canvas_id: String, time_offset: f32) -> ShaderBackgroundHandle {
     let handle = ShaderBackgroundHandle {
         running: Rc::new(Cell::new(true)),
         frame_callback: Rc::new(RefCell::new(None)),
@@ -59,15 +56,7 @@ pub(crate) fn start(
     let frame_callback = Rc::clone(&handle.frame_callback);
 
     dioxus::prelude::spawn(async move {
-        if let Err(error) = run(
-            &canvas_id,
-            grid_opacity,
-            time_offset,
-            running,
-            frame_callback,
-        )
-        .await
-        {
+        if let Err(error) = run(&canvas_id, time_offset, running, frame_callback).await {
             log_error(&format!("failed to start shader background: {error}"));
         }
     });
@@ -77,7 +66,6 @@ pub(crate) fn start(
 
 async fn run(
     canvas_id: &str,
-    grid_opacity: f32,
     time_offset: f32,
     running: Rc<Cell<bool>>,
     frame_callback: Rc<RefCell<Option<AnimationFrameCallback>>>,
@@ -100,7 +88,7 @@ async fn run(
         return Ok(());
     }
 
-    let renderer = ShaderBackgroundRenderer::new(canvas, grid_opacity, time_offset).await?;
+    let renderer = ShaderBackgroundRenderer::new(canvas, time_offset).await?;
 
     start_render_loop(Rc::new(RefCell::new(renderer)), running, frame_callback)
 }
@@ -166,16 +154,11 @@ struct ShaderBackgroundRenderer {
     uniform_buffer: Buffer,
     config: SurfaceConfiguration,
     last_frame_ms: f64,
-    grid_opacity: f32,
     time_offset: f32,
 }
 
 impl ShaderBackgroundRenderer {
-    async fn new(
-        canvas: HtmlCanvasElement,
-        grid_opacity: f32,
-        time_offset: f32,
-    ) -> Result<Self, String> {
+    async fn new(canvas: HtmlCanvasElement, time_offset: f32) -> Result<Self, String> {
         let mut instance_descriptor = InstanceDescriptor::new_without_display_handle();
         instance_descriptor.backends = Backends::BROWSER_WEBGPU;
         let instance = Instance::new(instance_descriptor);
@@ -284,7 +267,6 @@ impl ShaderBackgroundRenderer {
             uniform_buffer,
             config,
             last_frame_ms: -TARGET_FRAME_MS,
-            grid_opacity,
             time_offset,
         })
     }
@@ -314,10 +296,13 @@ impl ShaderBackgroundRenderer {
             | wgpu::CurrentSurfaceTexture::Validation => return false,
         };
 
+        // PERF: Reduce the phase once per frame instead of once per fragment.
+        let time = (time_ms * 0.001 * ANIMATION_TIME_SCALE + f64::from(self.time_offset))
+            .rem_euclid(std::f64::consts::TAU) as f32;
         let uniforms = Uniforms {
-            resolution: [self.config.width as f32, self.config.height as f32],
-            time: (time_ms * 0.001) as f32 + self.time_offset,
-            grid_opacity: self.grid_opacity,
+            resolution: [size.css_width, size.css_height],
+            time,
+            _padding: 0.0,
         };
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
@@ -383,7 +368,7 @@ fn resize_canvas(canvas: &HtmlCanvasElement) -> CanvasSize {
     let device_scale = web_sys::window()
         .map(|window| window.device_pixel_ratio())
         .unwrap_or(1.0)
-        .clamp(1.0, MAX_CANVAS_SCALE);
+        .clamp(MIN_CANVAS_SCALE, MAX_CANVAS_SCALE);
     let pixel_budget_scale = (MAX_CANVAS_PIXELS / (css_width * css_height)).sqrt();
     let scale = device_scale.min(pixel_budget_scale).max(MIN_CANVAS_SCALE);
     let width = (css_width * scale).floor().max(1.0) as u32;
@@ -396,12 +381,19 @@ fn resize_canvas(canvas: &HtmlCanvasElement) -> CanvasSize {
         canvas.set_height(height);
     }
 
-    CanvasSize { width, height }
+    CanvasSize {
+        width,
+        height,
+        css_width: css_width as f32,
+        css_height: css_height as f32,
+    }
 }
 
 struct CanvasSize {
     width: u32,
     height: u32,
+    css_width: f32,
+    css_height: f32,
 }
 
 fn log_error(message: &str) {

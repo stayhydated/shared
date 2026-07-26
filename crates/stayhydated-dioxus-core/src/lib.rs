@@ -20,6 +20,7 @@ pub use layout::FullscreenDemoFrame;
 pub use metadata::{ProjectPageMetadata, project_document_title};
 pub use motion::{page_entry_reveal_style, surface_reveal_style};
 pub use portal::{PortalAccent, PortalDestination, ProjectPortal, ProjectPortalShell};
+pub use shader_background::ShaderBackground;
 pub use styles::{DX_COMPONENTS_THEME_CSS, DX_COMPONENTS_THEME_FILE_NAME, SharedStyles};
 pub use tabs::{TabContent, TabList, TabTrigger, Tabs, TabsOrientation};
 pub use types::{CssClass, DisplayText, Href, InlineStyle};
