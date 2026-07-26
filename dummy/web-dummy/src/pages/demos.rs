@@ -11,6 +11,37 @@ use crate::site::{
 
 #[component]
 pub(crate) fn DemosPage() -> Element {
+    let demos = [
+        (
+            NavigationTarget::Internal(crate::site::routing::app_route(PageKind::DioxusDemo)),
+            "Dioxus",
+            "dioxus-demo-card-shader",
+            0.0,
+        ),
+        (
+            NavigationTarget::Internal(crate::site::routing::app_route(PageKind::TerminalDemo)),
+            "Terminal",
+            "terminal-demo-card-shader",
+            13.0,
+        ),
+        (
+            NavigationTarget::External(
+                crate::site::routing::static_demo_href("bevy-demo").into_string(),
+            ),
+            "Bevy UI",
+            "bevy-demo-card-shader",
+            26.0,
+        ),
+        (
+            NavigationTarget::External(
+                crate::site::routing::static_demo_href("gpui-demo").into_string(),
+            ),
+            "GPUI + gpui-component",
+            "gpui-demo-card-shader",
+            39.0,
+        ),
+    ];
+    let demo_count = demos.len();
     let demos_style = page_entry_reveal_style().into_string();
 
     rsx! {
@@ -22,41 +53,16 @@ pub(crate) fn DemosPage() -> Element {
                 section {
                     class: "grid columns-2 demo-example-cards motion-reveal",
                     style: demos_style,
-                    DemoCard::<AppRoute> {
-                        target: NavigationTarget::Internal(
-                            crate::site::routing::app_route(PageKind::DioxusDemo),
-                        ),
-                        accent: DemoCardAccent::Red,
-                        title: "Dioxus",
-                        shader_id: "dioxus-demo-card-shader",
-                        time_offset: 0.0,
-                    }
-                    DemoCard::<AppRoute> {
-                        target: NavigationTarget::Internal(
-                            crate::site::routing::app_route(PageKind::TerminalDemo),
-                        ),
-                        accent: DemoCardAccent::Yellow,
-                        title: "Terminal",
-                        shader_id: "terminal-demo-card-shader",
-                        time_offset: 13.0,
-                    }
-                    DemoCard::<AppRoute> {
-                        target: NavigationTarget::External(
-                            crate::site::routing::static_demo_href("bevy-demo").into_string(),
-                        ),
-                        accent: DemoCardAccent::Green,
-                        title: "Bevy UI",
-                        shader_id: "bevy-demo-card-shader",
-                        time_offset: 26.0,
-                    }
-                    DemoCard::<AppRoute> {
-                        target: NavigationTarget::External(
-                            crate::site::routing::static_demo_href("gpui-demo").into_string(),
-                        ),
-                        accent: DemoCardAccent::Cyan,
-                        title: "GPUI + gpui-component",
-                        shader_id: "gpui-demo-card-shader",
-                        time_offset: 39.0,
+                    for (position, (target, title, shader_id, time_offset)) in
+                        demos.into_iter().enumerate()
+                    {
+                        DemoCard::<AppRoute> {
+                            target,
+                            accent: DemoCardAccent::for_position(position, demo_count),
+                            title,
+                            shader_id,
+                            time_offset,
+                        }
                     }
                 }
             }
@@ -80,8 +86,8 @@ mod tests {
         );
         assert!(html.contains("demo-card-accent-red"));
         assert!(html.contains("demo-card-accent-yellow"));
-        assert!(html.contains("demo-card-accent-green"));
         assert!(html.contains("demo-card-accent-cyan"));
+        assert!(html.contains("demo-card-accent-blue"));
         assert_eq!(html.matches("class=\"demo-card-title\"").count(), 4);
         assert_eq!(html.matches("class=\"demo-card-tint\"").count(), 4);
         assert_eq!(

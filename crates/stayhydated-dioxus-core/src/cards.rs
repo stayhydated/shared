@@ -16,9 +16,39 @@ pub enum DemoCardAccent {
 }
 
 impl DemoCardAccent {
+    const PALETTE: [Self; 6] = [
+        Self::Red,
+        Self::Yellow,
+        Self::Green,
+        Self::Cyan,
+        Self::Blue,
+        Self::Magenta,
+    ];
+
     /// Stable color token used by the shared card and WebAssembly loader styles.
     pub const fn token(self) -> &'static str {
         self.into_str()
+    }
+
+    /// Selects an accent for one position in a gallery of `total` cards.
+    ///
+    /// Galleries up to the palette size are spread evenly across the available
+    /// accents. Larger galleries cycle the palette. Positions beyond `total`
+    /// wrap, and a zero `total` falls back to cycling the full palette.
+    pub const fn for_position(position: usize, total: usize) -> Self {
+        let palette_len = Self::PALETTE.len();
+        let position = if total == 0 {
+            position
+        } else {
+            position % total
+        };
+        let palette_index = if total == 0 || total > palette_len {
+            position % palette_len
+        } else {
+            position * palette_len / total
+        };
+
+        Self::PALETTE[palette_index]
     }
 }
 
@@ -113,5 +143,53 @@ mod tests {
             assert!(stylesheet.contains(&format!(".demo-card-accent-{token}")));
             assert!(stylesheet.contains(color));
         }
+    }
+
+    #[test]
+    fn gallery_positions_spread_across_the_palette() {
+        let accents = |total| {
+            (0..total)
+                .map(|position| DemoCardAccent::for_position(position, total))
+                .collect::<Vec<_>>()
+        };
+
+        assert_eq!(accents(1), [DemoCardAccent::Red]);
+        assert_eq!(accents(2), [DemoCardAccent::Red, DemoCardAccent::Cyan]);
+        assert_eq!(
+            accents(3),
+            [
+                DemoCardAccent::Red,
+                DemoCardAccent::Green,
+                DemoCardAccent::Blue,
+            ]
+        );
+        assert_eq!(
+            accents(4),
+            [
+                DemoCardAccent::Red,
+                DemoCardAccent::Yellow,
+                DemoCardAccent::Cyan,
+                DemoCardAccent::Blue,
+            ]
+        );
+        assert_eq!(
+            accents(6),
+            [
+                DemoCardAccent::Red,
+                DemoCardAccent::Yellow,
+                DemoCardAccent::Green,
+                DemoCardAccent::Cyan,
+                DemoCardAccent::Blue,
+                DemoCardAccent::Magenta,
+            ]
+        );
+    }
+
+    #[test]
+    fn gallery_positions_wrap_for_large_empty_and_out_of_range_inputs() {
+        assert_eq!(DemoCardAccent::for_position(6, 7), DemoCardAccent::Red);
+        assert_eq!(DemoCardAccent::for_position(7, 7), DemoCardAccent::Red);
+        assert_eq!(DemoCardAccent::for_position(2, 0), DemoCardAccent::Green);
+        assert_eq!(DemoCardAccent::for_position(4, 2), DemoCardAccent::Red);
     }
 }
