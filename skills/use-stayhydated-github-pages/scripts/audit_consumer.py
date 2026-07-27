@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import re
 import subprocess
 import sys
@@ -114,14 +113,6 @@ def read_toml(path: Path) -> Table:
     return as_table(parsed, str(path))
 
 
-def read_json(path: Path) -> Table:
-    try:
-        parsed: object = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise AuditError(f"failed to read {path}: {error}") from error
-    return as_table(parsed, str(path))
-
-
 def workspace_shared_revision(root: Path, cargo: Table) -> str:
     workspace = require_table(cargo, "workspace", "Cargo.toml")
     dependencies = require_table(workspace, "dependencies", "Cargo.toml.workspace")
@@ -180,11 +171,6 @@ def workspace_shared_revision(root: Path, cargo: Table) -> str:
 
 
 def project_slug(root: Path, cargo: Table) -> str:
-    package_name = require_string(
-        read_json(root / "package.json"),
-        "name",
-        "package.json",
-    )
     dioxus = read_toml(root / "web" / "Dioxus.toml")
     application = require_table(dioxus, "application", "web/Dioxus.toml")
     application_name = require_string(
@@ -196,28 +182,34 @@ def project_slug(root: Path, cargo: Table) -> str:
     app = require_table(web, "app", "web/Dioxus.toml.web")
     base_path = require_string(app, "base_path", "web/Dioxus.toml.web.app")
 
-    configured_names = (package_name, application_name, base_path)
+    configured_names = (application_name, base_path)
     normalized = [name.strip().strip("/") for name in configured_names]
     if len(set(normalized)) != 1:
         raise AuditError(
-            "package.json name and Dioxus application name/base_path "
-            "must use one project slug"
+            "Dioxus application name and base_path must use one project slug"
         )
 
     workspace = require_table(cargo, "workspace", "Cargo.toml")
     workspace_package = optional_table(workspace, "package", "Cargo.toml.workspace")
-    if workspace_package is not None and "repository" in workspace_package:
+    root_package = optional_table(cargo, "package", "Cargo.toml")
+    repository_sources = (
+        (workspace_package, "Cargo.toml.workspace.package"),
+        (root_package, "Cargo.toml.package"),
+    )
+    for package, context in repository_sources:
+        if package is None or "repository" not in package:
+            continue
         repository = require_string(
-            workspace_package,
+            package,
             "repository",
-            "Cargo.toml.workspace.package",
+            context,
         )
         repository_slug = urlparse(repository).path.rstrip("/").rsplit("/", 1)[-1]
         repository_slug = repository_slug.removesuffix(".git")
         if repository_slug and repository_slug != normalized[0]:
             raise AuditError(
-                f"workspace repository slug {repository_slug!r} "
-                f"differs from {normalized[0]!r}"
+                f"{context} repository slug {repository_slug!r} differs from "
+                f"{normalized[0]!r}"
             )
 
     return normalized[0]

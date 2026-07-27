@@ -322,9 +322,10 @@ reload_html = true
 watch_path = ["src", "public"]
 ```
 
-Keep the root `package.json` name, `[application].name`, and
-`[web.app].base_path` aligned to the same non-empty project slug. Current Bun
-previews enforce this invariant before serving the artifact.
+Keep `[application].name` and `[web.app].base_path` aligned to the same
+non-empty project slug. When Cargo package or workspace repository metadata is
+present, keep its repository slug aligned as well. The consumer audit enforces
+these invariants without requiring a package manifest outside Cargo.
 
 `StayhydatedRouterApp` inserts:
 
@@ -430,31 +431,23 @@ their implementation into the consumer.
 
 ## Static preview
 
-Current consumers build first and then run the Bun preview from `web/`:
+Do not introduce non-Cargo package manifests, package-manager commands, or
+JavaScript or TypeScript tooling solely to preview the Pages artifact. Preserve
+an existing non-JavaScript static preview when the consumer owns one:
 
 ```just
 web-preview: web-build
-    cd web && bun run preview
+    cargo xtask preview web
 ```
 
-`web/package.json` maps `preview` to `bun run preview.ts`. The script:
+Use that recipe only when the consumer's Rust tooling already implements it.
+Otherwise build `web/dist`, run the consumer audit with `--dist`, and inspect
+the required outputs directly. Do not add a second language toolchain just for
+local preview.
 
-- serves `web/dist`;
-- derives and cross-checks the project slug from the root package name and the
-  Dioxus application name/base path;
-- redirects `/` and the un-slashed project prefix to the canonical base path;
-- accepts the project prefix only as a complete path segment;
-- resolves direct files and directory `index.html` files;
-- falls back to `404.html`;
-- honors `HOST` and `PORT`, selecting the next available port when needed.
-
-Preserve this preview path during ordinary shared adoption work. Use
-`stayhydated_xtask::preview::StaticSitePreviewConfig` only when the consumer
-already uses the Rust preview or the task explicitly requests that migration.
-
-Preview the assembled artifact, not only `dx serve`, because direct navigation,
-fallback files, copied books/demos, and the repository base path are Pages
-contracts.
+When a suitable preview exists, exercise the assembled artifact rather than
+only `dx serve`, because direct navigation, fallback files, copied books/demos,
+and the repository base path are Pages contracts.
 
 ## Deployment workflow
 
@@ -570,6 +563,8 @@ Inspect `web/dist` for:
 - `sitemap.xml` with the canonical project URL;
 - requested `book/`, `llms.txt`, `llms-full.txt`, `llms/`, and demo outputs.
 
-Exercise the root and at least one nested route through a preview mounted at
-`/<project-slug>/` with `just web-preview`. Confirm
-`/<project-slug>-other/` returns `404` instead of entering the site.
+When the consumer owns a non-JavaScript static preview, exercise the root and
+at least one nested route mounted at `/<project-slug>/`. Confirm
+`/<project-slug>-other/` returns `404` instead of entering the site. Otherwise
+rely on the `--dist` audit plus direct inspection of the generated route
+fallbacks and `404.html`.

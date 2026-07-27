@@ -27,9 +27,9 @@ site.
 1. Inspect the consumer before editing:
    - locate `AGENTS.md`, `Cargo.toml`, `Cargo.lock`, `justfile`, `web/`,
      `xtask/`, and `.github/workflows/`;
-   - identify its project slug, root package name, Dioxus application name and
-     base path, default branch, static routes, generated directories, books,
-     llms.txt outputs, and browser demos;
+   - identify its project slug, Cargo repository metadata, Dioxus application
+     name and base path, default branch, static routes, generated directories,
+     books, llms.txt outputs, and browser demos;
    - preserve dirty worktree changes.
 2. Resolve the shared source:
    - prefer the local `shared` checkout when available;
@@ -66,7 +66,10 @@ site.
    - use explicit assets and demo inputs when the consumer already owns them.
 7. Preserve the consumer's preview and deployment topology unless the task
    explicitly requests a migration:
-   - current consumers use Bun to preview `web/dist`;
+   - do not introduce non-Cargo package manifests, package-manager commands,
+     or JavaScript or TypeScript tooling solely for the Pages site;
+   - use an existing non-JavaScript static preview when available, otherwise
+     validate the assembled artifact through the consumer audit;
    - install Trunk and nightly only for browser demos that need them.
 8. Build and inspect the actual `web/dist` artifact under the project base path
    before calling the site work complete.
