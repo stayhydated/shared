@@ -28,6 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/install-linux-deps
+
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Setup sccache
@@ -59,6 +63,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/install-linux-deps
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -89,6 +97,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/install-linux-deps
 
       - uses: dtolnay/rust-toolchain@stable
 
