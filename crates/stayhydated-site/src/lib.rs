@@ -3,12 +3,9 @@ use bon::Builder;
 #[cfg(feature = "web")]
 use dioxus::prelude::Element;
 
-pub mod project;
 pub mod route_cache;
 pub mod routing;
 pub mod sitemap;
-
-pub use project::Project;
 
 #[cfg(feature = "web")]
 #[derive(Builder, Clone, Copy)]

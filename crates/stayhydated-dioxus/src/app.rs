@@ -80,16 +80,16 @@ mod tests {
     #[test]
     fn asset_href_joins_project_base() {
         assert_eq!(
-            stayhydated_asset_href("/koruma/", "assets/site.css"),
-            "/koruma/assets/site.css"
+            stayhydated_asset_href("/example-project/", "assets/site.css"),
+            "/example-project/assets/site.css"
         );
     }
 
     #[test]
     fn asset_href_accepts_leading_asset_slash() {
         assert_eq!(
-            stayhydated_asset_href("/es-fluent/", "/dx-components-theme.css"),
-            "/es-fluent/dx-components-theme.css"
+            stayhydated_asset_href("/example-project/", "/dx-components-theme.css"),
+            "/example-project/dx-components-theme.css"
         );
     }
 

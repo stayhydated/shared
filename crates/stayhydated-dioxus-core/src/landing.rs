@@ -38,7 +38,7 @@ impl LandingLink {
     }
 }
 
-/// Compact, responsive landing page for a stayhydated project.
+/// Compact, responsive landing page for a repository project.
 #[component]
 pub fn ProjectLanding(
     #[props(into)] project_name: DisplayText,

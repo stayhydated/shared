@@ -13,6 +13,9 @@ pub(crate) fn HomePage() -> Element {
             project: PROJECT,
             version: VERSION,
             home: NavigationTarget::Internal(crate::site::routing::app_route(PageKind::Home)),
+            docs: Href::new(
+                crate::site::routing::book_page_href("api-contract.html").into_string(),
+            ),
             book: Href::new(crate::site::routing::book_href().into_string()),
             demos: NavigationTarget::Internal(crate::site::routing::app_route(PageKind::Demos)),
             source: Href::new(SOURCE_URL),
@@ -31,6 +34,7 @@ mod tests {
         assert!(html.contains("project-portal is-root"));
         assert!(html.contains("portal-header"));
         assert!(html.contains("portal-destinations"));
-        assert!(html.contains(r#"href="about:blank""#));
+        assert!(html.contains(r#"href="/book/api-contract.html""#));
+        assert!(html.contains(SOURCE_URL));
     }
 }

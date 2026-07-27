@@ -39,16 +39,25 @@ mod tests {
 
     #[test]
     fn document_title_includes_home_page_label() {
-        assert_eq!(project_document_title("koruma", "Home"), "koruma | Home");
+        assert_eq!(
+            project_document_title("example-project", "Home"),
+            "example-project | Home"
+        );
     }
 
     #[test]
     fn document_title_skips_empty_page_label() {
-        assert_eq!(project_document_title("koruma", ""), "koruma");
+        assert_eq!(
+            project_document_title("example-project", ""),
+            "example-project"
+        );
     }
 
     #[test]
     fn document_title_avoids_repeating_project_name() {
-        assert_eq!(project_document_title("koruma", "koruma"), "koruma");
+        assert_eq!(
+            project_document_title("example-project", "example-project"),
+            "example-project"
+        );
     }
 }

@@ -96,8 +96,8 @@ shared Rust request boundary.
   `dummy/web-dummy/dist`.
 
 The `just dummy web-build` recipe runs all three steps in order. The preview
-script serves `dummy/web-dummy/dist` under the `/sum-numbers-ai/` base path used
-by the project registry.
+script serves `dummy/web-dummy/dist` under the `/sum-numbers-ai/` base path
+configured by the dummy web application.
 
 ## Review Checklist
 
