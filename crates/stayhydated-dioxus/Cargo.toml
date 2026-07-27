@@ -1,6 +1,6 @@
 [package]
 name = "stayhydated-dioxus"
-description = "Dioxus project-site wrapper and stayhydated project inventory"
+description = "Dioxus application shell and project-site components"
 version.workspace = true
 rust-version.workspace = true
 edition.workspace = true
@@ -14,7 +14,6 @@ dioxus = { features = [ "lib", "router" ], workspace = true }
 dioxus-free-icons = { features = [ "lucide" ], workspace = true }
 dioxus-primitives = { workspace = true }
 stayhydated-dioxus-core = { workspace = true }
-stayhydated-site = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { features = [ "Clipboard", "Navigator", "Window" ], workspace = true }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use stayhydated GitHub Pages"
+  short_description: "Adopt the shared stayhydated Pages base"
+  default_prompt: "Use $use-stayhydated-github-pages to add or update this project’s GitHub Pages site with the stayhydated/shared base."

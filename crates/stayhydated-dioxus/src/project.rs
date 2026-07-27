@@ -8,7 +8,43 @@ use dioxus_primitives::{
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
 };
 use stayhydated_dioxus_core::{DisplayText, ProjectPageMetadata};
-use stayhydated_site::Project;
+
+/// Consumer-owned identity used by the shared project-site wrappers.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Project {
+    name: &'static str,
+    description: &'static str,
+    skill_command: Option<&'static str>,
+}
+
+impl Project {
+    /// Creates a project identity with no Skills command.
+    pub const fn new(name: &'static str, description: &'static str) -> Self {
+        Self {
+            name,
+            description,
+            skill_command: None,
+        }
+    }
+
+    /// Adds the command shown by the portal's Skills copy button.
+    pub const fn with_skill_command(mut self, skill_command: &'static str) -> Self {
+        self.skill_command = Some(skill_command);
+        self
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        self.name
+    }
+
+    pub const fn description(self) -> &'static str {
+        self.description
+    }
+
+    pub const fn skill_command(self) -> Option<&'static str> {
+        self.skill_command
+    }
+}
 
 #[component]
 pub fn StayhydatedProjectPageMetadata(
@@ -26,8 +62,7 @@ pub fn StayhydatedProjectPageMetadata(
 }
 
 #[component]
-pub(crate) fn ProjectSkillsCopyButton(project: Project) -> Element {
-    let command = project.skill_command();
+pub(crate) fn ProjectSkillsCopyButton(command: &'static str) -> Element {
     let mut copied = use_signal(|| false);
     let copy_label = if copied() {
         "Copied"
@@ -99,29 +134,26 @@ mod tests {
 
     #[test]
     fn native_clipboard_helper_is_a_safe_noop() {
-        copy_text_to_clipboard("npx skills add stayhydated/koruma");
+        copy_text_to_clipboard("npx skills add example/project");
     }
 
     #[test]
-    fn project_metadata_exposes_current_site_destinations() {
-        assert_eq!(Project::Koruma.as_str(), "koruma");
-        assert_eq!(Project::Koruma.description(), "Rust validation");
+    fn project_identity_uses_consumer_owned_values() {
+        const PROJECT: Project = Project::new("example-project", "An example project.")
+            .with_skill_command("npx skills add example/project");
+
+        assert_eq!(PROJECT.as_str(), "example-project");
+        assert_eq!(PROJECT.description(), "An example project.");
         assert_eq!(
-            Project::Koruma.site_url(),
-            "https://stayhydated.github.io/koruma/"
+            PROJECT.skill_command(),
+            Some("npx skills add example/project")
         );
-        assert_eq!(Project::Koruma.rustdoc_href(), "https://docs.rs/koruma/");
-        assert_eq!(
-            Project::EsFluent.source_href(),
-            "https://github.com/stayhydated/es-fluent"
-        );
-        assert_eq!(Project::EsFluent.book_href().as_str(), "/es-fluent/book/");
-        assert_eq!(Project::SumNumbersAi.rustdoc_href(), "about:blank");
-        assert_eq!(Project::SumNumbersAi.source_href(), "about:blank");
-        assert_eq!(
-            Project::Koruma.skill_command(),
-            "npx skills add stayhydated/koruma"
-        );
-        assert_eq!(Project::GpuiForm.demo_path(), Some("gpui-demo/"));
+    }
+
+    #[test]
+    fn project_identity_does_not_require_a_skills_command() {
+        const PROJECT: Project = Project::new("example-project", "An example project.");
+
+        assert_eq!(PROJECT.skill_command(), None);
     }
 }

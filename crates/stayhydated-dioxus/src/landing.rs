@@ -1,42 +1,22 @@
 use dioxus::prelude::*;
-use stayhydated_dioxus_core::{LandingLink, LandingTheme, ProjectLanding};
+use stayhydated_dioxus_core::{DisplayText, LandingLink, LandingTheme, ProjectLanding};
 
 use crate::Project;
 
-fn landing_theme(project: Project) -> LandingTheme {
-    match project {
-        Project::GpuiForm => LandingTheme::Blue,
-        Project::GpuiTable => LandingTheme::Green,
-        Project::GpuiStorybook => LandingTheme::Rose,
-        Project::GpuiEsFluent => LandingTheme::Purple,
-        Project::FrameCapture => LandingTheme::Amber,
-        Project::Koruma | Project::EsFluent | Project::SumNumbersAi => LandingTheme::Cyan,
-    }
-}
-
-fn landing_links(project: Project) -> Vec<LandingLink> {
-    let mut links = vec![LandingLink::new("book/", "Read the book")];
-    if let Some(demo_path) = project.demo_path() {
-        links.push(LandingLink::new(demo_path, "Open the demo"));
-    }
-    links.extend([
-        LandingLink::new(project.rustdoc_href(), "Rust API docs"),
-        LandingLink::new(project.source_href(), "Source"),
-    ]);
-    links
-}
-
 #[component]
-pub fn StayhydatedProjectLanding(project: Project) -> Element {
-    let eyebrow = format!("stayhydated / {}", project.category());
-
+pub fn StayhydatedProjectLanding(
+    project: Project,
+    #[props(into)] eyebrow: DisplayText,
+    links: Vec<LandingLink>,
+    #[props(default)] theme: LandingTheme,
+) -> Element {
     rsx! {
         ProjectLanding {
-            project_name: project.display_name(),
+            project_name: project.as_str(),
             tagline: project.description(),
             eyebrow,
-            links: landing_links(project),
-            theme: landing_theme(project),
+            links,
+            theme,
         }
     }
 }
@@ -46,24 +26,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn project_landing_uses_project_destinations_and_theme() {
+    fn project_landing_uses_consumer_destinations_and_theme() {
+        const PROJECT: Project = Project::new("example-project", "An example project.");
         let html = dioxus::ssr::render_element(rsx! {
-            StayhydatedProjectLanding { project: Project::GpuiTable }
+            StayhydatedProjectLanding {
+                project: PROJECT,
+                eyebrow: "Example organization / Rust",
+                links: vec![
+                    LandingLink::new("book/", "Read the book"),
+                    LandingLink::new("https://docs.example/project/", "API docs"),
+                ],
+                theme: LandingTheme::Green,
+            }
         });
 
         assert!(html.contains("project-landing--green"));
-        assert!(html.contains("stayhydated / Rust UI"));
-        assert!(html.contains("href=\"gpui-demo/\""));
-        assert!(html.contains("https://docs.rs/gpui-table/"));
+        assert!(html.contains("Example organization / Rust"));
+        assert!(html.contains("href=\"book/\""));
+        assert!(html.contains("https://docs.example/project/"));
     }
 
     #[test]
-    fn project_without_demo_omits_demo_destination() {
+    fn project_landing_does_not_require_optional_destinations() {
+        const PROJECT: Project = Project::new("example-project", "An example project.");
         let html = dioxus::ssr::render_element(rsx! {
-            StayhydatedProjectLanding { project: Project::FrameCapture }
+            StayhydatedProjectLanding {
+                project: PROJECT,
+                eyebrow: "Example organization / Rust",
+                links: vec![LandingLink::new("book/", "Read the book")],
+            }
         });
 
         assert!(!html.contains("Open the demo"));
-        assert!(html.contains("project-landing--amber"));
+        assert!(html.contains("project-landing--blue"));
     }
 }
