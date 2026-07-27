@@ -2,71 +2,18 @@
 
 ## Contents
 
-- [Evidence map](#evidence-map)
-- [Current consumer baseline](#current-consumer-baseline)
 - [Workspace dependencies](#workspace-dependencies)
 - [Consumer-owned project configuration](#consumer-owned-project-configuration)
 - [Web package](#web-package)
 - [Base-path-safe app and routing](#base-path-safe-app-and-routing)
 - [Shared pages and components](#shared-pages-and-components)
+- [Consumer portal contract test](#consumer-portal-contract-test)
 - [Dioxus and asset configuration](#dioxus-and-asset-configuration)
 - [GitHub Pages build task](#github-pages-build-task)
 - [Static preview](#static-preview)
 - [Deployment workflow](#deployment-workflow)
 - [Revision automation](#revision-automation)
 - [Validation checklist](#validation-checklist)
-
-## Evidence map
-
-Inspect these paths in the `shared` checkout at the consumer's target
-revision:
-
-- `crates/stayhydated-site/src/routing.rs`: `BasePath`, `BaseHref`,
-  `RoutePath`, `OutputDir`, `Href`, and `SiteUrl`.
-- `crates/stayhydated-site/src/sitemap.rs`: sitemap generation.
-- `crates/stayhydated-dioxus/src/`: application wrappers, consumer-configured
-  project pages, and component exports.
-- `crates/stayhydated-dioxus-core/src/`: framework-neutral Dioxus components
-  and shared styles.
-- `crates/stayhydated-xtask/src/web.rs`: Pages build configuration.
-- `crates/stayhydated-xtask/src/preview.rs`: base-path-aware preview.
-- `crates/stayhydated-xtask/src/book.rs`, `llms.rs`, and `trunk.rs`: optional
-  artifact builders.
-- `dummy/web-dummy` and `dummy/xtask-dummy`: production-shaped integration
-  examples.
-- `.github/workflows/deploy-pages.yml`: reusable deployment contract.
-
-When Koruma or es-fluent is locally available, inspect its `web/`, `xtask/`,
-`justfile`, and `.github/workflows/` at the consumer's checked-out branch.
-Treat those repositories as consumer evidence, not as sources for shared
-project metadata.
-
-## Current consumer baseline
-
-Koruma and es-fluent share these surfaces:
-
-- a `web` library plus feature-gated binary;
-- `Project`, `StayhydatedRouterApp`, `StayhydatedProjectPageMetadata`,
-  `StayhydatedProjectPortal`, and `StayhydatedProjectPortalShell`;
-- one route model for Dioxus dispatch, fallback paths, metadata, and sitemap
-  inputs;
-- `cargo xtask build book`, `cargo xtask build llms-txt`, and
-  `cargo xtask build web`;
-- `just web-build`, `just web`, and `just web-preview`;
-- a Bun `web/preview.ts` that serves `web/dist` under the root package name;
-- an explicit Pages workflow and the shared revision-update workflow.
-
-Preserve their build variants:
-
-| Surface | Koruma | es-fluent |
-| --- | --- | --- |
-| Web command | Root-driven `.package("web")` | Runs from `web/` |
-| Public assets | Default `web/public` copy | Explicit localization and stylesheet inputs |
-| Browser demos | Dioxus routes | Bevy and GPUI Trunk outputs plus Dioxus routes |
-| Extra toolchains | Dioxus CLI | Dioxus CLI, Trunk, and nightly GPUI build |
-
-Neither current consumer uses `StayhydatedProjectLanding`; treat it as an
-optional component rather than part of the required adoption.
 
 ## Workspace dependencies
 
@@ -106,9 +53,6 @@ stayhydated-xtask = { workspace = true }
 web = { workspace = true }
 ```
 
-Add Dioxus with its `ssr` feature under web dev-dependencies only when
-project-owned route, metadata, or content render tests need it.
-
 Update the lockfile without broad dependency upgrades:
 
 ```sh
@@ -122,10 +66,6 @@ cargo update \
 uses core-only APIs.
 
 ## Consumer-owned project configuration
-
-Keep each repository's identity and destinations local. Shared provides the
-`Project` value type and reusable rendering components, but it does not catalog
-consumer repositories.
 
 Define the identity in the consumer:
 
@@ -145,17 +85,6 @@ pub(crate) const SOURCE_URL: &str =
 Omit `.with_skill_command(...)` when the project does not publish an agent
 skill. Keep book and demo destinations base-path-aware through the consumer's
 routing helpers.
-
-When updating a consumer pinned before the consumer-owned `Project` API:
-
-1. replace its catalog enum variant with `Project::new(...)`;
-2. replace `PROJECT.site_url()` with a local `SITE_URL`;
-3. add local Rustdoc and source URL constants;
-4. pass `docs`, `book`, and `source` to `StayhydatedProjectPortal`.
-
-Existing `StayhydatedProjectPageMetadata` and
-`StayhydatedProjectPortalShell` call sites continue to accept the local
-`PROJECT` value.
 
 ## Web package
 
@@ -337,6 +266,42 @@ for (position, (route, title, shader_id, time_offset)) in
 Prefer other exported shared components—tabs, selects, fullscreen frames,
 shader backgrounds, landing links, and reveal styles—over local equivalents.
 
+## Consumer portal contract test
+
+Keep the consumer-owned portal contract in one focused test beside the home
+page. Render `HomePage`, assert that the configured docs and source URLs are
+present, and assert the exact Skills command directly on `PROJECT` because
+tooltip content is not part of the native render. Rely on shared tests for
+generic portal labels, accents, classes, and layout.
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn home_page_uses_project_owned_destinations() {
+        let html = dioxus::ssr::render_element(rsx! { HomePage {} });
+
+        for expected in [RUSTDOC_URL, SOURCE_URL] {
+            assert!(html.contains(expected));
+        }
+        assert_eq!(
+            PROJECT.skill_command(),
+            Some("npx skills add my-organization/my-project")
+        );
+    }
+}
+```
+
+Add Dioxus with its `ssr` feature under `web` dev-dependencies when the
+consumer does not already enable it:
+
+```toml
+[dev-dependencies]
+dioxus = { features = ["ssr"], workspace = true }
+```
+
 ## Dioxus and asset configuration
 
 Set the repository slug as the Dioxus base path:
@@ -356,6 +321,10 @@ index_on_404 = true
 reload_html = true
 watch_path = ["src", "public"]
 ```
+
+Keep the root `package.json` name, `[application].name`, and
+`[web.app].base_path` aligned to the same non-empty project slug. Current Bun
+previews enforce this invariant before serving the artifact.
 
 `StayhydatedRouterApp` inserts:
 
@@ -471,8 +440,10 @@ web-preview: web-build
 `web/package.json` maps `preview` to `bun run preview.ts`. The script:
 
 - serves `web/dist`;
-- derives the Pages base path from the root package name;
-- redirects `/` to that base path;
+- derives and cross-checks the project slug from the root package name and the
+  Dioxus application name/base path;
+- redirects `/` and the un-slashed project prefix to the canonical base path;
+- accepts the project prefix only as a complete path segment;
 - resolves direct files and directory `index.html` files;
 - falls back to `404.html`;
 - honors `HOST` and `PORT`, selecting the next available port when needed.
@@ -578,12 +549,18 @@ just clippy
 just test
 cargo test -p web --lib --no-default-features --locked
 just web-build
+python3 <shared-checkout>/skills/use-stayhydated-github-pages/scripts/audit_consumer.py \
+  . \
+  --dist \
+  --site-url https://my-organization.github.io/my-project/
 git diff --check
 ```
 
 Adapt the feature set and generated prerequisites to repository evidence. Run
-the consumer's focused Dioxus/localization feature matrix when its CI or
-`justfile` defines one.
+the audit helper from the local shared checkout when available. Pass
+`--project-style-input <consumer-relative-path>` when the project stylesheet
+comes from another tracked source. Run the consumer's focused
+Dioxus/localization feature matrix when its CI or `justfile` defines one.
 
 Inspect `web/dist` for:
 
@@ -594,5 +571,5 @@ Inspect `web/dist` for:
 - requested `book/`, `llms.txt`, `llms-full.txt`, `llms/`, and demo outputs.
 
 Exercise the root and at least one nested route through a preview mounted at
-`/<project-slug>/` with `just web-preview`. Test project-owned integration;
-rely on shared tests for generic component styling and rendering.
+`/<project-slug>/` with `just web-preview`. Confirm
+`/<project-slug>-other/` returns `404` instead of entering the site.
