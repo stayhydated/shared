@@ -87,10 +87,6 @@ pub(crate) fn book_href() -> Href {
     stayhydated_site::routing::href(&app_base_href(), &RoutePath::new("book"))
 }
 
-pub(crate) fn book_page_href(path: &str) -> Href {
-    Href::new(format!("{}{path}", book_href().as_str()))
-}
-
 pub(crate) fn static_demo_href(path: &str) -> Href {
     stayhydated_site::routing::href(&app_base_href(), &RoutePath::new(path))
 }
@@ -150,14 +146,6 @@ mod tests {
     fn static_demo_paths_follow_the_application_base_href() {
         assert_eq!(static_demo_href("bevy-demo").as_str(), "/bevy-demo/");
         assert_eq!(static_demo_href("gpui-demo").as_str(), "/gpui-demo/");
-    }
-
-    #[test]
-    fn book_page_paths_follow_the_application_base_href() {
-        assert_eq!(
-            book_page_href("api-contract.html").as_str(),
-            "/book/api-contract.html"
-        );
     }
 }
 
