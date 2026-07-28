@@ -3,7 +3,3 @@ node_modules/
 .rumdl_cache/
 crates/stayhydated-dioxus-skeleton/.dx-bundle/
 crates/stayhydated-dioxus-skeleton/dist/
-dummy/bevy-demo/index.html
-dummy/bevy-demo/trunk-loader.js
-dummy/gpui-demo/index.html
-dummy/gpui-demo/trunk-loader.js

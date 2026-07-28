@@ -6,21 +6,24 @@ use std::{
 
 use anyhow::{Context as _, bail};
 use bon::Builder;
+use path_slash::PathExt as _;
 
 /// File name used for the loader beside a generated Trunk index.
 pub const TRUNK_DEMO_LOADER_FILE_NAME: &str = "trunk-loader.js";
 /// Shared JavaScript initializer for Trunk-built WebAssembly demos.
 pub const WASM_DEMO_LOADER_JS: &str = include_str!("trunk_loader.js");
 
+const TRUNK_DEMO_STAGING_DIR: &str = "stayhydated-trunk";
+
 /// A Trunk `copy-dir` declaration rendered into a generated demo page.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TrunkDemoCopyDir {
-    source: String,
-    target: String,
+    source: PathBuf,
+    target: PathBuf,
 }
 
 impl TrunkDemoCopyDir {
-    pub fn new(source: impl Into<String>, target: impl Into<String>) -> Self {
+    pub fn new(source: impl Into<PathBuf>, target: impl Into<PathBuf>) -> Self {
         Self {
             source: source.into(),
             target: target.into(),
@@ -65,7 +68,7 @@ pub struct TrunkDemoBuildConfig {
     pub require_javascript: bool,
     #[builder(with = |value: impl Into<PathBuf>| value.into())]
     pub loader_destination: Option<PathBuf>,
-    /// Generates `index.html` and an adjacent shared loader before Trunk runs.
+    /// Stages `index.html` and an adjacent shared loader before Trunk runs.
     pub generated_page: Option<TrunkDemoPageConfig>,
 }
 
@@ -85,6 +88,13 @@ impl TrunkDemoBuildConfig {
     fn output_dir(&self) -> PathBuf {
         self.resolve(&self.output_dir)
     }
+
+    fn generated_input_dir(&self) -> PathBuf {
+        self.workspace_root
+            .join("target")
+            .join(TRUNK_DEMO_STAGING_DIR)
+            .join(&self.example_name)
+    }
 }
 
 pub fn build(config: &TrunkDemoBuildConfig) -> anyhow::Result<()> {
@@ -97,19 +107,22 @@ pub fn build(config: &TrunkDemoBuildConfig) -> anyhow::Result<()> {
             example_dir.display()
         );
     }
+    let example_dir = fs::canonicalize(&example_dir)
+        .with_context(|| format!("failed to resolve {}", example_dir.display()))?;
 
-    if let Some(page) = &config.generated_page {
-        write_generated_page_inputs(&example_dir, page)?;
+    let index = if let Some(page) = &config.generated_page {
+        write_generated_page_inputs(&config.generated_input_dir(), &example_dir, page)?
     } else if let Some(destination) = &config.loader_destination {
         write_loader(&config.resolve(destination))?;
-    }
-
-    let output_dir = config.output_dir();
-    let index = example_dir.join("index.html");
+        example_dir.join("index.html")
+    } else {
+        example_dir.join("index.html")
+    };
     if !index.is_file() {
         bail!("Trunk demo build requires {}", index.display());
     }
 
+    let output_dir = config.output_dir();
     if output_dir.exists() {
         fs::remove_dir_all(&output_dir)
             .with_context(|| format!("failed to clean {}", output_dir.display()))?;
@@ -122,7 +135,7 @@ pub fn build(config: &TrunkDemoBuildConfig) -> anyhow::Result<()> {
         .current_dir(&example_dir)
         .env_remove("NO_COLOR")
         .arg("build")
-        .arg("index.html")
+        .arg(&index)
         .arg("--example")
         .arg(&config.example_name)
         .args([
@@ -168,6 +181,15 @@ fn validate_config(config: &TrunkDemoBuildConfig) -> anyhow::Result<()> {
     if config.generated_page.is_some() && config.loader_destination.is_some() {
         bail!("Trunk generated page and loader destination are mutually exclusive");
     }
+    if config.generated_page.is_some()
+        && (matches!(config.example_name.as_str(), "." | "..")
+            || config
+                .example_name
+                .chars()
+                .any(|character| matches!(character, '/' | '\\')))
+    {
+        bail!("Trunk generated page example name must be a single path segment");
+    }
     if let Some(page) = &config.generated_page {
         validate_page_config(page)?;
     }
@@ -206,21 +228,24 @@ fn validate_page_config(config: &TrunkDemoPageConfig) -> anyhow::Result<()> {
         bail!("Trunk demo canvas ID cannot be empty");
     }
     for copy_dir in &config.copy_dirs {
-        if copy_dir.source.trim().is_empty() {
+        if copy_dir.source.as_os_str().is_empty() {
             bail!("Trunk demo copy directory source cannot be empty");
         }
-        if copy_dir.target.trim().is_empty() {
+        if copy_dir.target.as_os_str().is_empty() {
             bail!("Trunk demo copy directory target cannot be empty");
         }
     }
     Ok(())
 }
 
-/// Renders the deterministic source index used by [`TrunkDemoBuildConfig`]'s
-/// `generated_page` mode.
-pub fn render_index_html(config: &TrunkDemoPageConfig) -> anyhow::Result<String> {
+fn render_index_html(
+    config: &TrunkDemoPageConfig,
+    example_dir: &Path,
+    input_dir: &Path,
+) -> anyhow::Result<String> {
     validate_page_config(config)?;
 
+    let manifest = staged_relative_path(input_dir, &example_dir.join("Cargo.toml"))?;
     let mut html = String::from(concat!(
         "<!doctype html>\n",
         "<!-- Generated by stayhydated-xtask. -->\n",
@@ -252,13 +277,17 @@ pub fn render_index_html(config: &TrunkDemoPageConfig) -> anyhow::Result<String>
     }
     html.push_str("    />\n");
     for copy_dir in &config.copy_dirs {
+        let source = resolve_path(example_dir, &copy_dir.source);
+        let source = staged_relative_path(input_dir, &source)?;
         html.push_str("    <link data-trunk rel=\"copy-dir\" href=\"");
-        push_html_escaped(&mut html, &copy_dir.source);
+        push_html_path(&mut html, &source)?;
         html.push_str("\" data-target-path=\"");
-        push_html_escaped(&mut html, &copy_dir.target);
+        push_html_path(&mut html, &copy_dir.target)?;
         html.push_str("\" />\n");
     }
-    html.push_str("    <link data-trunk rel=\"rust\" data-initializer=\"");
+    html.push_str("    <link data-trunk rel=\"rust\" href=\"");
+    push_html_path(&mut html, &manifest)?;
+    html.push_str("\" data-initializer=\"");
     html.push_str(TRUNK_DEMO_LOADER_FILE_NAME);
     html.push_str(concat!(
         "\" />\n",
@@ -307,15 +336,55 @@ fn push_html_escaped(html: &mut String, value: &str) {
     }
 }
 
+fn push_html_path(html: &mut String, path: &Path) -> anyhow::Result<()> {
+    let path = path
+        .to_slash()
+        .with_context(|| format!("Trunk demo path is not valid UTF-8: {}", path.display()))?;
+    push_html_escaped(html, &path);
+    Ok(())
+}
+
+fn resolve_path(base: &Path, path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_owned()
+    } else {
+        base.join(path)
+    }
+}
+
+fn staged_relative_path(input_dir: &Path, path: &Path) -> anyhow::Result<PathBuf> {
+    pathdiff::diff_paths(path, input_dir).with_context(|| {
+        format!(
+            "failed to make Trunk demo path {} relative to {}",
+            path.display(),
+            input_dir.display()
+        )
+    })
+}
+
 fn write_generated_page_inputs(
+    input_dir: &Path,
     example_dir: &Path,
     config: &TrunkDemoPageConfig,
-) -> anyhow::Result<()> {
-    let index = example_dir.join("index.html");
-    let loader = example_dir.join(TRUNK_DEMO_LOADER_FILE_NAME);
+) -> anyhow::Result<PathBuf> {
+    let manifest = example_dir.join("Cargo.toml");
+    if !manifest.is_file() {
+        bail!(
+            "Trunk generated page requires a Cargo manifest at {}",
+            manifest.display()
+        );
+    }
+
+    fs::create_dir_all(input_dir)
+        .with_context(|| format!("failed to create {}", input_dir.display()))?;
+    let input_dir = fs::canonicalize(input_dir)
+        .with_context(|| format!("failed to resolve {}", input_dir.display()))?;
+    let index = input_dir.join("index.html");
+    let loader = input_dir.join(TRUNK_DEMO_LOADER_FILE_NAME);
     write_loader(&loader)?;
-    fs::write(&index, render_index_html(config)?)
-        .with_context(|| format!("failed to write {}", index.display()))
+    fs::write(&index, render_index_html(config, example_dir, &input_dir)?)
+        .with_context(|| format!("failed to write {}", index.display()))?;
+    Ok(index)
 }
 
 fn write_loader(destination: &Path) -> anyhow::Result<()> {
@@ -408,7 +477,12 @@ mod tests {
             .canvas_id("demo-canvas")
             .build();
 
-        let html = render_index_html(&config).expect("page should render");
+        let html = render_index_html(
+            &config,
+            Path::new("workspace/examples/demo"),
+            Path::new("workspace/target/stayhydated-trunk/demo"),
+        )
+        .expect("page should render");
 
         assert_eq!(
             html,
@@ -427,9 +501,9 @@ mod tests {
                 "      data-wasm-bootstrap-module=\"./bootstrap.js\"\n",
                 "      data-wasm-bootstrap-export=\"run\"\n",
                 "    />\n",
-                "    <link data-trunk rel=\"copy-dir\" href=\"assets\" ",
+                "    <link data-trunk rel=\"copy-dir\" href=\"../../../examples/demo/assets\" ",
                 "data-target-path=\"public/assets\" />\n",
-                "    <link data-trunk rel=\"rust\" ",
+                "    <link data-trunk rel=\"rust\" href=\"../../../examples/demo/Cargo.toml\" ",
                 "data-initializer=\"trunk-loader.js\" />\n",
                 "    <style>\n",
                 "      html,\n",
@@ -463,10 +537,16 @@ mod tests {
             .canvas_id("canvas&one")
             .build();
 
-        let html = render_index_html(&config).expect("page should render");
+        let html = render_index_html(
+            &config,
+            Path::new("workspace/examples/demo&one"),
+            Path::new("workspace/target/stayhydated-trunk/demo"),
+        )
+        .expect("page should render");
 
         assert!(html.contains("<title>&lt;demo&gt; &amp; &quot;page&quot;</title>"));
         assert!(html.contains("data-wasm-demo-name=\"&#39;loader&#39;\""));
+        assert!(html.contains("href=\"../../../examples/demo&amp;one/Cargo.toml\""));
         assert!(html.contains("<canvas id=\"canvas&amp;one\"></canvas>"));
     }
 
@@ -478,8 +558,12 @@ mod tests {
             .bootstrap_export("run")
             .build();
 
-        let error =
-            render_index_html(&config).expect_err("bootstrap export should require a module");
+        let error = render_index_html(
+            &config,
+            Path::new("workspace/examples/demo"),
+            Path::new("workspace/target/stayhydated-trunk/demo"),
+        )
+        .expect_err("bootstrap export should require a module");
 
         assert_eq!(
             error.to_string(),
@@ -510,7 +594,7 @@ mod tests {
     fn write_fake_trunk(path: &Path) {
         write_executable(
             path,
-            "#!/bin/sh\nset -eu\ndist=''\nwhile [ \"$#\" -gt 0 ]; do\n  if [ \"$1\" = '--dist' ]; then shift; dist=\"$1\"; fi\n  shift\ndone\nmkdir -p \"$dist\"\ncp index.html \"$dist/index.html\"\nprintf 'app' > \"$dist/demo.js\"\nprintf 'prefix-demo-marker-suffix' > \"$dist/demo.wasm\"\n",
+            "#!/bin/sh\nset -eu\ntarget=''\ndist=''\nif [ \"$1\" = 'build' ]; then\n  shift\n  target=\"$1\"\n  shift\nfi\nwhile [ \"$#\" -gt 0 ]; do\n  if [ \"$1\" = '--dist' ]; then shift; dist=\"$1\"; fi\n  shift\ndone\ntest -n \"$target\"\nmkdir -p \"$dist\"\ncp \"$target\" \"$dist/index.html\"\nprintf 'app' > \"$dist/demo.js\"\nprintf 'prefix-demo-marker-suffix' > \"$dist/demo.wasm\"\n",
         );
     }
 
@@ -549,8 +633,12 @@ mod tests {
     #[test]
     fn build_materializes_shared_page_inputs_before_running_trunk() {
         let temp = tempfile::tempdir().expect("temporary directory should be created");
-        fs::create_dir_all(temp.path().join("examples/demo"))
-            .expect("example directory should be created");
+        let example_dir = temp.path().join("examples/demo");
+        fs::create_dir_all(&example_dir).expect("example directory should be created");
+        write(
+            &example_dir.join("Cargo.toml"),
+            "[package]\nname = \"demo\"\n",
+        );
         let fake_trunk = temp.path().join("fake-trunk");
         write_fake_trunk(&fake_trunk);
         let page = TrunkDemoPageConfig::builder()
@@ -570,20 +658,52 @@ mod tests {
 
         build(&config).expect("Trunk demo should build");
 
+        let staged_dir = temp.path().join("target/stayhydated-trunk/demo");
+        let example_dir =
+            fs::canonicalize(example_dir).expect("example directory should be resolvable");
+        let staged_dir =
+            fs::canonicalize(staged_dir).expect("staging directory should be resolvable");
+        let expected_index =
+            render_index_html(&page, &example_dir, &staged_dir).expect("page should render");
+        assert!(!example_dir.join("index.html").exists());
+        assert!(!example_dir.join(TRUNK_DEMO_LOADER_FILE_NAME).exists());
         assert_eq!(
-            fs::read_to_string(temp.path().join("examples/demo/index.html"))
+            fs::read_to_string(staged_dir.join("index.html"))
                 .expect("generated index should be readable"),
-            render_index_html(&page).expect("page should render")
+            expected_index
         );
         assert_eq!(
-            fs::read_to_string(temp.path().join("examples/demo/trunk-loader.js"))
+            fs::read_to_string(staged_dir.join(TRUNK_DEMO_LOADER_FILE_NAME))
                 .expect("generated loader should be readable"),
             WASM_DEMO_LOADER_JS
         );
         assert_eq!(
             fs::read_to_string(temp.path().join("web/public/demo/index.html"))
                 .expect("built index should be readable"),
-            render_index_html(&page).expect("page should render")
+            expected_index
+        );
+    }
+
+    #[test]
+    fn generated_page_example_name_must_be_a_path_segment() {
+        let page = TrunkDemoPageConfig::builder()
+            .title("Shared demo")
+            .demo_name("Shared loader")
+            .build();
+        let config = TrunkDemoBuildConfig::builder()
+            .workspace_root("workspace")
+            .example_dir("examples/demo")
+            .output_dir("web/public/demo")
+            .example_name("../demo")
+            .required_marker("demo-marker")
+            .generated_page(page)
+            .build();
+
+        let error = validate_config(&config).expect_err("path traversal should be rejected");
+
+        assert_eq!(
+            error.to_string(),
+            "Trunk generated page example name must be a single path segment"
         );
     }
 
