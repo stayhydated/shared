@@ -1,4 +1,4 @@
-use stayhydated_xtask::trunk::TrunkDemoBuildConfig;
+use stayhydated_xtask::trunk::{TrunkDemoBuildConfig, TrunkDemoPageConfig};
 
 pub fn run() -> anyhow::Result<()> {
     let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
@@ -9,7 +9,13 @@ pub fn run() -> anyhow::Result<()> {
             .output_dir("dummy/web-dummy/public/bevy-demo")
             .example_name("bevy-demo")
             .required_marker("sum-numbers-ai-bevy-demo")
-            .loader_destination("dummy/scripts/trunk-loader.js")
+            .generated_page(
+                TrunkDemoPageConfig::builder()
+                    .title("sum-numbers-ai Bevy UI demo")
+                    .demo_name("Bevy UI")
+                    .canvas_id("bevy-demo")
+                    .build(),
+            )
             .build(),
     )
 }

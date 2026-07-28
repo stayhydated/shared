@@ -41,12 +41,12 @@ Use it to decide:
 - `dummy/bevy-demo`
   Audience: Local validation.
   Role: Bevy UI WebAssembly example with three editable operands for the dummy sum contract.
-  Sync: Trunk input lives beside `src/main.rs`; build output ownership is in `dummy/xtask-dummy/src/commands/build_bevy_demo.rs`, and gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
+  Sync: shared Trunk page inputs and build output ownership are configured in `dummy/xtask-dummy/src/commands/build_bevy_demo.rs`; gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
 
 - `dummy/gpui-demo`
   Audience: Local validation.
   Role: GPUI WebAssembly example using gpui-component inputs for the dummy sum contract.
-  Sync: Trunk input lives beside `src/main.rs`; build output ownership is in `dummy/xtask-dummy/src/commands/build_gpui_demo.rs`, and gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
+  Sync: shared Trunk page inputs and build output ownership are configured in `dummy/xtask-dummy/src/commands/build_gpui_demo.rs`; gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
 
 - `dummy/book-dummy`
   Audience: Documentation fixture.

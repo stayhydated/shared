@@ -1,4 +1,4 @@
-use stayhydated_xtask::trunk::TrunkDemoBuildConfig;
+use stayhydated_xtask::trunk::{TrunkDemoBuildConfig, TrunkDemoPageConfig};
 
 pub fn run() -> anyhow::Result<()> {
     let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
@@ -10,7 +10,12 @@ pub fn run() -> anyhow::Result<()> {
             .example_name("gpui-demo")
             .required_marker("sum-numbers-ai-gpui-demo")
             .toolchain("nightly")
-            .loader_destination("dummy/scripts/trunk-loader.js")
+            .generated_page(
+                TrunkDemoPageConfig::builder()
+                    .title("sum-numbers-ai GPUI demo")
+                    .demo_name("GPUI + gpui-component")
+                    .build(),
+            )
             .build(),
     )
 }

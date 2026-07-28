@@ -429,6 +429,40 @@ cargo xtask build web
 Use `stayhydated_xtask::book`, `llms`, and `trunk` helpers rather than copying
 their implementation into the consumer.
 
+For a standard fullscreen Trunk demo, let the shared helper materialize both
+the source `index.html` and its adjacent `trunk-loader.js`:
+
+```rust
+use stayhydated_xtask::trunk::{
+    TrunkDemoBuildConfig, TrunkDemoCopyDir, TrunkDemoPageConfig,
+};
+
+stayhydated_xtask::trunk::build(
+    &TrunkDemoBuildConfig::builder()
+        .workspace_root(&workspace_root)
+        .example_dir("examples/bevy")
+        .output_dir("web/public/bevy-demo")
+        .example_name("bevy-demo")
+        .required_marker("my-project-bevy-demo")
+        .generated_page(
+            TrunkDemoPageConfig::builder()
+                .title("my-project Bevy demo")
+                .demo_name("Bevy")
+                .copy_dirs(vec![TrunkDemoCopyDir::new("assets", "assets")])
+                .canvas_id("bevy-demo")
+                .build(),
+        )
+        .build(),
+)
+```
+
+The generated page keeps loader configuration on persistent
+`data-wasm-demo-config` metadata. Add `.bootstrap_module(...)` and
+`.bootstrap_export(...)` when the demo has an explicit JavaScript bootstrap.
+Treat the materialized `index.html` and `trunk-loader.js` as generated inputs
+and ignore them in the consumer worktree.
+Keep a consumer-owned index for markup outside this standard fullscreen shape.
+
 ## Static preview
 
 Keep the live development server, full publication build, and assembled static
