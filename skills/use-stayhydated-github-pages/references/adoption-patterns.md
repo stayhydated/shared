@@ -431,23 +431,58 @@ their implementation into the consumer.
 
 ## Static preview
 
-Do not introduce non-Cargo package manifests, package-manager commands, or
-JavaScript or TypeScript tooling solely to preview the Pages artifact. Preserve
-an existing non-JavaScript static preview when the consumer owns one:
+Keep the live development server, full publication build, and assembled static
+preview as distinct root `justfile` recipes:
 
 ```just
+web-build:
+    cargo xtask build book
+    cargo xtask build llms-txt
+    cargo xtask build web
+
+web: web-build
+    dx serve --package web
+
 web-preview: web-build
     cargo xtask preview web
 ```
 
-Use that recipe only when the consumer's Rust tooling already implements it.
-Otherwise build `web/dist`, run the consumer audit with `--dist`, and inspect
-the required outputs directly. Do not add a second language toolchain just for
-local preview.
+Keep `web-build` dedicated even when it depends on a demo recipe:
 
-When a suitable preview exists, exercise the assembled artifact rather than
-only `dx serve`, because direct navigation, fallback files, copied books/demos,
-and the repository base path are Pages contracts.
+```just
+gpui-demo-build:
+    cargo xtask build gpui-demo
+
+web-build: gpui-demo-build
+    cargo xtask build book
+    cargo xtask build llms-txt
+    cargo xtask build web
+```
+
+Add a `PreviewCommand::Web` xtask target and route it through the shared helper:
+
+```rust
+use stayhydated_xtask::preview::StaticSitePreviewConfig;
+
+pub fn run() -> anyhow::Result<()> {
+    let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
+    stayhydated_xtask::preview::serve(
+        &StaticSitePreviewConfig::builder()
+            .workspace_root(&workspace_root)
+            .dist_dir("web/dist")
+            .base_path("my-project")
+            .build_hint("Run `just web-build` first.")
+            .build(),
+    )
+}
+```
+
+Do not add consumer-owned non-Cargo package manifests, package-manager
+commands, or JavaScript or TypeScript tool configuration for this workflow.
+
+Exercise the assembled artifact through `web-preview` rather than only
+`dx serve`, because direct navigation, fallback files, copied books/demos, and
+the repository base path are Pages contracts.
 
 ## Deployment workflow
 
@@ -542,6 +577,7 @@ just clippy
 just test
 cargo test -p web --lib --no-default-features --locked
 just web-build
+cargo xtask preview web --help
 python3 <shared-checkout>/skills/use-stayhydated-github-pages/scripts/audit_consumer.py \
   . \
   --dist \
@@ -563,8 +599,6 @@ Inspect `web/dist` for:
 - `sitemap.xml` with the canonical project URL;
 - requested `book/`, `llms.txt`, `llms-full.txt`, `llms/`, and demo outputs.
 
-When the consumer owns a non-JavaScript static preview, exercise the root and
-at least one nested route mounted at `/<project-slug>/`. Confirm
-`/<project-slug>-other/` returns `404` instead of entering the site. Otherwise
-rely on the `--dist` audit plus direct inspection of the generated route
-fallbacks and `404.html`.
+Exercise the root and at least one nested route through `web-preview`, mounted
+at `/<project-slug>/`. Confirm `/<project-slug>-other/` returns `404` instead
+of entering the site.

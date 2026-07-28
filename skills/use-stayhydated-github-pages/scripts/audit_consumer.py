@@ -251,6 +251,49 @@ def check_tracked_inputs(root: Path, project_style_input: Path) -> None:
         )
 
 
+def just_recipe(justfile: str, name: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    header_match = re.search(rf"(?m)^{re.escape(name)}:([^\n]*)\n", justfile)
+    if header_match is None:
+        raise AuditError(f"justfile must define a {name} recipe")
+
+    dependencies = tuple(header_match.group(1).split())
+    body = []
+    for line in justfile[header_match.end() :].splitlines():
+        if not line.strip():
+            continue
+        if line[0].isspace():
+            body.append(line.strip())
+            continue
+        break
+    return dependencies, tuple(body)
+
+
+def check_justfile(root: Path) -> None:
+    try:
+        justfile = (root / "justfile").read_text(encoding="utf-8")
+    except OSError as error:
+        raise AuditError(f"failed to read {root / 'justfile'}: {error}") from error
+
+    _, web_build_body = just_recipe(justfile, "web-build")
+    if "cargo xtask build web" not in web_build_body:
+        raise AuditError("justfile web-build must run `cargo xtask build web`")
+
+    web_dependencies, web_body = just_recipe(justfile, "web")
+    if web_dependencies != ("web-build",) or web_body != ("dx serve --package web",):
+        raise AuditError(
+            "justfile web must depend on web-build and run `dx serve --package web`"
+        )
+
+    preview_dependencies, preview_body = just_recipe(justfile, "web-preview")
+    if preview_dependencies != ("web-build",) or preview_body != (
+        "cargo xtask preview web",
+    ):
+        raise AuditError(
+            "justfile web-preview must depend on web-build and run "
+            "`cargo xtask preview web`"
+        )
+
+
 def parse_site_url(value: str, slug: str) -> ParseResult:
     site_url = urlparse(value)
     if site_url.scheme.lower() != "https" or not site_url.netloc:
@@ -324,6 +367,7 @@ def main() -> int:
         revision = workspace_shared_revision(root, cargo)
         slug = project_slug(root, cargo)
         check_tracked_inputs(root, args.project_style_input)
+        check_justfile(root)
         if args.dist:
             if args.site_url is None:
                 raise AuditError("--site-url is required with --dist")

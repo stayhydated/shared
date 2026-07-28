@@ -64,14 +64,20 @@ site.
    - write the sitemap;
    - keep the default public-assets pipeline when it fits;
    - use explicit assets and demo inputs when the consumer already owns them.
-7. Preserve the consumer's preview and deployment topology unless the task
-   explicitly requests a migration:
-   - do not introduce non-Cargo package manifests, package-manager commands,
-     or JavaScript or TypeScript tooling solely for the Pages site;
-   - use an existing non-JavaScript static preview when available, otherwise
-     validate the assembled artifact through the consumer audit;
+7. Expose the Pages workflow through three root `justfile` recipes:
+   - keep a dedicated `web-build` recipe that assembles every consumer-owned
+     prerequisite and finishes with `cargo xtask build web`;
+   - make `web: web-build` run `dx serve --package web`;
+   - make `web-preview: web-build` run `cargo xtask preview web`;
+   - wire the xtask preview command to the shared static preview helper with the
+     consumer's `web/dist` directory and project base path.
+8. Preserve the consumer's deployment topology unless the task explicitly
+   requests a migration:
+   - do not introduce consumer-owned non-Cargo package manifests,
+     package-manager commands, or JavaScript or TypeScript tool configuration
+     solely for the Pages site;
    - install Trunk and nightly only for browser demos that need them.
-8. Build and inspect the actual `web/dist` artifact under the project base path
+9. Build and inspect the actual `web/dist` artifact under the project base path
    before calling the site work complete.
 
 ## Ownership rules
