@@ -1,60 +1,48 @@
-# Product Positioning
+# Product fit
 
-`sum-numbers-ai-dummy` is positioned as a managed AI integration for focused
-addition workflows.
+`sum-numbers-ai` helps teams review the shape and presentation of an auditable
+AI integration without requiring a live provider. It is best suited to contract,
+documentation, and cross-client evaluations; its local evidence is not a
+substitute for production-provider testing.
 
-The product story is direct: a well-designed AI service should make provider
-routing, verification, documentation, and operational evidence easy to inspect.
+## Intended reviewers
 
-## Audience
+- Product leads can test whether the addition workflow and its evidence are
+  understandable.
+- Platform and API reviewers can inspect route fields, response metadata, trace
+  ordering, and local verification.
+- Documentation owners can compare the book's examples with the public Rust
+  types and generated outputs.
+- Client owners can confirm that Dioxus, terminal, Bevy UI, and GPUI surfaces
+  call one Rust boundary.
 
-The primary audience is a reviewer who cares about the shape around an AI
-feature:
+## Evidence and limits
 
-- Product leads evaluating whether the user-facing promise is specific.
-- Platform engineers checking provider routing and operational evidence.
-- Documentation owners checking that examples match implementation behavior.
-- Client owners validating that multiple surfaces use one contract.
+| Review concern | Evidence in this target | What the evidence means |
+| --- | --- | --- |
+| Request contract | Ordered `i64` operands plus endpoint and model strings | Callers can inspect the intended route alongside the workload. |
+| Result correctness | Local `i128` accumulation and a matching result string | `verified: true` confirms local consistency only. |
+| Operational visibility | Synthetic latency, token counts, and five trace events | Reviewers can assess field naming and presentation, not live operations. |
+| Client parity | Four clients use `sum_with_request` | The same `8`, `13`, and `21` inputs produce `42` across frameworks. |
+| Generated documentation | mdBook, llms files, sitemap, and static site | Reviewers can compare outputs produced from one source tree. |
 
-## Value Proposition
+The configured endpoint uses the reserved `.invalid` domain, and the crate never
+opens a network connection. Authentication, retries, timeouts, provider errors,
+and real cost or performance data require separate integration evidence.
 
-### Clear contract
+## Decision criteria
 
-The request accepts an ordered list of integers and a provider route. The
-response returns the answer, the model-facing result, provider metadata, and
-trace events as separate fields.
+This target is a fit when the decision is about:
 
-### Transparent delegation
+- the clarity of a Rust request and response contract;
+- the visibility of provider-routing fields and audit events;
+- deterministic demonstrations across multiple UI frameworks; or
+- alignment between product prose, API examples, and generated documentation.
 
-The provider route is visible. Endpoint, model, latency, prompt tokens,
-completion tokens, and trace codes all remain part of the response story.
+Use a provider-backed prototype when the decision depends on network behavior,
+credentials, model quality, service limits, fallback policy, or observed
+latency and token usage.
 
-### Deterministic verification
-
-The crate computes the answer locally with `i128` accumulation. The provider
-result is returned beside a `verified` flag so clients can show the AI boundary
-without depending on an external service.
-
-### Professional documentation target
-
-The focused workload supports fast review, while the site and book still
-exercise real documentation concerns: positioning, API examples, client surfaces,
-generated book output, llms text, route metadata, and static web output.
-
-## Message Framework
-
-| Question | Answer |
-| --- | --- |
-| What is it? | A Rust API and product site for an AI-assisted sum workflow. |
-| Why does it exist? | To make AI API integration discipline visible without domain noise. |
-| What should reviewers inspect? | Request shape, response envelope, trace data, verification, and client parity. |
-| What makes it credible? | The clients call the real local crate and render the response fields directly. |
-
-## Success Criteria
-
-A professional presentation of this product succeeds when a reader can answer
-three questions quickly:
-
-1. What does a caller send?
-2. What evidence comes back?
-3. Which generated docs and client surfaces prove the same contract?
+An evaluation is successful when reviewers can identify what a caller sends,
+which fields come back, which values are synthetic, and whether all four clients
+show the same result.

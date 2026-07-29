@@ -1,110 +1,84 @@
-# Operating Model
+# Evaluate and operate the demos
 
-The operating model is designed to make the AI boundary visible enough for
-product review, implementation review, and generated-output validation.
+Build and preview the repository's static site to compare the four clients
+against the same Rust request. A successful review shows `42` and
+`verified true` for the operands `8`, `13`, and `21`.
 
-## Request Lifecycle
+## Prerequisites
 
-1. Accept an ordered list of integer operands from the client.
-2. Build a `SumRequest` with the selected endpoint and model.
-3. Generate a deterministic request identifier from operands, endpoint, and
-   model.
-4. Record provider-style trace events through `tracing` and the response trace
-   vector.
-5. Accumulate the answer locally with `i128`.
-6. Return provider metadata, the model-style result, verification status, and
-   trace evidence.
+Run the commands in this chapter from the `shared` repository root. The complete
+site build requires:
 
-## Evidence Model
+- a Rust toolchain compatible with the workspace's Rust `1.96` requirement;
+- the `wasm32-unknown-unknown` target for stable Rust;
+- nightly Rust with the `wasm32-unknown-unknown` target for the GPUI demo;
+- `just`, Trunk, and the Dioxus CLI (`dx`) on `PATH`; and
+- Bun to run the local preview server.
 
-Every successful response carries three evidence layers:
+The mdBook-only build uses the repository's Rust wrapper and does not require a
+separate `mdbook` executable.
 
-- `provider`: endpoint, model, latency, prompt tokens, and completion tokens.
-- `trace`: ordered events for endpoint resolution, transport, prompt contract,
-  model dispatch, and verification.
-- `verified`: a boolean summary that the provider-style result matched the local
-  guardrail.
+## Build the documentation only
 
-Those fields support the managed AI workflow presentation while keeping the
-runtime deterministic.
+Run:
 
-## Provider Policy
-
-The default provider route is explicit:
-
-```text
-endpoint: https://api.sum-numbers-ai.invalid/v1/responses
-model: sum-numbers-ai/addition-router-2026-07
+```console
+cargo run -p xtask-dummy -- build book
 ```
 
-The local implementation uses stable provider-style metadata so reviewers can
-discuss model routing, timeout budgets, token costs, and fallback policy without
-calling a network service.
+The command succeeds when it prints `mdBook built successfully` and writes
+`dummy/web-dummy/public/book/index.html`.
 
-## Client Surfaces
+## Build and preview the complete site
 
-### Dioxus console
+1. Build the Bevy UI demo, GPUI demo, mdBook, llms outputs, and Dioxus static
+   site:
 
-The Dioxus page owns up to three editable operands, validates each input, and
-renders three review panels:
+   ```console
+   just dummy web-build
+   ```
 
-- Request facade
-- Verified response envelope
-- Provider evidence trail
+2. Start the preview server without rebuilding:
 
-### Terminal CLI
+   ```console
+   cargo run -p xtask-dummy -- preview web
+   ```
 
-The Ratzilla terminal starts with starter commands and routes input through a
-`clap` parser. Operators can run either form:
+3. Open the URL printed by the command. The default is
+   `http://127.0.0.1:8081/sum-numbers-ai/`; if port `8081` is busy, the server
+   selects the next available port.
 
-```text
-[1,2,3]
-sum [4, 5, 6]
-```
+`just dummy web-preview` combines the complete build and preview steps.
 
-The terminal returns the same request identity, sum, verification status, model,
-latency, and trace lines as the web console.
+## Compare the client surfaces
 
-The terminal parser accepts no more than three operands so its interactive
-contract stays aligned with every visual demo.
+| Client | Review action | Success signal |
+| --- | --- | --- |
+| Dioxus | Change, remove, or restore up to three operands | Request, response, and trace panels update together |
+| Terminal | Enter `[8,13,21]`, `sum [8,13,21]`, or `run [8,13,21]` | Output includes request ID, operands, sum, verification, model, latency, and five trace lines |
+| Bevy UI | Edit any of the three operand fields | Total recomputes after all fields parse as `i64` |
+| GPUI + gpui-component | Edit the three fields, then use the reset button | Total recomputes and reset restores `8 + 13 + 21` |
 
-### Bevy UI
+The visual clients expose at most three operands and no reordering controls.
+The Rust crate itself accepts longer workloads, as described in the
+[Rust API contract](api-contract.md#public-helpers-and-constants).
 
-The Bevy WebAssembly example uses Bevy's UI text editing components for three
-operand fields. It updates the verified total through the same
-`sum-numbers-ai-dummy` request boundary as the Dioxus and terminal clients.
+## Generated outputs
 
-### GPUI + gpui-component
+| Command target | Output |
+| --- | --- |
+| `build bevy-demo` | `dummy/web-dummy/public/bevy-demo` |
+| `build gpui-demo` | `dummy/web-dummy/public/gpui-demo` |
+| `build book` | `dummy/web-dummy/public/book` |
+| `build llms-txt` | `public/llms.txt`, `public/llms-full.txt`, and the `public/llms` Markdown mirror under `dummy/web-dummy` |
+| `build web` | Complete static site in `dummy/web-dummy/dist`, including copied generated outputs, route fallbacks, `404.html`, and `sitemap.xml` |
 
-The GPUI WebAssembly example renders three `gpui-component` inputs and a reset
-button. Input changes immediately recompute the verified total through the
-shared Rust request boundary.
+## Troubleshoot the local build
 
-## Generated Outputs
-
-`xtask-dummy` owns the generated project artifacts:
-
-- `cargo run -p xtask-dummy -- build bevy-demo` writes the Bevy UI WebAssembly
-  example into `dummy/web-dummy/public/bevy-demo`.
-- `cargo run -p xtask-dummy -- build book` writes the mdBook output into
-  `dummy/web-dummy/public/book`.
-- `cargo run -p xtask-dummy -- build gpui-demo` writes the GPUI WebAssembly
-  example into `dummy/web-dummy/public/gpui-demo`.
-- `cargo run -p xtask-dummy -- build llms-txt` writes the llms text output into
-  `dummy/web-dummy/public/llms.txt`.
-- `cargo run -p xtask-dummy -- build web` writes the static Dioxus site into
-  `dummy/web-dummy/dist`.
-
-The `just dummy web-build` recipe runs all three steps in order. The preview
-script serves `dummy/web-dummy/dist` under the `/sum-numbers-ai/` base path
-configured by the dummy web application.
-
-## Review Checklist
-
-Use this checklist when changing the product story:
-
-1. The home page pitch explains the focused addition workflow.
-2. The book examples name the same fields returned by `SumResponse`.
-3. All four demo clients call `sum-numbers-ai-dummy` directly and expose no
-   more than three operands.
-4. The generated book, llms text, sitemap, and static site remain aligned.
+| Symptom | Action |
+| --- | --- |
+| The Bevy or GPUI build cannot start `trunk` | Install Trunk and confirm `trunk --version` succeeds |
+| The GPUI build reports a missing toolchain or target | Install nightly Rust and add its `wasm32-unknown-unknown` target |
+| The web build cannot start `dx` | Install the Dioxus CLI and confirm `dx --version` succeeds |
+| The preview cannot start `bun` | Install Bun and confirm `bun --version` succeeds |
+| A demo reports invalid input | Restore one to three `i64` values in Dioxus or terminal, or all three fields in Bevy UI or GPUI |

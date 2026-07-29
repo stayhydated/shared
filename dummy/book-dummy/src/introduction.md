@@ -1,38 +1,36 @@
-# Executive Brief
+# Overview
 
-`sum-numbers-ai-dummy` packages integer addition as a managed AI workflow with a
-clear request contract, provider metadata, verified responses, and generated
-documentation.
+`sum-numbers-ai` is a deterministic evaluation target for an auditable
+AI-style addition API. Its Rust crate accepts ordered `i64` operands and returns
+an `i128` total together with a request ID, route metadata, verification status,
+and trace events.
 
-The product surface is designed around operational clarity. A caller submits an
-ordered integer workload, the service records the provider route, and the
-response returns the answer beside verification and trace evidence.
+All calculation, verification, and provider-style evidence is generated locally.
+The examples do not contact the configured endpoint or invoke an AI model. Use
+them to review a contract and its presentation across clients, not to measure
+provider availability, latency, token use, or model accuracy.
 
-## What the crate provides
+## What you can evaluate
 
-The crate computes the sum locally and returns provider-style metadata. That
-keeps every demo deterministic while exercising the shape of an AI-backed API:
+- The `sum-numbers-ai-dummy` crate provides the executable Rust contract.
+- The Dioxus console displays an illustrative request, response, and trace.
+- The Ratzilla terminal accepts JSON-style integer lists through a `clap`
+  command parser.
+- The Bevy UI and GPUI browser demos recompute the same Rust sum from three
+  fields.
+- The build produces the mdBook, an llms text set, a sitemap, and the static demo
+  site from the same repository state.
 
-- A caller creates a `SumRequest` from an ordered list of `i64` operands.
-- The request carries the endpoint and model that would identify the provider
-  route.
-- `sum_with_request` returns a `SumResponse` with the numeric answer, provider
-  metadata, verification status, and trace events.
-- The Dioxus, terminal, Bevy UI, and GPUI clients call the same library boundary.
-- The mdBook, llms output, sitemap, and static web build all document the same
-  current behavior.
+When reviewers use the operands `8`, `13`, and `21`, every client reports a
+total of `42` and a successful local verification.
 
-## Why the product is focused
+## Choose your path
 
-An addition-focused AI workflow gives reviewers a compact surface for evaluating
-the parts of the product that matter operationally:
-
-- Product reviewers can evaluate the value proposition without learning a
-  domain model.
-- API reviewers can see the full contract in one page.
-- Documentation reviewers can compare examples against the actual Rust types.
-- Demo reviewers can verify that all four clients agree on the same three-input
-  workload.
-
-The focused workload keeps the contract easy to inspect while preserving the
-same evidence model expected from a larger AI-backed service.
+- Buyers and product reviewers can use [Product fit](positioning.md) to
+  understand what this target does and what it cannot prove.
+- Rust callers and API reviewers can use the
+  [Rust API contract](api-contract.md) for defaults, fields, examples, and input
+  boundaries.
+- Demo reviewers can use
+  [Evaluate and operate the demos](operating-model.md) to build the site and
+  compare all four clients.
