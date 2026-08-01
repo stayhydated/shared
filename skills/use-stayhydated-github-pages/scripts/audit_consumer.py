@@ -184,6 +184,10 @@ def project_slug(root: Path, cargo: Table) -> str:
 
     configured_names = (application_name, base_path)
     normalized = [name.strip().strip("/") for name in configured_names]
+    if any(not name for name in normalized):
+        raise AuditError(
+            "Dioxus application name and base_path must use a non-empty project slug"
+        )
     if len(set(normalized)) != 1:
         raise AuditError(
             "Dioxus application name and base_path must use one project slug"
