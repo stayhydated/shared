@@ -149,6 +149,26 @@ fn renders_shader_demo_card_for_external_destination() {
 }
 
 #[test]
+fn renders_shared_demo_gallery_layout_and_offsets() {
+    let html = render(rsx! {
+        DemoGallery::<TestRoute> {
+            columns: DemoGalleryColumns::Three,
+            items: vec![
+                DemoGalleryItem::route(TestRoute::Demos {}, "Internal", "internal-shader"),
+                DemoGalleryItem::href("/external/", "External", "external-shader"),
+            ],
+        }
+    });
+
+    assert!(html.contains("demo-page demo-gallery"));
+    assert!(html.contains("columns-3"));
+    assert!(html.contains("demo-card-accent-red"));
+    assert!(html.contains("demo-card-accent-cyan"));
+    assert!(html.contains("id=\"internal-shader\""));
+    assert!(html.contains("id=\"external-shader\""));
+}
+
+#[test]
 fn renders_tab_and_select_primitives() {
     let html = render(rsx! { PrimitiveApp {} });
 

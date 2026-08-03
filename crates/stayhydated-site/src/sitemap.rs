@@ -1,25 +1,6 @@
 use std::fmt::Write as _;
 
-use crate::routing::{Href, SiteUrl};
-
-pub const PROJECT_STATIC_PATHS: [&str; 3] = ["/book/", "/llms.txt", "/llms-full.txt"];
-
-pub fn project_static_paths() -> impl Iterator<Item = Href> {
-    PROJECT_STATIC_PATHS.into_iter().map(Href::new)
-}
-
-pub fn render_project<I, P>(site_url: &SiteUrl, route_paths: I) -> String
-where
-    I: IntoIterator<Item = P>,
-    P: AsRef<str>,
-{
-    let paths = route_paths
-        .into_iter()
-        .map(|path| Href::new(path.as_ref()))
-        .chain(project_static_paths());
-
-    render(site_url, paths)
-}
+use crate::routing::SiteUrl;
 
 pub fn render<I, P>(site_url: &SiteUrl, paths: I) -> String
 where
@@ -64,14 +45,5 @@ mod tests {
         assert!(sitemap.contains("<loc>https://example.test/project/</loc>"));
         assert!(sitemap.contains("<loc>https://example.test/project/demos/</loc>"));
         assert!(sitemap.contains("<loc>https://example.test/project/llms.txt</loc>"));
-    }
-
-    #[test]
-    fn project_sitemap_includes_standard_static_outputs() {
-        let sitemap = render_project(&SiteUrl::new("https://example.test/project"), ["/"]);
-
-        assert!(sitemap.contains("<loc>https://example.test/project/book/</loc>"));
-        assert!(sitemap.contains("<loc>https://example.test/project/llms.txt</loc>"));
-        assert!(sitemap.contains("<loc>https://example.test/project/llms-full.txt</loc>"));
     }
 }

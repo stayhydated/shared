@@ -19,19 +19,13 @@ SHARED_PACKAGES = (
     "stayhydated-site",
     "stayhydated-xtask",
 )
-SHARED_DEVELOPMENT_INPUTS = (
-    "web/public/.nojekyll",
-    "web/public/dx-components-theme.css",
-)
-DEFAULT_PROJECT_STYLE_INPUT = Path("web/public/assets/site.css")
 REQUIRED_DIST_FILES = (
     ".nojekyll",
     "404.html",
-    "assets/site.css",
-    "dx-components-theme.css",
     "index.html",
     "sitemap.xml",
 )
+REMOVED_THEME_PATH = Path("web/public/dx-components-theme.css")
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -51,10 +45,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--project-style-input",
-        default=DEFAULT_PROJECT_STYLE_INPUT,
         type=Path,
         help=(
-            "Consumer-relative tracked stylesheet source copied to "
+            "Optional consumer-relative tracked stylesheet source expected at "
             "web/dist/assets/site.css."
         ),
     )
@@ -64,6 +57,10 @@ def parse_args() -> argparse.Namespace:
             "Canonical project URL, required with --dist "
             "(for example, https://example.github.io/project/)."
         ),
+    )
+    parser.add_argument(
+        "--expected-shared-revision",
+        help="Full shared SHA that every pinned dependency must resolve to.",
     )
     return parser.parse_args()
 
@@ -227,10 +224,19 @@ def consumer_relative_path(path: Path, option: str) -> str:
     return path.as_posix()
 
 
-def check_tracked_inputs(root: Path, project_style_input: Path) -> None:
-    tracked_inputs = (
-        *SHARED_DEVELOPMENT_INPUTS,
-        consumer_relative_path(project_style_input, "--project-style-input"),
+def check_tracked_style(root: Path, project_style_input: Path | None) -> None:
+    if project_style_input is None:
+        default_style = root / "web" / "public" / "assets" / "site.css"
+        if default_style.exists():
+            raise AuditError(
+                "web/public/assets/site.css exists; pass --project-style-input "
+                "when it contains project-specific CSS or remove it"
+            )
+        return
+
+    tracked_input = consumer_relative_path(
+        project_style_input,
+        "--project-style-input",
     )
     try:
         result = subprocess.run(
@@ -240,7 +246,7 @@ def check_tracked_inputs(root: Path, project_style_input: Path) -> None:
                 str(root),
                 "ls-files",
                 "--error-unmatch",
-                *tracked_inputs,
+                tracked_input,
             ],
             capture_output=True,
             check=False,
@@ -249,10 +255,83 @@ def check_tracked_inputs(root: Path, project_style_input: Path) -> None:
     except OSError as error:
         raise AuditError(f"failed to inspect tracked inputs: {error}") from error
     if result.returncode != 0:
-        raise AuditError(
-            "tracked local-development inputs are incomplete: "
-            + ", ".join(tracked_inputs)
+        raise AuditError(f"project stylesheet is not tracked: {tracked_input}")
+
+
+def dependency_features(dependency: object, context: str) -> tuple[str, ...]:
+    table = as_table(dependency, context)
+    value = table.get("features", [])
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise AuditError(f"{context}.features must be an array of strings")
+    return tuple(cast(list[str], value))
+
+
+def check_web_source_contract(root: Path) -> None:
+    web_cargo = read_toml(root / "web" / "Cargo.toml")
+    if "features" in web_cargo:
+        raise AuditError("web/Cargo.toml must not define a feature matrix")
+
+    dependencies = require_table(web_cargo, "dependencies", "web/Cargo.toml")
+    dioxus_features = dependency_features(
+        dependencies.get("dioxus"),
+        "web/Cargo.toml.dependencies.dioxus",
+    )
+    if "web" not in dioxus_features:
+        raise AuditError("web/Cargo.toml must enable the Dioxus `web` feature")
+    if "ssr" in dioxus_features:
+        raise AuditError("web/Cargo.toml must not enable Dioxus SSR")
+
+    dev_dependencies = optional_table(
+        web_cargo,
+        "dev-dependencies",
+        "web/Cargo.toml",
+    )
+    if dev_dependencies is not None and "dioxus" in dev_dependencies:
+        dev_features = dependency_features(
+            dev_dependencies["dioxus"],
+            "web/Cargo.toml.dev-dependencies.dioxus",
         )
+        if "ssr" in dev_features:
+            raise AuditError("web tests must not enable Dioxus SSR")
+
+    try:
+        main_source = (root / "web" / "src" / "main.rs").read_text(encoding="utf-8")
+        library_source = (root / "web" / "src" / "lib.rs").read_text(encoding="utf-8")
+        build_source = (
+            root / "xtask" / "src" / "commands" / "build_web.rs"
+        ).read_text(encoding="utf-8")
+    except OSError as error:
+        raise AuditError(f"failed to read web source contract: {error}") from error
+
+    if "cfg(feature" in main_source or "SiteApp" in main_source:
+        raise AuditError("web/src/main.rs must use the unconditional launch API")
+    if "stayhydated_site::launch(" not in main_source:
+        raise AuditError("web/src/main.rs must call stayhydated_site::launch")
+    if "route_manifest" not in library_source:
+        raise AuditError("web/src/lib.rs must export a route manifest")
+    if "route_manifest(web::route_manifest())" not in build_source:
+        raise AuditError("xtask build_web must pass the web route manifest")
+    for removed in ("route_fallback_paths(", "sitemap_xml("):
+        if removed in build_source:
+            raise AuditError(f"xtask build_web still uses removed API {removed}")
+
+    if (root / REMOVED_THEME_PATH).exists():
+        raise AuditError(f"remove bundled theme copy {REMOVED_THEME_PATH}")
+
+
+def check_workflows(root: Path) -> None:
+    try:
+        pages = (root / ".github/workflows/gh-pages.yml").read_text(encoding="utf-8")
+        revisions = (
+            root / ".github/workflows/update-shared-revisions.yml"
+        ).read_text(encoding="utf-8")
+    except OSError as error:
+        raise AuditError(f"failed to read shared workflows: {error}") from error
+
+    if "stayhydated/shared/.github/workflows/deploy-pages.yml@" not in pages:
+        raise AuditError("gh-pages workflow must call the shared Pages workflow")
+    if "stayhydated/shared/.github/workflows/update-shared-revisions.yml@" not in revisions:
+        raise AuditError("shared revision workflow must call the reusable updater")
 
 
 def just_recipe(justfile: str, name: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -313,12 +392,27 @@ def parse_site_url(value: str, slug: str) -> ParseResult:
     return site_url
 
 
-def check_dist(root: Path, slug: str, canonical_site_url: str) -> None:
+def check_dist(
+    root: Path,
+    slug: str,
+    canonical_site_url: str,
+    project_style_input: Path | None,
+) -> None:
     site_url = parse_site_url(canonical_site_url, slug)
     dist = root / "web" / "dist"
     for relative in REQUIRED_DIST_FILES:
         if not (dist / relative).is_file():
             raise AuditError(f"missing assembled output web/dist/{relative}")
+    project_style = dist / "assets/site.css"
+    if project_style_input is not None and not project_style.is_file():
+        raise AuditError("missing assembled project stylesheet web/dist/assets/site.css")
+    if project_style_input is None and project_style.exists():
+        raise AuditError("unexpected assembled project stylesheet web/dist/assets/site.css")
+    if (dist / "dx-components-theme.css").exists():
+        raise AuditError("web/dist must not contain a copied component theme")
+    bundled_themes = tuple((dist / "assets").glob("dx-components-theme*.css"))
+    if not any(path.is_file() for path in bundled_themes):
+        raise AuditError("missing bundled Dioxus component theme under web/dist/assets")
 
     try:
         sitemap_root = ET.parse(dist / "sitemap.xml").getroot()
@@ -369,13 +463,25 @@ def main() -> int:
     try:
         cargo = read_toml(root / "Cargo.toml")
         revision = workspace_shared_revision(root, cargo)
+        if args.expected_shared_revision is not None:
+            if not FULL_SHA.fullmatch(args.expected_shared_revision):
+                raise AuditError(
+                    "--expected-shared-revision must be a full 40-character SHA"
+                )
+            if revision != args.expected_shared_revision:
+                raise AuditError(
+                    f"shared revision is {revision}, expected "
+                    f"{args.expected_shared_revision}"
+                )
         slug = project_slug(root, cargo)
-        check_tracked_inputs(root, args.project_style_input)
+        check_tracked_style(root, args.project_style_input)
+        check_web_source_contract(root)
+        check_workflows(root)
         check_justfile(root)
         if args.dist:
             if args.site_url is None:
                 raise AuditError("--site-url is required with --dist")
-            check_dist(root, slug, args.site_url)
+            check_dist(root, slug, args.site_url, args.project_style_input)
     except AuditError as error:
         print(f"consumer audit failed: {error}", file=sys.stderr)
         return 1

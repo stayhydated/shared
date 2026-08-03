@@ -2,42 +2,29 @@ use std::marker::PhantomData;
 
 use dioxus::{document, prelude::*};
 use stayhydated_dioxus_core::{Href, SharedStyles};
-
-pub fn stayhydated_asset_href(base_href: impl AsRef<str>, asset_path: impl AsRef<str>) -> String {
-    let base_href = base_href.as_ref();
-    let asset_path = asset_path.as_ref().trim_start_matches('/');
-
-    if base_href.is_empty() {
-        asset_path.to_string()
-    } else {
-        let base_href = base_href.trim_end_matches('/');
-        if base_href.is_empty() {
-            return format!("/{asset_path}");
-        }
-        format!("{base_href}/{asset_path}")
-    }
-}
+use stayhydated_site::routing::{asset_href, dioxus_base_href};
 
 #[component]
-pub fn StayhydatedDocumentAssets(
-    #[props(into)] base_href: Href,
-    #[props(default = Href::new("assets/site.css"), into)] site_stylesheet_path: Href,
-    #[props(default = Href::new("dx-components-theme.css"), into)] components_theme_path: Href,
-) -> Element {
-    let stylesheet_href = stayhydated_asset_href(&base_href, &site_stylesheet_path);
-    let components_theme_href = stayhydated_asset_href(&base_href, &components_theme_path);
+pub fn StayhydatedDocumentAssets(#[props(default)] site_stylesheet_path: Option<Href>) -> Element {
+    let base_href = dioxus_base_href();
+    let stylesheet_href =
+        site_stylesheet_path.map(|path| asset_href(&base_href, path).into_string());
 
     rsx! {
         SharedStyles {}
-        document::Stylesheet { href: stylesheet_href }
-        document::Stylesheet { href: components_theme_href }
+        if let Some(stylesheet_href) = stylesheet_href {
+            document::Stylesheet { href: stylesheet_href }
+        }
     }
 }
 
 #[component]
-pub fn StayhydatedDioxusApp(#[props(into)] base_href: Href, children: Element) -> Element {
+pub fn StayhydatedDioxusApp(
+    #[props(default)] site_stylesheet_path: Option<Href>,
+    children: Element,
+) -> Element {
     rsx! {
-        StayhydatedDocumentAssets { base_href }
+        StayhydatedDocumentAssets { site_stylesheet_path }
         {children}
     }
 }
@@ -47,8 +34,8 @@ pub struct StayhydatedRouterAppProps<R>
 where
     R: Routable + Clone + PartialEq + 'static,
 {
-    #[props(into)]
-    pub base_href: Href,
+    #[props(default)]
+    pub site_stylesheet_path: Option<Href>,
     #[props(default)]
     route: PhantomData<R>,
 }
@@ -59,45 +46,8 @@ where
     R: Routable + Clone + PartialEq + 'static,
 {
     rsx! {
-        StayhydatedDioxusApp { base_href: props.base_href,
+        StayhydatedDioxusApp { site_stylesheet_path: props.site_stylesheet_path,
             Router::<R> {}
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn asset_href_joins_root_base() {
-        assert_eq!(
-            stayhydated_asset_href("/", "assets/site.css"),
-            "/assets/site.css"
-        );
-    }
-
-    #[test]
-    fn asset_href_joins_project_base() {
-        assert_eq!(
-            stayhydated_asset_href("/example-project/", "assets/site.css"),
-            "/example-project/assets/site.css"
-        );
-    }
-
-    #[test]
-    fn asset_href_accepts_leading_asset_slash() {
-        assert_eq!(
-            stayhydated_asset_href("/example-project/", "/dx-components-theme.css"),
-            "/example-project/dx-components-theme.css"
-        );
-    }
-
-    #[test]
-    fn asset_href_accepts_empty_base() {
-        assert_eq!(
-            stayhydated_asset_href("", "/assets/site.css"),
-            "assets/site.css"
-        );
     }
 }

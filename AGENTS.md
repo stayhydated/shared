@@ -25,8 +25,8 @@ Use it to decide:
 
 - `crates/stayhydated-dioxus`
   Audience: Public integration.
-  Role: Dioxus application wrapper, consumer-configured project identity, landing and portal helpers, page metadata, and selected re-exports from `stayhydated-dioxus-core`.
-  Sync: project identity and presentation behavior are tested in adjacent module tests and `tests/render_components.rs`; asset path behavior is tested in `src/app.rs`.
+  Role: featureless Dioxus Web application wrapper, reusable consumer-owned project-site configuration, single-page preset, landing and portal helpers, page metadata, and selected re-exports from `stayhydated-dioxus-core`.
+  Sync: project identity and presentation behavior are tested in adjacent module tests and `tests/render_components.rs`; base and asset href behavior is tested in `stayhydated-site/src/routing.rs`.
 
 - `dummy/sum-numbers-ai-dummy`
   Audience: Local validation.
@@ -60,8 +60,8 @@ Use it to decide:
 
 - `crates/stayhydated-site`
   Audience: Public integration.
-  Role: UI-neutral base-path, href, sitemap, and generated route-cache helpers for static project sites.
-  Sync: route path, sitemap static output, and route-cache cleanup behavior is encoded in module tests next to `src/routing.rs`, `src/sitemap.rs`, and `src/route_cache.rs`.
+  Role: featureless Dioxus Web launch, base-path and href helpers, route manifests, sitemaps, and generated route-cache helpers for static project sites.
+  Sync: route path, manifest, sitemap static output, and route-cache cleanup behavior is encoded in module tests next to `src/routing.rs`, `src/manifest.rs`, `src/sitemap.rs`, and `src/route_cache.rs`.
 
 - `crates/stayhydated-xtask`
   Audience: Internal workflow and public repository tooling.
@@ -81,11 +81,11 @@ Use it to decide:
 ## Synchronization Rules
 
 - When changing a public Rust type, function, component prop, route helper, or exported constant, update the owning module, the crate `src/lib.rs` export surface, and any tests or trybuild fixtures that name the changed API.
-- When changing `dx-components-theme.css` or `DX_COMPONENTS_THEME_FILE_NAME`, keep `crates/stayhydated-dioxus-core/src/styles.rs` and `crates/stayhydated-xtask/src/web.rs` aligned.
+- When changing `dx-components-theme.css`, keep its bundled asset declaration and token tests in `crates/stayhydated-dioxus-core/src/styles.rs` aligned. Consumers do not copy this asset.
 - When changing the consumer-owned `Project` identity or its Dioxus wrappers, update `crates/stayhydated-dioxus/src/project.rs`, the crate export surface, adjacent wrapper tests, and the dummy identity in `dummy/web-dummy/src/site/constants.rs`.
 - When changing sum-numbers-ai positioning, keep the library behavior in `dummy/sum-numbers-ai-dummy/src/lib.rs`, all four demo clients, website pages under `dummy/web-dummy/src/pages/`, book chapters under `dummy/book-dummy/src/`, and consumer-owned constants under `dummy/web-dummy/src/site/` aligned. Interactive demos expose at most three operands and do not provide operand reordering.
 - When public book, Pages, or preview workflow guidance changes, keep affected README files, `dummy/book-dummy/src/`, and `skills/use-stayhydated-github-pages` aligned with the current helper APIs and examples.
-- When changing sitemap, route-cache, book, llms, Dioxus build, Trunk build, generated loader, or preview behavior, update the owning `stayhydated-site` or `stayhydated-xtask` module plus tests that encode its output or command contract.
+- When changing route manifests, sitemap, route-cache, book, llms, Dioxus SSG build, Trunk build, generated loader, or preview behavior, update the owning `stayhydated-site` or `stayhydated-xtask` module plus tests that encode its output or command contract.
 - When changing release publishing behavior in `stayhydated-xtask/src/release.rs`, update tests for publish order, command arguments, dirty-worktree guards, resume points, and registry handling.
 - When changing downstream revision-update behavior, keep `xtask/src/commands/update_shared_revisions.rs`, its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
 

@@ -154,6 +154,24 @@ pub fn base_href(base_path: Option<&BasePath>) -> BaseHref {
     BaseHref::from_base_path(base_path)
 }
 
+/// Resolves the base href supplied by the Dioxus CLI for the current web build.
+pub fn dioxus_base_href() -> BaseHref {
+    let base_path = dioxus::cli_config::base_path();
+    let base_path = base_path.as_deref().map(BasePath::new);
+    base_href(base_path.as_ref())
+}
+
+pub fn asset_href(base_href: &BaseHref, asset_path: impl AsRef<str>) -> Href {
+    let asset_path = asset_path.as_ref().trim_start_matches('/');
+    let base_href = base_href.as_str().trim_end_matches('/');
+
+    if base_href.is_empty() {
+        Href::new(format!("/{asset_path}"))
+    } else {
+        Href::new(format!("{base_href}/{asset_path}"))
+    }
+}
+
 pub fn href(base_href: &BaseHref, route: &RoutePath) -> Href {
     Href::from_route(base_href, route)
 }
@@ -229,6 +247,22 @@ mod tests {
         assert_eq!(
             href(&BaseHref::root(), &RoutePath::new("/book/")).as_str(),
             "/book/"
+        );
+    }
+
+    #[test]
+    fn asset_href_joins_files_without_adding_a_trailing_slash() {
+        assert_eq!(
+            asset_href(&BaseHref::root(), "assets/site.css").as_str(),
+            "/assets/site.css"
+        );
+        assert_eq!(
+            asset_href(
+                &BaseHref::from_base_path(Some(&BasePath::new("project"))),
+                "/assets/site.css"
+            )
+            .as_str(),
+            "/project/assets/site.css"
         );
     }
 

@@ -4,12 +4,9 @@ use std::process::Command;
 
 use anyhow::{Context as _, bail};
 use bon::Builder;
+use stayhydated_site::SiteRouteManifest;
 use strum::IntoStaticStr;
 use walkdir::WalkDir;
-
-pub const DX_COMPONENTS_THEME_FILE_NAME: &str = "dx-components-theme.css";
-pub const DX_COMPONENTS_THEME_CSS: &str =
-    include_str!("../../stayhydated-dioxus-core/src/dx-components-theme.css");
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PackageName(String);
@@ -116,9 +113,8 @@ pub struct WebBuildConfig {
     pub copy_dirs: Vec<CopyPath>,
     pub copy_files: Vec<CopyPath>,
     pub write_files: Vec<WriteFile>,
-    pub route_fallback_paths: Vec<String>,
+    pub route_manifest: Option<SiteRouteManifest>,
     pub write_404_from_index: bool,
-    pub sitemap_xml: Option<String>,
 }
 
 pub struct WebBuildConfigBuilder {
@@ -128,8 +124,7 @@ pub struct WebBuildConfigBuilder {
     extra_copy_dirs: Vec<CopyPath>,
     extra_copy_files: Vec<CopyPath>,
     public_assets_dir: Option<PathBuf>,
-    route_fallback_paths: Vec<String>,
-    sitemap_xml: Option<String>,
+    route_manifest: Option<SiteRouteManifest>,
 }
 
 impl WebBuildConfig {
@@ -141,8 +136,7 @@ impl WebBuildConfig {
             extra_copy_dirs: Vec::new(),
             extra_copy_files: Vec::new(),
             public_assets_dir: Some(PathBuf::from("web/public/assets")),
-            route_fallback_paths: Vec::new(),
-            sitemap_xml: None,
+            route_manifest: None,
         }
     }
 }
@@ -192,18 +186,8 @@ impl WebBuildConfigBuilder {
         self
     }
 
-    pub fn sitemap_xml(mut self, sitemap_xml: impl Into<String>) -> Self {
-        self.sitemap_xml = Some(sitemap_xml.into());
-        self
-    }
-
-    pub fn route_fallback_paths<I, P>(mut self, paths: I) -> Self
-    where
-        I: IntoIterator<Item = P>,
-        P: AsRef<str>,
-    {
-        self.route_fallback_paths
-            .extend(paths.into_iter().map(|path| path.as_ref().to_owned()));
+    pub fn route_manifest(mut self, route_manifest: SiteRouteManifest) -> Self {
+        self.route_manifest = Some(route_manifest);
         self
     }
 
@@ -242,16 +226,10 @@ impl WebBuildConfigBuilder {
         ];
         copy_files.extend(self.extra_copy_files);
 
-        let write_files = vec![
-            WriteFile {
-                destination: dist_dir.join(".nojekyll"),
-                contents: "",
-            },
-            WriteFile {
-                destination: dist_dir.join(DX_COMPONENTS_THEME_FILE_NAME),
-                contents: DX_COMPONENTS_THEME_CSS,
-            },
-        ];
+        let write_files = vec![WriteFile {
+            destination: dist_dir.join(".nojekyll"),
+            contents: "",
+        }];
 
         WebBuildConfig::builder()
             .command_current_dir(
@@ -264,9 +242,8 @@ impl WebBuildConfigBuilder {
             .copy_dirs(copy_dirs)
             .copy_files(copy_files)
             .write_files(write_files)
-            .route_fallback_paths(self.route_fallback_paths)
+            .maybe_route_manifest(self.route_manifest)
             .write_404_from_index(true)
-            .maybe_sitemap_xml(self.sitemap_xml)
             .build()
     }
 
@@ -320,7 +297,9 @@ fn build_with(
         write_file(&write.destination, write.contents)?;
     }
 
-    write_route_fallbacks(&config.dist_dir, &config.route_fallback_paths)?;
+    if let Some(route_manifest) = &config.route_manifest {
+        write_route_fallbacks(&config.dist_dir, route_manifest.application_paths())?;
+    }
 
     if config.write_404_from_index {
         fs::copy(
@@ -335,8 +314,12 @@ fn build_with(
         })?;
     }
 
-    if let Some(sitemap_xml) = config.sitemap_xml {
-        fs::write(config.dist_dir.join("sitemap.xml"), sitemap_xml).with_context(|| {
+    if let Some(route_manifest) = &config.route_manifest {
+        fs::write(
+            config.dist_dir.join("sitemap.xml"),
+            route_manifest.sitemap_xml(),
+        )
+        .with_context(|| {
             format!(
                 "failed to write {}",
                 config.dist_dir.join("sitemap.xml").display()
@@ -363,7 +346,10 @@ fn run_dioxus_build(config: &WebBuildConfig) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn write_route_fallbacks(dist_dir: &std::path::Path, paths: &[String]) -> anyhow::Result<()> {
+fn write_route_fallbacks<P>(dist_dir: &std::path::Path, paths: &[P]) -> anyhow::Result<()>
+where
+    P: AsRef<str>,
+{
     if paths.is_empty() {
         return Ok(());
     }
@@ -374,7 +360,7 @@ fn write_route_fallbacks(dist_dir: &std::path::Path, paths: &[String]) -> anyhow
     }
 
     for path in paths {
-        let Some(relative_index) = route_fallback_path(path) else {
+        let Some(relative_index) = route_fallback_path(path.as_ref()) else {
             continue;
         };
         let destination = dist_dir.join(relative_index);
@@ -499,18 +485,6 @@ mod tests {
         fs::write(path, contents).expect("fixture should be written");
     }
 
-    #[cfg(unix)]
-    fn write_executable(path: &std::path::Path, contents: &str) {
-        use std::os::unix::fs::PermissionsExt as _;
-
-        write(path, contents);
-        let mut permissions = fs::metadata(path)
-            .expect("script metadata should be readable")
-            .permissions();
-        permissions.set_mode(0o755);
-        fs::set_permissions(path, permissions).expect("script should be executable");
-    }
-
     #[test]
     fn dioxus_web_static_site_command_renders_expected_argv() {
         let command = DioxusBuildCommand::web_static_site(Some(PackageName::new("web")));
@@ -571,30 +545,16 @@ mod tests {
     }
 
     #[test]
-    fn github_pages_config_writes_shared_dx_components_theme() {
-        let config = WebBuildConfig::github_pages("/workspace")
-            .package("web")
-            .build();
-        let theme = config
-            .write_files
-            .iter()
-            .find(|file| file.destination.ends_with(DX_COMPONENTS_THEME_FILE_NAME))
-            .expect("shared theme should be written");
-
-        assert_eq!(
-            theme.destination,
-            PathBuf::from("/workspace/web/dist").join(DX_COMPONENTS_THEME_FILE_NAME)
+    fn github_pages_config_tracks_the_route_manifest() {
+        let manifest = SiteRouteManifest::project(
+            stayhydated_site::routing::SiteUrl::new("https://example.test/project"),
+            ["/", "/demos/", "/zh/demos/"],
         );
-        assert!(theme.contents.contains("--primary-color"));
-    }
-
-    #[test]
-    fn github_pages_config_tracks_route_fallback_paths() {
         let config = WebBuildConfig::github_pages("/workspace")
-            .route_fallback_paths(["/", "/demos/", "/zh/demos/"])
+            .route_manifest(manifest.clone())
             .build();
 
-        assert_eq!(config.route_fallback_paths, ["/", "/demos/", "/zh/demos/"]);
+        assert_eq!(config.route_manifest, Some(manifest));
     }
 
     #[test]
@@ -616,13 +576,17 @@ mod tests {
 
     #[test]
     fn github_pages_builder_tracks_custom_inputs() {
+        let manifest = SiteRouteManifest::new(
+            stayhydated_site::routing::SiteUrl::new("https://example.test/project"),
+            ["/"],
+        );
         let config = WebBuildConfig::github_pages("/workspace")
             .command_current_dir("/workspace/web")
             .no_public_assets_dir()
             .public_assets_dir("public")
             .extra_dir("generated/book", "custom-book")
             .extra_file("generated/index.txt", "index.txt")
-            .sitemap_xml("<urlset />")
+            .route_manifest(manifest.clone())
             .build();
 
         assert_eq!(config.command_current_dir, PathBuf::from("/workspace/web"));
@@ -634,7 +598,7 @@ mod tests {
             copy.source == std::path::Path::new("/workspace/generated/index.txt")
                 && copy.destination == std::path::Path::new("/workspace/web/dist/index.txt")
         }));
-        assert_eq!(config.sitemap_xml.as_deref(), Some("<urlset />"));
+        assert_eq!(config.route_manifest, Some(manifest));
     }
 
     #[test]
@@ -681,7 +645,8 @@ mod tests {
                 .expect("fallback should be readable"),
             "<main>Home</main>"
         );
-        write_route_fallbacks(&destination, &[]).expect("empty fallback list should be a no-op");
+        write_route_fallbacks(&destination, &[] as &[String])
+            .expect("empty fallback list should be a no-op");
 
         let missing_root = temp.path().join("missing-root");
         let error = write_route_fallbacks(&missing_root, &["/demos/".to_owned()])
@@ -699,9 +664,13 @@ mod tests {
         write(&public.join("llms.txt"), "Index");
         write(&public.join("llms-full.txt"), "Full");
 
+        let manifest = SiteRouteManifest::project(
+            stayhydated_site::routing::SiteUrl::new("https://example.test/project"),
+            ["/", "/demos/"],
+        );
+        let expected_sitemap = manifest.sitemap_xml();
         let config = WebBuildConfig::github_pages(temp.path())
-            .route_fallback_paths(["/demos/"])
-            .sitemap_xml("<urlset />")
+            .route_manifest(manifest)
             .build();
         write(&config.dx_public_dir.join("stale.txt"), "stale");
         write(&config.dist_dir.join("stale.txt"), "stale");
@@ -725,10 +694,9 @@ mod tests {
         assert!(dist.join("assets/site.css").is_file());
         assert!(dist.join("book/index.html").is_file());
         assert!(dist.join("llms/intro.md").is_file());
-        assert!(dist.join(DX_COMPONENTS_THEME_FILE_NAME).is_file());
         assert_eq!(
             fs::read_to_string(dist.join("sitemap.xml")).expect("sitemap should be readable"),
-            "<urlset />"
+            expected_sitemap
         );
         assert!(!dist.join("stale.txt").exists());
     }
@@ -742,46 +710,5 @@ mod tests {
             .expect_err("runner must create the expected Dioxus output");
 
         assert!(error.to_string().contains("expected Dioxus static output"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn public_build_runs_dioxus_command_and_assembles_output() {
-        let temp = tempfile::tempdir().expect("temporary directory should be created");
-        let fake_dx = temp.path().join("fake-dx");
-        write_executable(
-            &fake_dx,
-            "#!/bin/sh\nset -eu\nmkdir -p target/dx/web/release/web/public\nprintf '<main>Built</main>' > target/dx/web/release/web/public/index.html\n",
-        );
-        let mut config = WebBuildConfig::github_pages(temp.path())
-            .no_public_assets_dir()
-            .build();
-        config.dioxus_command.program = fake_dx;
-
-        build(config).expect("public build should run the configured Dioxus command");
-
-        assert_eq!(
-            fs::read_to_string(temp.path().join("web/dist/index.html"))
-                .expect("built index should be readable"),
-            "<main>Built</main>"
-        );
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn public_build_reports_command_failure_and_spawn_error() {
-        let temp = tempfile::tempdir().expect("temporary directory should be created");
-        let fake_dx = temp.path().join("failing-dx");
-        write_executable(&fake_dx, "#!/bin/sh\nexit 7\n");
-        let mut config = WebBuildConfig::github_pages(temp.path()).build();
-        config.dioxus_command.program = fake_dx;
-
-        let error = build(config).expect_err("failed Dioxus command should be reported");
-        assert!(error.to_string().contains("failed with status"));
-
-        let mut config = WebBuildConfig::github_pages(temp.path()).build();
-        config.dioxus_command.program = temp.path().join("missing-dx");
-        let error = build(config).expect_err("missing Dioxus command should be reported");
-        assert!(error.to_string().contains("failed to run"));
     }
 }

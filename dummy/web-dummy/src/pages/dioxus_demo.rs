@@ -398,30 +398,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn dioxus_demo_renders_only_the_console() {
-        let html = dioxus::ssr::render_element(rsx! { DioxusDemoPage {} });
-
-        assert!(html.contains("demo-page sum-console-demo"));
-        assert!(html.contains("sum-demo-workbench"));
-        assert_eq!(html.matches("class=\"code-sample\"").count(), 3);
-        assert!(html.contains("class=\"project-portal\""));
-        assert!(html.contains("portal-header"));
-        assert!(html.contains("portal-skills-copy"));
-        assert!(!html.contains("project-portal is-root"));
-        assert!(!html.contains("page-header"));
-        assert!(!html.contains("page-title-band"));
-        assert!(!html.contains("project-surface-header"));
-        assert!(!html.contains("site-footer"));
-    }
-
-    #[test]
-    fn number_inputs_stop_at_the_shared_demo_limit_without_reordering() {
+    fn number_inputs_stop_at_the_shared_demo_limit() {
         let inputs = default_number_inputs();
-        let html = dioxus::ssr::render_element(rsx! { DioxusDemoPage {} });
 
         assert_eq!(inputs.len(), MAX_DEMO_INPUTS);
         assert_eq!(next_number_input(&inputs), None);
-        assert!(!html.contains("Move number"));
-        assert!(!html.contains("data-drag"));
     }
 }

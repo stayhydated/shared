@@ -1,8 +1,6 @@
 use crate::{pages, site::constants::PROJECT};
-use dioxus::cli_config;
 use dioxus::prelude::*;
 use stayhydated_dioxus::StayhydatedProjectPageMetadata;
-use stayhydated_site::routing::{BaseHref, BasePath, Href, RoutePath};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum PageKind {
@@ -19,15 +17,6 @@ struct PageMetadata {
 }
 
 impl PageKind {
-    pub(crate) fn all() -> [Self; 4] {
-        [
-            Self::Home,
-            Self::Demos,
-            Self::DioxusDemo,
-            Self::TerminalDemo,
-        ]
-    }
-
     const fn metadata(self) -> PageMetadata {
         match self {
             Self::Home => PageMetadata {
@@ -58,39 +47,6 @@ impl PageKind {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct SiteRoute {
-    pub(crate) page: PageKind,
-}
-
-impl SiteRoute {
-    pub(crate) const fn new(page: PageKind) -> Self {
-        Self { page }
-    }
-
-    pub(crate) fn path(self) -> Href {
-        Href::new(app_route(self.page).to_string())
-    }
-}
-
-pub(crate) fn all_routes() -> Vec<SiteRoute> {
-    PageKind::all().into_iter().map(SiteRoute::new).collect()
-}
-
-pub(crate) fn app_base_href() -> BaseHref {
-    let base_path = cli_config::base_path();
-    let base_path = base_path.as_deref().map(BasePath::new);
-    stayhydated_site::routing::base_href(base_path.as_ref())
-}
-
-pub(crate) fn book_href() -> Href {
-    stayhydated_site::routing::href(&app_base_href(), &RoutePath::new("book"))
-}
-
-pub(crate) fn static_demo_href(path: &str) -> Href {
-    stayhydated_site::routing::href(&app_base_href(), &RoutePath::new(path))
-}
-
 #[derive(Clone, Debug, Eq, PartialEq, Routable)]
 #[rustfmt::skip]
 pub(crate) enum AppRoute {
@@ -113,14 +69,14 @@ pub(crate) fn app_route(page: PageKind) -> AppRoute {
     }
 }
 
-fn route_element(route: SiteRoute) -> Element {
+fn route_element(page: PageKind) -> Element {
     rsx! {
         StayhydatedProjectPageMetadata {
             project: PROJECT,
-            page_title: route.page.title(),
-            description: route.page.description(),
+            page_title: page.title(),
+            description: page.description(),
         }
-        {pages::route_content(route)}
+        {pages::route_content(page)}
     }
 }
 
@@ -129,42 +85,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn site_routes_use_app_route_paths() {
-        assert_eq!(SiteRoute::new(PageKind::Home).path().as_str(), "/");
-        assert_eq!(SiteRoute::new(PageKind::Demos).path().as_str(), "/demos/");
+    fn page_kinds_map_to_their_app_routes() {
+        assert_eq!(app_route(PageKind::Home).to_string(), "/");
+        assert_eq!(app_route(PageKind::Demos).to_string(), "/demos/");
         assert_eq!(
-            SiteRoute::new(PageKind::DioxusDemo).path().as_str(),
+            app_route(PageKind::DioxusDemo).to_string(),
             "/demos/dioxus/"
         );
         assert_eq!(
-            SiteRoute::new(PageKind::TerminalDemo).path().as_str(),
+            app_route(PageKind::TerminalDemo).to_string(),
             "/demos/terminal/"
         );
-    }
-
-    #[test]
-    fn static_demo_paths_follow_the_application_base_href() {
-        assert_eq!(static_demo_href("bevy-demo").as_str(), "/bevy-demo/");
-        assert_eq!(static_demo_href("gpui-demo").as_str(), "/gpui-demo/");
     }
 }
 
 #[component]
 fn HomeRoute() -> Element {
-    route_element(SiteRoute::new(PageKind::Home))
+    route_element(PageKind::Home)
 }
 
 #[component]
 fn DemosRoute() -> Element {
-    route_element(SiteRoute::new(PageKind::Demos))
+    route_element(PageKind::Demos)
 }
 
 #[component]
 fn DioxusDemoRoute() -> Element {
-    route_element(SiteRoute::new(PageKind::DioxusDemo))
+    route_element(PageKind::DioxusDemo)
 }
 
 #[component]
 fn TerminalDemoRoute() -> Element {
-    route_element(SiteRoute::new(PageKind::TerminalDemo))
+    route_element(PageKind::TerminalDemo)
 }

@@ -1,8 +1,5 @@
 use dioxus::prelude::*;
 
-pub const DX_COMPONENTS_THEME_FILE_NAME: &str = "dx-components-theme.css";
-pub const DX_COMPONENTS_THEME_CSS: &str = include_str!("dx-components-theme.css");
-
 #[component]
 pub fn SharedStyles() -> Element {
     rsx! {
@@ -12,18 +9,18 @@ pub fn SharedStyles() -> Element {
         document::Stylesheet { href: asset!("./motion.css") }
         document::Stylesheet { href: asset!("./demo.css") }
         document::Stylesheet { href: asset!("./portal.css") }
+        document::Stylesheet { href: asset!("./dx-components-theme.css") }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
-    fn shared_dx_components_theme_exposes_expected_file() {
-        assert_eq!(DX_COMPONENTS_THEME_FILE_NAME, "dx-components-theme.css");
-        assert!(DX_COMPONENTS_THEME_CSS.contains("--primary-color"));
-        assert!(DX_COMPONENTS_THEME_CSS.contains("--focused-border-color"));
+    fn shared_dx_components_theme_exposes_expected_tokens() {
+        let theme = include_str!("dx-components-theme.css");
+
+        assert!(theme.contains("--primary-color"));
+        assert!(theme.contains("--focused-border-color"));
     }
 
     #[test]

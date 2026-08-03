@@ -14,9 +14,9 @@ Treat the shared repository as the source of truth for:
 - GitHub Pages build, fallback, preview, book, llms.txt, and Trunk helpers;
 - reusable Pages and shared-revision workflows.
 
-Keep the project name, tagline, canonical URL, docs/book/source/demo
-destinations, Skills command, landing theme, and other project identity in the
-consumer repository.
+Keep the project name, tagline, canonical URL, docs/book/source destinations,
+optional demo destination, Skills command, landing theme, and other project
+identity in the consumer repository.
 
 Read the shared repository's own `AGENTS.md` before maintaining those
 implementations. Read the consumer repository's guidance before changing its
@@ -42,8 +42,9 @@ site.
    - construct a local `stayhydated_dioxus::Project` value from the project
      name and tagline;
    - opt into the portal Skills control with `.with_skill_command(...)`;
-   - define the canonical site URL and docs, book, source, and demo destinations
-     beside the consumer's routing constants;
+   - define the canonical site URL and docs, book, and source destinations beside
+     the consumer's routing constants, plus a demo destination when the project
+     has demos;
    - pass theme and landing links explicitly where the landing component is
      used.
 4. Pin `stayhydated-dioxus`, `stayhydated-site`, and
@@ -51,17 +52,22 @@ site.
    Regenerate `Cargo.lock` with package-scoped `cargo update` and review solver
    churn.
 5. Wire the web crate around shared types:
-   - launch with `stayhydated_site::SiteApp`;
-   - derive the runtime base href from `dioxus::cli_config::base_path()`;
-   - render through `StayhydatedRouterApp`;
+   - keep the package featureless and enable Dioxus Web unconditionally;
+   - launch directly with `stayhydated_site::launch(web::App)`;
+   - define one consumer-owned `ProjectSite` for both one-route and multi-route
+     sites;
+   - use `StayhydatedSinglePageProjectApp` as the one-route preset;
+   - use `StayhydatedProjectApp` for a custom `Routable` application;
    - use `StayhydatedProjectPageMetadata` for every route;
-   - pass the consumer-owned `Project` to page and portal wrappers;
-   - pass docs, book, source, demo, and landing configuration explicitly;
-   - export project route paths and sitemap XML for the build task.
+   - use `StayhydatedProjectSitePortal` when the configured docs, book, source,
+     version, and project identity fit the home portal;
+   - use `ProjectSite::static_href` for consumer-owned static destinations;
+   - export one `SiteRouteManifest` for fallback and sitemap generation;
+   - derive multi-route application paths from the app's `Routable` enum;
+   - test consumer-owned configuration directly without enabling Dioxus SSR.
 6. Assemble Pages through
    `stayhydated_xtask::web::WebBuildConfig::github_pages`:
-   - pass every client-side route as a fallback;
-   - write the sitemap;
+   - pass the consumer's route manifest;
    - keep the default public-assets pipeline when it fits;
    - use explicit assets and demo inputs when the consumer already owns them.
 7. Expose the Pages workflow through three root `justfile` recipes:
@@ -71,8 +77,7 @@ site.
    - make `web-preview: web-build` run `cargo xtask preview web`;
    - wire the xtask preview command to the shared static preview helper with the
      consumer's `web/dist` directory and project base path.
-8. Preserve the consumer's deployment topology unless the task explicitly
-   requests a migration:
+8. Deploy through the shared reusable Pages workflow:
    - do not introduce consumer-owned non-Cargo package manifests,
      package-manager commands, or JavaScript or TypeScript tool configuration
      solely for the Pages site;
@@ -83,7 +88,8 @@ site.
 ## Ownership rules
 
 - Keep generic visual behavior and CSS in shared. Keep only project-specific
-  layout/content CSS in the consumer.
+  layout/content CSS in the consumer. The shared Dioxus component theme is a
+  bundled asset; do not copy it into `web/public` or `web/dist`.
 - Use shared components directly. Do not retain downstream wrappers or copied
   helpers once shared exposes the required API.
 - Treat `web/dist`, generated books, llms.txt trees, and built wasm demos as
@@ -109,3 +115,6 @@ when signatures differ.
 Follow the reference's validation checklist and run the bundled
 [consumer audit](scripts/audit_consumer.py). When shared itself changed,
 validate the focused shared crates and dummy site before validating consumers.
+Pass the intended commit with `--expected-shared-revision`. The audit checks
+structure and generated output; it does not replace a locked compile or
+consumer tests that assert every expected static route is in the manifest.

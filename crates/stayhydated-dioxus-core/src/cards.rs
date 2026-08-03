@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use strum::IntoStaticStr;
 
-use crate::{CssClass, DisplayText, ShaderBackground};
+use crate::{CssClass, DisplayText, Href, ShaderBackground, motion::page_entry_reveal_style};
 
 /// Saturated RGB-edge accent applied to a project demo card.
 #[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
@@ -49,6 +49,61 @@ impl DemoCardAccent {
         };
 
         Self::PALETTE[palette_index]
+    }
+}
+
+/// Responsive column count used by a [`DemoGallery`].
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum DemoGalleryColumns {
+    #[default]
+    Two,
+    Three,
+}
+
+impl DemoGalleryColumns {
+    const fn class(self) -> &'static str {
+        match self {
+            Self::Two => "columns-2",
+            Self::Three => "columns-3",
+        }
+    }
+}
+
+/// One destination rendered by a [`DemoGallery`].
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DemoGalleryItem<R> {
+    target: NavigationTarget<R>,
+    title: DisplayText,
+    shader_id: String,
+}
+
+impl<R> DemoGalleryItem<R> {
+    pub fn new(
+        target: NavigationTarget<R>,
+        title: impl Into<DisplayText>,
+        shader_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            target,
+            title: title.into(),
+            shader_id: shader_id.into(),
+        }
+    }
+
+    pub fn route(route: R, title: impl Into<DisplayText>, shader_id: impl Into<String>) -> Self {
+        Self::new(NavigationTarget::Internal(route), title, shader_id)
+    }
+
+    pub fn href(
+        href: impl Into<Href>,
+        title: impl Into<DisplayText>,
+        shader_id: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            NavigationTarget::External(href.into().into_string()),
+            title,
+            shader_id,
+        )
     }
 }
 
@@ -106,6 +161,34 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
                 }
             }
         },
+    }
+}
+
+/// Shared reveal layout for a collection of shader-backed demo cards.
+#[component]
+pub fn DemoGallery<R: Routable + Clone + PartialEq + 'static>(
+    items: Vec<DemoGalleryItem<R>>,
+    #[props(default)] columns: DemoGalleryColumns,
+) -> Element {
+    let item_count = items.len();
+    let grid_class = format!("grid {} demo-example-cards motion-reveal", columns.class());
+    let reveal_style = page_entry_reveal_style().into_string();
+
+    rsx! {
+        div { class: "demo-page demo-gallery",
+            section { class: grid_class, style: reveal_style,
+                for (position, item) in items.into_iter().enumerate() {
+                    DemoCard::<R> {
+                        key: "{item.shader_id}",
+                        target: item.target,
+                        accent: DemoCardAccent::for_position(position, item_count),
+                        title: item.title,
+                        shader_id: item.shader_id,
+                        time_offset: position as f32 * 13.0,
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -191,5 +274,11 @@ mod tests {
         assert_eq!(DemoCardAccent::for_position(7, 7), DemoCardAccent::Red);
         assert_eq!(DemoCardAccent::for_position(2, 0), DemoCardAccent::Green);
         assert_eq!(DemoCardAccent::for_position(4, 2), DemoCardAccent::Red);
+    }
+
+    #[test]
+    fn gallery_columns_have_stable_layout_classes() {
+        assert_eq!(DemoGalleryColumns::default().class(), "columns-2");
+        assert_eq!(DemoGalleryColumns::Three.class(), "columns-3");
     }
 }
