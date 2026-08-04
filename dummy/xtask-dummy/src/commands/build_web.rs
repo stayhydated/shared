@@ -1,6 +1,5 @@
 use stayhydated_xtask::web::{
-    CopyPath, DX_COMPONENTS_THEME_CSS, DX_COMPONENTS_THEME_FILE_NAME, DioxusBuildCommand,
-    PackageName, WebBuildConfig, WriteFile,
+    CopyPath, DioxusBuildCommand, PackageName, WebBuildConfig, WriteFile,
 };
 
 pub fn run() -> anyhow::Result<()> {
@@ -49,19 +48,12 @@ pub fn run() -> anyhow::Result<()> {
                     destination: dist_dir.join("llms-full.txt"),
                 },
             ])
-            .write_files(vec![
-                WriteFile {
-                    destination: dist_dir.join(".nojekyll"),
-                    contents: "",
-                },
-                WriteFile {
-                    destination: dist_dir.join(DX_COMPONENTS_THEME_FILE_NAME),
-                    contents: DX_COMPONENTS_THEME_CSS,
-                },
-            ])
-            .route_fallback_paths(web_dummy::route_paths())
+            .write_files(vec![WriteFile {
+                destination: dist_dir.join(".nojekyll"),
+                contents: "",
+            }])
+            .route_manifest(web_dummy::route_manifest())
             .write_404_from_index(true)
-            .sitemap_xml(web_dummy::sitemap_xml())
             .build(),
     )
 }

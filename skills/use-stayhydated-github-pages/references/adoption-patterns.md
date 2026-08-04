@@ -3,13 +3,13 @@
 ## Contents
 
 - [Workspace dependencies](#workspace-dependencies)
-- [Consumer-owned project configuration](#consumer-owned-project-configuration)
-- [Web package](#web-package)
-- [Base-path-safe app and routing](#base-path-safe-app-and-routing)
+- [Featureless web package](#featureless-web-package)
+- [Single-page project portal](#single-page-project-portal)
+- [Multi-route sites](#multi-route-sites)
 - [Shared pages and components](#shared-pages-and-components)
-- [Consumer portal contract test](#consumer-portal-contract-test)
-- [Dioxus and asset configuration](#dioxus-and-asset-configuration)
+- [Assets and Dioxus configuration](#assets-and-dioxus-configuration)
 - [GitHub Pages build task](#github-pages-build-task)
+- [Browser demo builds](#browser-demo-builds)
 - [Static preview](#static-preview)
 - [Deployment workflow](#deployment-workflow)
 - [Revision automation](#revision-automation)
@@ -37,12 +37,8 @@ Use workspace inheritance in the web and xtask packages:
 
 ```toml
 # web/Cargo.toml
-[features]
-default = ["web"]
-web = ["dioxus/web", "stayhydated-site/web"]
-
 [dependencies]
-dioxus = { features = ["launch", "lib", "router"], workspace = true }
+dioxus = { features = ["launch", "lib", "router", "web"], workspace = true }
 stayhydated-dioxus = { workspace = true }
 stayhydated-site = { workspace = true }
 
@@ -52,6 +48,10 @@ anyhow = { workspace = true }
 stayhydated-xtask = { workspace = true }
 web = { workspace = true }
 ```
+
+The web package has one browser shape. Do not add a `web` feature, a native
+fallback `main`, or a Dioxus SSR dev-dependency. The published artifact is
+always produced by the shared `dx build --platform web --ssg` command.
 
 Update the lockfile without broad dependency upgrades:
 
@@ -65,214 +65,69 @@ cargo update \
 `stayhydated-dioxus-core` arrives transitively unless the consumer directly
 uses core-only APIs.
 
-## Consumer-owned project configuration
+## Featureless web package
 
-Define the identity in the consumer:
-
-```rust
-use stayhydated_dioxus::Project;
-
-pub(crate) const PROJECT: Project =
-    Project::new("my-project", "A concise project tagline.")
-        .with_skill_command("npx skills add my-organization/my-project");
-pub(crate) const SITE_URL: &str =
-    "https://my-organization.github.io/my-project/";
-pub(crate) const RUSTDOC_URL: &str = "https://docs.rs/my-project/";
-pub(crate) const SOURCE_URL: &str =
-    "https://github.com/my-organization/my-project";
-```
-
-Omit `.with_skill_command(...)` when the project does not publish an agent
-skill. Keep book and demo destinations base-path-aware through the consumer's
-routing helpers.
-
-## Web package
-
-A feature-gated binary can launch the shared app:
+The binary launches the only supported application shape directly:
 
 ```rust
-#[cfg(not(feature = "web"))]
-compile_error!("web must be built with the `web` feature enabled");
-
-#[cfg(not(feature = "web"))]
-fn main() {}
-
-#[cfg(feature = "web")]
 fn main() {
-    stayhydated_site::launch(
-        stayhydated_site::SiteApp::builder()
-            .app(web::App)
-            .build(),
-    );
+    stayhydated_site::launch(web::App);
 }
 ```
 
-Keep `PROJECT`, `SITE_URL`, destination constants, and `VERSION` together in
-the consumer's site constants module.
+Keep consumer-owned identity, canonical URLs, and versions in the web library
+or its site constants module. Do not put project identity in shared.
 
-Export the build inputs from the web library:
+## Single-page project portal
 
-```rust
-pub use site::app::App;
-
-pub fn route_paths() -> Vec<String> {
-    site::routing::all_routes()
-        .into_iter()
-        .map(|route| route.path().into_string())
-        .collect()
-}
-
-pub fn sitemap_xml() -> String {
-    site::render::render_sitemap()
-}
-```
-
-## Base-path-safe app and routing
-
-Let the Dioxus CLI provide the runtime project prefix:
-
-```rust
-use dioxus::cli_config;
-use stayhydated_site::routing::{BaseHref, BasePath};
-
-pub(crate) fn app_base_href() -> BaseHref {
-    let base_path = cli_config::base_path();
-    let base_path = base_path.as_deref().map(BasePath::new);
-    stayhydated_site::routing::base_href(base_path.as_ref())
-}
-```
-
-Render the router through the shared app wrapper so shared and project
-stylesheets use the same base:
+Use `ProjectSite` with `StayhydatedSinglePageProjectApp` when `/` is the only
+Dioxus route. The preset owns the standard metadata, router, portal,
+base-path-aware Book and optional direct Demos destination, and route manifest while
+leaving values in the consumer:
 
 ```rust
 use dioxus::prelude::*;
-use stayhydated_dioxus::StayhydatedRouterApp;
+use stayhydated_dioxus::{
+    Project, ProjectSite, StayhydatedSinglePageProjectApp,
+};
+
+const PROJECT: Project = Project::new(
+    "my-project",
+    "A concise project tagline.",
+)
+.with_skill_command("npx skills add my-organization/my-project");
+const SITE_URL: &str = "https://my-organization.github.io/my-project/";
+const RUSTDOC_URL: &str = "https://docs.rs/my-project/";
+const SOURCE_URL: &str = "https://github.com/my-organization/my-project";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+fn site() -> ProjectSite {
+    ProjectSite::builder()
+        .project(PROJECT)
+        .site_url(SITE_URL)
+        .rustdoc_url(RUSTDOC_URL)
+        .source_url(SOURCE_URL)
+        .version(VERSION)
+        .demo_path("gpui-demo")
+        .build()
+}
 
 #[component]
 pub fn App() -> Element {
-    let base_href = crate::site::routing::app_base_href();
+    rsx! { StayhydatedSinglePageProjectApp { site: site() } }
+}
 
-    rsx! {
-        StayhydatedRouterApp::<AppRoute> {
-            base_href: base_href.to_string(),
-        }
-    }
+pub fn route_manifest() -> stayhydated_site::SiteRouteManifest {
+    site().single_page_route_manifest()
 }
 ```
 
-Model project routes once. Use that model for:
+Omit `.with_skill_command(...)` when no skill is published. Omit
+`.demo_path(...)` when the site has no static demo. Add
+`.site_stylesheet_path("assets/site.css")` only when the consumer owns real
+project-specific CSS.
 
-- the `Routable` enum;
-- route-to-page dispatch;
-- page title and description;
-- exported fallback paths;
-- sitemap paths.
-
-The route paths supplied to `WebBuildConfig` are root-relative application
-paths such as `/`, `/demos/`, and `/demos/example/`. Do not prefix them with
-the repository slug.
-
-Wrap each route's content with canonical metadata:
-
-```rust
-rsx! {
-    StayhydatedProjectPageMetadata {
-        project: PROJECT,
-        page_title: route.page.title(),
-        description: route.page.description(),
-    }
-    {pages::route_content(route)}
-}
-```
-
-Create the sitemap from the same routes:
-
-```rust
-use stayhydated_site::routing::SiteUrl;
-
-pub(crate) fn render_sitemap() -> String {
-    let paths = crate::site::routing::all_routes()
-        .into_iter()
-        .map(|route| route.path())
-        .collect::<Vec<_>>();
-
-    stayhydated_site::sitemap::render_project(&SiteUrl::new(SITE_URL), paths)
-}
-```
-
-## Shared pages and components
-
-Current consumers render `StayhydatedProjectPortal` on the home route. Pass
-every destination explicitly:
-
-```rust
-StayhydatedProjectPortal::<AppRoute> {
-    project: PROJECT,
-    version: VERSION,
-    home: NavigationTarget::Internal(app_route(PageKind::Home)),
-    docs: Href::new(RUSTDOC_URL),
-    book: book_href(),
-    demos: NavigationTarget::Internal(app_route(PageKind::Demos)),
-    source: Href::new(SOURCE_URL),
-}
-```
-
-Use `StayhydatedProjectPortal` when the standard Docs, Book, Demos, and Git
-labels fit. Use `StayhydatedProjectPortalShell` for demo pages and other
-project-specific content inside the shared frame.
-
-Use `StayhydatedProjectLanding` only when the consumer requests a compact
-landing instead of the portal:
-
-```rust
-StayhydatedProjectLanding {
-    project: PROJECT,
-    eyebrow: "my-organization / Rust",
-    links: vec![
-        LandingLink::new("book/", "Read the book"),
-        LandingLink::new(RUSTDOC_URL, "Rust API docs"),
-        LandingLink::new(SOURCE_URL, "Source"),
-    ],
-    theme: LandingTheme::Cyan,
-}
-```
-
-Use typed targets:
-
-```rust
-NavigationTarget::Internal(app_route(PageKind::Demos))
-NavigationTarget::<AppRoute>::External("https://example.test/".to_owned())
-```
-
-Use shared demo cards for galleries:
-
-```rust
-let demo_count = demos.len();
-
-for (position, (route, title, shader_id, time_offset)) in
-    demos.into_iter().enumerate()
-{
-    DemoCard::<AppRoute> {
-        target: NavigationTarget::Internal(route),
-        accent: DemoCardAccent::for_position(position, demo_count),
-        title,
-        shader_id,
-        time_offset,
-    }
-}
-```
-
-Prefer other exported shared components—tabs, selects, fullscreen frames,
-shader backgrounds, landing links, and reveal styles—over local equivalents.
-
-## Consumer portal contract test
-
-Keep the consumer-owned portal contract in one focused test beside the home
-page. Render `HomePage`, assert that the configured docs and source URLs are
-present, and assert the exact Skills command directly on `PROJECT` because
-tooltip content is not part of the native render. Rely on shared tests for
-generic portal labels, accents, classes, and layout.
+Test the owned configuration and manifest directly:
 
 ```rust
 #[cfg(test)]
@@ -280,29 +135,181 @@ mod tests {
     use super::*;
 
     #[test]
-    fn home_page_uses_project_owned_destinations() {
-        let html = dioxus::ssr::render_element(rsx! { HomePage {} });
-
-        for expected in [RUSTDOC_URL, SOURCE_URL] {
-            assert!(html.contains(expected));
-        }
-        assert_eq!(
-            PROJECT.skill_command(),
-            Some("npx skills add my-organization/my-project")
+    fn site_tracks_the_static_demo() {
+        assert_eq!(site().demo_path(), Some("gpui-demo"));
+        assert_eq!(site().rustdoc_url(), RUSTDOC_URL);
+        assert!(
+            route_manifest()
+                .static_paths()
+                .iter()
+                .any(|path| path.as_str() == "/gpui-demo/")
         );
     }
 }
 ```
 
-Add Dioxus with its `ssr` feature under `web` dev-dependencies when the
-consumer does not already enable it:
+Do not enable Dioxus SSR to test consumer configuration. Shared component
+tests own generic rendered markup behavior.
 
-```toml
-[dev-dependencies]
-dioxus = { features = ["ssr"], workspace = true }
+Use `StayhydatedEmbeddedDemoProjectApp` when the portal should keep its shared
+header while a single static browser demo runs inside the page. Configure the
+raw artifact with `demo_path`, link the portal to the preset's `/demo/` route,
+and assemble both the application route and static output from one manifest:
+
+```rust
+use dioxus::prelude::*;
+use stayhydated_dioxus::{
+    Project, ProjectSite, StayhydatedEmbeddedDemoProjectApp,
+};
+
+#[component]
+pub fn App() -> Element {
+    rsx! { StayhydatedEmbeddedDemoProjectApp { site: site() } }
+}
+
+pub fn route_manifest() -> stayhydated_site::SiteRouteManifest {
+    site().embedded_demo_route_manifest()
+}
 ```
 
-## Dioxus and asset configuration
+The manifest treats `/demo/` as a Dioxus application route and the configured
+`demo_path` as the raw static iframe source.
+
+## Multi-route sites
+
+Treat the `Routable` enum as the application-route source of truth. Route
+manifest paths are root-relative (`/`, `/demos/`, `/demos/example/`) and do
+not include the repository slug. `Routable::static_routes()` excludes dynamic
+segments, so add any dynamic paths that need generated fallbacks through an
+explicit manifest source.
+
+Define the same general configuration used by the single-page preset in the
+consumer's site constants module:
+
+```rust
+use stayhydated_dioxus::{Project, ProjectSite};
+
+pub(crate) const PROJECT: Project = Project::new(
+    "my-project",
+    "A concise project tagline.",
+);
+pub(crate) const SITE_URL: &str = "https://my-organization.github.io/my-project/";
+pub(crate) const RUSTDOC_URL: &str = "https://docs.rs/my-project/";
+pub(crate) const SOURCE_URL: &str = "https://github.com/my-organization/my-project";
+pub(crate) const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub(crate) fn site() -> ProjectSite {
+    ProjectSite::builder()
+        .project(PROJECT)
+        .site_url(SITE_URL)
+        .rustdoc_url(RUSTDOC_URL)
+        .source_url(SOURCE_URL)
+        .version(VERSION)
+        .site_stylesheet_path("assets/site.css")
+        .build()
+}
+```
+
+Export one manifest from the web library:
+
+```rust
+pub fn route_manifest() -> stayhydated_site::SiteRouteManifest {
+    site::constants::site()
+        .route_manifest::<site::routing::AppRoute>()
+        .with_static_paths(["/bevy-demo/", "/gpui-demo/"])
+}
+```
+
+Static paths are included in the sitemap but do not receive application-route
+fallback files. The project manifest automatically includes `/book/`,
+`/llms.txt`, and `/llms-full.txt`.
+
+Render through the shared router. The base href comes from the Dioxus CLI
+inside shared:
+
+```rust
+use dioxus::prelude::*;
+use stayhydated_dioxus::StayhydatedProjectApp;
+
+#[component]
+pub fn App() -> Element {
+    rsx! {
+        StayhydatedProjectApp::<AppRoute> { site: site() }
+    }
+}
+```
+
+Omit `site_stylesheet_path` from `ProjectSite` when the consumer has no project
+CSS. Resolve project-owned static destinations from the same configuration:
+
+```rust
+let gpui_demo = site().static_href("gpui-demo");
+```
+
+Wrap each route's content with canonical metadata:
+
+```rust
+rsx! {
+    StayhydatedProjectPageMetadata {
+        project: PROJECT,
+        page_title: page.title(),
+        description: page.description(),
+    }
+    {pages::route_content(page)}
+}
+```
+
+## Shared pages and components
+
+For a custom multi-route home page, use `StayhydatedProjectSitePortal`. It
+reads Docs, Book, Git, version, and identity from `ProjectSite`; pass `demos`
+only when a gallery exists:
+
+```rust
+StayhydatedProjectSitePortal::<AppRoute> {
+    site: site(),
+    home: NavigationTarget::Internal(app_route(PageKind::Home)),
+    demos: NavigationTarget::Internal(app_route(PageKind::Demos)),
+}
+```
+
+Use the lower-level `StayhydatedProjectPortal` when the page intentionally
+needs destinations that differ from `ProjectSite`.
+
+Use `StayhydatedProjectPortalShell` for demo pages and other project-specific
+content inside the shared frame. Use `StayhydatedProjectLanding` only when a
+compact landing is intentionally preferred over the portal.
+
+Use `DemoGallery` instead of rebuilding the common grid, accent selection,
+shader offset, and reveal behavior:
+
+```rust
+let items = vec![
+    DemoGalleryItem::route(
+        app_route(PageKind::Dioxus),
+        "Dioxus",
+        "dioxus-demo-card-shader",
+    ),
+    DemoGalleryItem::href(
+        site().static_href("gpui-demo"),
+        "GPUI",
+        "gpui-demo-card-shader",
+    ),
+];
+
+rsx! {
+    DemoGallery::<AppRoute> {
+        items,
+        columns: DemoGalleryColumns::Three,
+    }
+}
+```
+
+Two columns are the default. Prefer other exported shared components—tabs,
+selects, fullscreen frames, shader backgrounds, landing links, and reveal
+styles—over local equivalents.
+
+## Assets and Dioxus configuration
 
 Set the repository slug as the Dioxus base path:
 
@@ -323,29 +330,20 @@ watch_path = ["src", "public"]
 ```
 
 Keep `[application].name` and `[web.app].base_path` aligned to the same
-non-empty project slug. When Cargo package or workspace repository metadata is
-present, keep its repository slug aligned as well. The consumer audit enforces
-these invariants without requiring a package manifest outside Cargo.
+non-empty project slug. Keep Cargo repository metadata aligned when present.
 
-`StayhydatedRouterApp` inserts:
+`StayhydatedProjectApp` and the single-page preset insert the shared component
+styles, including the bundled Dioxus component theme. Do not keep a copied
+`web/public/dx-components-theme.css`. A consumer stylesheet is optional; keep
+`web/public/assets/site.css` only when it contains project-specific rules and
+configure it explicitly in the app.
 
-- the shared component styles;
-- the project stylesheet at `<base>/assets/site.css`;
-- the generated component theme at `<base>/dx-components-theme.css`.
-
-Current consumers keep `web/public/.nojekyll` and
-`web/public/dx-components-theme.css` available to local `dx serve`. Preserve
-those checked-in development inputs during an ordinary shared-revision update.
-`WebBuildConfig::github_pages` writes authoritative copies into `web/dist` and
-normally copies `web/public/assets` into `web/dist/assets`.
-
-Keep shared component selectors and tokens in shared. Put project-specific
-rules in `web/public/assets/site.css`, or explicitly configure another asset
-source in the build task.
+`WebBuildConfig::github_pages` writes `.nojekyll` into the assembled artifact
+and normally copies `web/public/assets` when that directory exists.
 
 ## GitHub Pages build task
 
-Use the root-driven default-assets build for the Koruma-shaped consumer:
+Use the root-driven builder and pass the manifest as one contract:
 
 ```rust
 use stayhydated_xtask::web::WebBuildConfig;
@@ -356,83 +354,69 @@ pub fn run() -> anyhow::Result<()> {
     stayhydated_xtask::web::build(
         WebBuildConfig::github_pages(&workspace_root)
             .package("web")
-            .route_fallback_paths(web::route_paths())
-            .sitemap_xml(web::sitemap_xml())
+            .route_manifest(web::route_manifest())
             .build(),
     )
 }
 ```
 
-Use the explicit-assets variant for an es-fluent-shaped consumer:
+Use explicit inputs only when the consumer needs them:
 
 ```rust
-use stayhydated_xtask::web::WebBuildConfig;
-
-pub fn run() -> anyhow::Result<()> {
-    let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
-
-    stayhydated_xtask::web::build(
-        WebBuildConfig::github_pages(&workspace_root)
-            .command_current_dir(workspace_root.join("web"))
-            .no_public_assets_dir()
-            .extra_dir("web/assets", "assets")
-            .extra_file("web/public/assets/site.css", "assets/site.css")
-            .extra_dir("web/public/bevy-demo", "bevy-demo")
-            .extra_dir("web/public/gpui-demo", "gpui-demo")
-            .route_fallback_paths(web::route_paths())
-            .sitemap_xml(web::sitemap_xml())
-            .build(),
-    )
-}
+WebBuildConfig::github_pages(&workspace_root)
+    .command_current_dir(workspace_root.join("web"))
+    .no_public_assets_dir()
+    .extra_dir("web/assets", "assets")
+    .extra_file("web/public/assets/site.css", "assets/site.css")
+    .extra_dir("web/public/bevy-demo", "bevy-demo")
+    .extra_dir("web/public/gpui-demo", "gpui-demo")
+    .route_manifest(web::route_manifest())
+    .build()
 ```
 
-Keep only extra inputs the consumer actually produces. In particular, do not
-add localization assets, Bevy output, GPUI output, Trunk, or nightly setup to a
-consumer that does not use them.
+The builder always runs a release Dioxus Web SSG build, assembles `web/dist`,
+copies available book/LLM/public assets, writes route fallbacks and `404.html`,
+and renders `sitemap.xml` from the manifest. It has no SSR build mode.
 
-The builder:
+## Browser demo builds
 
-- runs a release Dioxus web SSG build;
-- assembles `web/dist`;
-- copies `web/public/assets`, `book`, `llms`, `llms.txt`, and
-  `llms-full.txt` when present;
-- writes `.nojekyll` and `dx-components-theme.css`;
-- writes route fallback `index.html` files;
-- copies the root index to `404.html`;
-- writes the supplied sitemap.
+Use `stayhydated_xtask::trunk` instead of copying a Trunk subprocess, output
+verifier, HTML shell, or initializer into the consumer. Generate the standard
+fullscreen page and shared loader with:
 
-Use `.extra_dir(source, destination)` and `.extra_file(source, destination)`
-for project-owned static demos or artifacts. Use `.no_public_assets_dir()` or
-`.public_assets_dir(path)` only when the repository intentionally assembles
-assets explicitly.
+```rust
+use stayhydated_xtask::trunk::{TrunkDemoBuildConfig, TrunkDemoPageConfig};
 
-If the Dioxus command runs from `web/`, use
-`.command_current_dir(workspace_root.join("web"))`; otherwise prefer the
-root-driven `.package("web")` shape.
-
-Build only the prerequisite outputs owned by the consumer before the final web
-task:
-
-```sh
-# es-fluent browser demos
-cargo xtask build bevy-demo
-cargo xtask build gpui-demo
-
-# common documentation outputs
-cargo xtask build book
-cargo xtask build llms-txt
-
-# final Pages artifact
-cargo xtask build web
+let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
+stayhydated_xtask::trunk::build(
+    &TrunkDemoBuildConfig::builder()
+        .workspace_root(workspace_root)
+        .example_dir("examples/gpui-demo")
+        .output_dir("web/public/gpui-demo")
+        .example_name("gpui-demo")
+        .required_marker("my-project-gpui-demo")
+        .toolchain("nightly")
+        .generated_page(
+            TrunkDemoPageConfig::builder()
+                .title("my-project GPUI demo")
+                .demo_name("GPUI")
+                .build(),
+        )
+        .build(),
+)
 ```
 
-Use `stayhydated_xtask::book`, `llms`, and `trunk` helpers rather than copying
-their implementation into the consumer.
+Add optional `TrunkDemoCopyDir` values when the demo needs copied assets. The
+helper stages generated inputs under
+`target/stayhydated-trunk/<example-name>/` and verifies JavaScript, Wasm, and
+the required marker.
+
+Keep only demos the consumer actually produces. Do not add Trunk or nightly to
+a site without a matching browser build.
 
 ## Static preview
 
-Keep the live development server, full publication build, and assembled static
-preview as distinct root `justfile` recipes:
+Keep live development, publication assembly, and static preview distinct:
 
 ```just
 web-build:
@@ -447,58 +431,15 @@ web-preview: web-build
     cargo xtask preview web
 ```
 
-Keep `web-build` dedicated even when it depends on a demo recipe:
-
-```just
-gpui-demo-build:
-    cargo xtask build gpui-demo
-
-web-build: gpui-demo-build
-    cargo xtask build book
-    cargo xtask build llms-txt
-    cargo xtask build web
-```
-
-Add a `PreviewCommand::Web` xtask target and route it through the shared helper:
-
-```rust
-use stayhydated_xtask::preview::StaticSitePreviewConfig;
-
-pub fn run() -> anyhow::Result<()> {
-    let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
-    stayhydated_xtask::preview::serve(
-        &StaticSitePreviewConfig::builder()
-            .workspace_root(&workspace_root)
-            .dist_dir("web/dist")
-            .base_path("my-project")
-            .build_hint("Run `just web-build` first.")
-            .build(),
-    )
-}
-```
-
-Do not add consumer-owned non-Cargo package manifests, package-manager
-commands, or JavaScript or TypeScript tool configuration for this workflow.
-
-Exercise the assembled artifact through `web-preview` rather than only
-`dx serve`, because direct navigation, fallback files, copied books/demos, and
-the repository base path are Pages contracts.
+Wire `PreviewCommand::Web` through `StaticSitePreviewConfig` with `web/dist`
+and the project base path. Exercise the assembled artifact because direct
+navigation, fallback files, copied books/demos, and the base path are Pages
+contracts that `dx serve` alone does not prove.
 
 ## Deployment workflow
 
-Current consumers own an explicit `.github/workflows/gh-pages.yml` with
-separate build and deploy jobs. Preserve that workflow during ordinary shared
-adoption and revision updates.
-
-Keep its project-specific setup aligned with the build:
-
-- Koruma installs the Dioxus CLI and runs book, llms.txt, and web builds.
-- es-fluent also installs Trunk and nightly, builds Bevy and GPUI demos, then
-  builds book, llms.txt, and web output.
-- both upload `web/dist` and deploy it through GitHub Pages actions.
-
-Use the shared reusable workflow only for a new consumer or an explicitly
-requested workflow migration:
+Use the shared reusable workflow. The consumer owns only its prerequisite build
+sequence and tool requirements:
 
 ```yaml
 name: Deploy to GitHub Pages
@@ -522,28 +463,22 @@ jobs:
     uses: stayhydated/shared/.github/workflows/deploy-pages.yml@master
     with:
       build-command: |
+        env -u RUSTC_WRAPPER cargo xtask build gpui-demo
         cargo xtask build book
         cargo xtask build llms-txt
         cargo xtask build web
-      artifact-path: web/dist
+      install-trunk: true
+      install-nightly: true
 ```
 
-For the reusable workflow, set `install-trunk: true` for Trunk-built browser
-demos and `install-nightly: true` for GPUI wasm builds that require nightly.
-Add those demo build commands before the web build.
-
-Follow repository policy for reusable-workflow refs. A full commit pin is
-appropriate for immutable workflow policy; `@master` follows the pattern used
-by current stayhydated reusable workflows. Cargo dependencies remain pinned to
-one full commit SHA either way.
-
-Keep an explicit workflow when it owns setup that the reusable inputs do not
-cover. Align its Rust target, Dioxus/Trunk versions, Pages permissions, artifact
-path, and deploy actions with the consumer's actual build.
+Omit `install-trunk` and `install-nightly` when unused. The default artifact is
+`web/dist`; override `artifact-path` only for a genuinely different layout.
+Keep an explicit workflow only when it owns setup the reusable inputs cannot
+express.
 
 ## Revision automation
 
-The shared reusable updater can keep Cargo revisions current:
+Every pinned consumer should use the reusable updater:
 
 ```yaml
 name: update shared revisions
@@ -562,43 +497,43 @@ jobs:
     uses: stayhydated/shared/.github/workflows/update-shared-revisions.yml@master
 ```
 
-It updates Cargo dependencies sourced from `stayhydated/shared` and regenerates
-the lockfile. It does not update immutable reusable-workflow SHAs.
+It updates dependencies sourced from `stayhydated/shared` and regenerates the
+lockfile. It does not update immutable reusable-workflow SHAs.
 
 ## Validation checklist
 
-Run the consumer's repository-standard commands first. A typical focused
-sequence is:
+Run the consumer's repository-standard commands first. A focused sequence is:
 
 ```sh
 just fmt
-just check
-just clippy
-just test
-cargo test -p web --lib --no-default-features --locked
+cargo test -p web --lib --locked
+cargo check -p xtask --locked
 just web-build
 cargo xtask preview web --help
 python3 <shared-checkout>/skills/use-stayhydated-github-pages/scripts/audit_consumer.py \
   . \
   --dist \
+  --expected-shared-revision <40-character-sha> \
   --site-url https://my-organization.github.io/my-project/
 git diff --check
 ```
 
-Adapt the feature set and generated prerequisites to repository evidence. Run
-the audit helper from the local shared checkout when available. Pass
-`--project-style-input <consumer-relative-path>` when the project stylesheet
-comes from another tracked source. Run the consumer's focused
-Dioxus/localization feature matrix when its CI or `justfile` defines one.
+Run `just check`, `just clippy`, and `just test` when repository guidance or
+the change scope calls for them. Run the consumer's localization or other
+library feature matrices separately; the `web` package itself has no feature
+matrix.
 
 Inspect `web/dist` for:
 
-- `.nojekyll`, `index.html`, and `404.html`;
-- `dx-components-theme.css` and `assets/site.css`;
-- every route fallback path;
-- `sitemap.xml` with the canonical project URL;
-- requested `book/`, `llms.txt`, `llms-full.txt`, `llms/`, and demo outputs.
+- `.nojekyll`, `index.html`, `404.html`, and `sitemap.xml`;
+- every application-route fallback;
+- requested `book/`, `llms.txt`, `llms-full.txt`, `llms/`, and demo outputs;
+- a hashed `assets/dx-components-theme*.css` bundled by Dioxus;
+- `assets/site.css` only when the app explicitly configures project CSS.
 
-Exercise the root and at least one nested route through `web-preview`, mounted
-at `/<project-slug>/`. Confirm `/<project-slug>-other/` returns `404` instead
-of entering the site.
+The shared component theme is bundled into Dioxus assets, so a root
+`dx-components-theme.css` is not part of the assembled contract.
+
+The audit validates declared sitemap entries but cannot infer a missing
+consumer-owned static destination. Keep direct manifest tests for every book,
+LLM, or browser-demo path the repository promises.

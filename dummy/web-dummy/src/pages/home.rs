@@ -1,38 +1,15 @@
 use dioxus::prelude::*;
-use stayhydated_dioxus::{Href, NavigationTarget, StayhydatedProjectPortal};
+use stayhydated_dioxus::{NavigationTarget, StayhydatedProjectSitePortal};
 
-use crate::site::{
-    constants::{PROJECT, SOURCE_URL, VERSION},
-    routing::PageKind,
-};
+use crate::site::{constants::site, routing::PageKind};
 
 #[component]
 pub(crate) fn HomePage() -> Element {
     rsx! {
-        StayhydatedProjectPortal::<crate::site::routing::AppRoute> {
-            project: PROJECT,
-            version: VERSION,
+        StayhydatedProjectSitePortal::<crate::site::routing::AppRoute> {
+            site: site(),
             home: NavigationTarget::Internal(crate::site::routing::app_route(PageKind::Home)),
-            docs: Href::new("about:blank"),
-            book: Href::new(crate::site::routing::book_href().into_string()),
             demos: NavigationTarget::Internal(crate::site::routing::app_route(PageKind::Demos)),
-            source: Href::new(SOURCE_URL),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn home_page_keeps_the_project_navigation() {
-        let html = dioxus::ssr::render_element(rsx! { HomePage {} });
-
-        assert!(html.contains("project-portal is-root"));
-        assert!(html.contains("portal-header"));
-        assert!(html.contains("portal-destinations"));
-        assert!(html.contains(r#"href="about:blank""#));
-        assert!(html.contains(SOURCE_URL));
     }
 }

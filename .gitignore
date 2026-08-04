@@ -1,5 +1,6 @@
 target/
 node_modules/
 .rumdl_cache/
-crates/stayhydated-dioxus-skeleton/.dx-bundle/
-crates/stayhydated-dioxus-skeleton/dist/
+.dx-bundle/
+dist/
+__pycache__

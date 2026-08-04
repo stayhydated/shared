@@ -1,19 +1,13 @@
-#[cfg(feature = "web")]
-use bon::Builder;
-#[cfg(feature = "web")]
 use dioxus::prelude::Element;
 
+mod manifest;
 pub mod route_cache;
 pub mod routing;
 pub mod sitemap;
 
-#[cfg(feature = "web")]
-#[derive(Builder, Clone, Copy)]
-pub struct SiteApp {
-    app: fn() -> Element,
-}
+pub use manifest::SiteRouteManifest;
 
-#[cfg(feature = "web")]
-pub fn launch(site_app: SiteApp) {
-    dioxus::launch(site_app.app);
+/// Launches the repository's browser-only Dioxus application.
+pub fn launch(app: fn() -> Element) {
+    dioxus::launch(app);
 }

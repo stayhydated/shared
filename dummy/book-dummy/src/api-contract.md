@@ -1,124 +1,52 @@
-# API Contract
+# Dummy Rust contract
 
-The API has one operation: sum an ordered list of integers through a
-provider-shaped request and return the verified answer with evidence.
+The workspace-local `sum-numbers-ai-dummy` crate supplies deterministic data to
+every fixture client. Construct a `SumRequest` and pass it to
+`sum_with_request`, or call `sum` when the default route labels are sufficient.
 
-The crate exposes a Rust boundary. The Dioxus, terminal, Bevy UI, and GPUI demos
-project that boundary into buyer-facing request and response examples.
-
-## Rust Boundary
-
-```rust
+```rust,ignore
 use sum_numbers_ai_dummy::{SumRequest, sum_with_request};
 
-let request = SumRequest::new([8, 13, 21])
-    .endpoint("https://api.sum-numbers-ai.invalid/v1/responses")
-    .model("sum-numbers-ai/addition-router-2026-07");
-
+let request = SumRequest::new([8, 13, 21]);
 let response = sum_with_request(&request);
 
+assert_eq!(response.numbers, [8, 13, 21]);
 assert_eq!(response.sum, 42);
 assert_eq!(response.model_result, "42");
 assert!(response.verified);
 ```
 
-`SumRequest` owns:
+## Request and response shape
 
-- `numbers`: ordered `i64` operands.
-- `endpoint`: provider endpoint URL, defaulting to the configured endpoint.
-- `model`: provider model name, defaulting to the configured addition router.
+`SumRequest::new` preserves the order of supplied `i64` operands. The optional
+`.endpoint(...)` and `.model(...)` setters replace labels used in the request ID
+and synthetic provider metadata.
 
-`SumResponse` returns:
+| Response field | Fixture meaning |
+| --- | --- |
+| `request_id` | Correlation value derived from operands and route labels |
+| `numbers` | Operands in their original order |
+| `sum` | Local `i128` accumulation |
+| `model_result` | Decimal string of the local total |
+| `verified` | Local result and result string agree |
+| `provider` | Endpoint, model, latency, and token fixture values |
+| `trace` | Five ordered provider-style events |
 
-- `request_id`: deterministic identifier for the request shape.
-- `numbers`: normalized operands echoed for audit.
-- `sum`: local `i128` total.
-- `model_result`: provider-style answer string.
-- `verified`: local guardrail result.
-- `provider`: endpoint, model, latency, and token metadata.
-- `trace`: ordered provider-style events.
+The default endpoint is
+`https://api.sum-numbers-ai.invalid/v1/responses`, and the default model is
+`sum-numbers-ai/addition-router-2026-07`. Both are labels; the crate performs no
+network operation.
 
-## HTTP-Style Facade
+## Fixture invariants
 
-The Dioxus console renders the Rust request as a documented wire facade:
+- Convert each `i64` operand to `i128` before accumulation.
+- Preserve operand order in the response.
+- Emit the endpoint, transport, prompt, model, and verification trace events in
+  that order.
+- Keep `MAX_DEMO_INPUTS` as the three-input limit for interactive clients.
+- Allow the library contract to accept workloads outside the interactive limit,
+  including an empty iterator, which sums to `0`.
 
-```http
-POST /v1/sum
-Content-Type: application/json
-```
-
-```json
-{
-  "numbers": [8, 13, 21],
-  "strategy": "llm-delegated",
-  "verification": "local-cross-check",
-  "endpoint": "https://api.sum-numbers-ai.invalid/v1/responses",
-  "model": "sum-numbers-ai/addition-router-2026-07"
-}
-```
-
-The response separates the answer from the provider metadata:
-
-```json
-{
-  "request_id": "sum_11772416564322390563",
-  "sum": 42,
-  "model_result": "42",
-  "verified": true,
-  "latency_ms": 173,
-  "usage": {
-    "prompt_tokens": 37,
-    "completion_tokens": 3
-  }
-}
-```
-
-Trace output stays line-oriented so both the web code block and the terminal can
-render it directly:
-
-```text
-ai.endpoint.resolve  Resolved AI sum endpoint https://api.sum-numbers-ai.invalid/v1/responses for request sum_11772416564322390563
-ai.transport.open  attached provider request budget through ai-sum-gateway-edge-cache-04
-ai.prompt.contract  Serialized 3 operands into strict JSON response contract sum.v1
-ai.model.dispatch  Dispatched addition prompt to model sum-numbers-ai/addition-router-2026-07 with deterministic verifier attached
-ai.response.verify  Parsed provider answer 42 and matched local guardrail
-```
-
-## Caller Validation
-
-Every demo client validates caller input before constructing a `SumRequest` and
-limits its interactive workload to three operands. Invalid numeric input uses a
-small error envelope:
-
-```json
-{
-  "error": {
-    "code": "invalid_number_input",
-    "message": "Review input 2"
-  }
-}
-```
-
-Provider-facing implementations should keep transport failures distinct from
-caller validation failures:
-
-```json
-{
-  "error": {
-    "code": "provider_unavailable",
-    "message": "The delegated sum request could not be completed.",
-    "retryable": true
-  }
-}
-```
-
-## Contract Rules
-
-1. Preserve operand order in the request and response.
-2. Accumulate the local answer in `i128` so extreme `i64` operands remain safe to
-   demonstrate.
-3. Keep provider endpoint and model visible.
-4. Return token and latency fields as first-class metadata.
-5. Attach trace events in the order a reviewer should read them.
-6. Use one local crate boundary for every demo client.
-7. Keep demo inputs capped at three without input reordering controls.
+`numbers_from_entropy` and `request_from_entropy` provide deterministic
+workloads for generated examples. They include extreme and mixed-sign operands
+so clients can exercise the `i128` result boundary.

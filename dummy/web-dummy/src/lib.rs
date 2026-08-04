@@ -7,13 +7,35 @@ mod terminal;
 pub use site::app::App;
 pub use site::constants::SITE_URL;
 
-pub fn route_paths() -> Vec<String> {
-    site::routing::all_routes()
-        .into_iter()
-        .map(|route| route.path().into_string())
-        .collect()
+pub fn route_manifest() -> stayhydated_site::SiteRouteManifest {
+    site::constants::site()
+        .route_manifest::<site::routing::AppRoute>()
+        .with_static_paths(["/bevy-demo/", "/gpui-demo/"])
 }
 
-pub fn sitemap_xml() -> String {
-    site::render::render_sitemap()
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn route_manifest_includes_both_static_wasm_demos() {
+        let manifest = route_manifest();
+        let sitemap = manifest.sitemap_xml();
+
+        assert_eq!(
+            manifest
+                .application_paths()
+                .iter()
+                .map(|path| path.as_str())
+                .collect::<Vec<_>>(),
+            ["/", "/demos/", "/demos/dioxus/", "/demos/terminal/"]
+        );
+
+        assert!(
+            sitemap.contains("<loc>https://stayhydated.github.io/sum-numbers-ai/bevy-demo/</loc>")
+        );
+        assert!(
+            sitemap.contains("<loc>https://stayhydated.github.io/sum-numbers-ai/gpui-demo/</loc>")
+        );
+    }
 }

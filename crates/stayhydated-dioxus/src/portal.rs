@@ -36,7 +36,7 @@ pub fn StayhydatedProjectPortalShell<R: Routable + Clone + PartialEq + 'static>(
     }
 }
 
-/// Stayhydated project portal with consumer-provided docs, book, demos, and source destinations.
+/// Stayhydated project portal with consumer-provided docs, book, source, and optional demos.
 #[component]
 pub fn StayhydatedProjectPortal<R: Routable + Clone + PartialEq + 'static>(
     project: Project,
@@ -44,16 +44,22 @@ pub fn StayhydatedProjectPortal<R: Routable + Clone + PartialEq + 'static>(
     home: NavigationTarget<R>,
     #[props(into)] docs: Href,
     #[props(into)] book: Href,
-    demos: NavigationTarget<R>,
+    demos: Option<NavigationTarget<R>>,
     #[props(into)] source: Href,
 ) -> Element {
     let shader_id_prefix = format!("{}-portal", project.as_str());
-    let destinations = vec![
+    let mut destinations = vec![
         PortalDestination::href(docs, "Docs", PortalAccent::Yellow),
         PortalDestination::href(book, "Book", PortalAccent::Cyan),
-        PortalDestination::new(demos, "Demos", PortalAccent::Magenta),
-        PortalDestination::href(source, "Git", PortalAccent::White),
     ];
+    if let Some(demos) = demos {
+        destinations.push(PortalDestination::new(
+            demos,
+            "Demos",
+            PortalAccent::Magenta,
+        ));
+    }
+    destinations.push(PortalDestination::href(source, "Git", PortalAccent::White));
 
     rsx! {
         ProjectPortal::<R> {

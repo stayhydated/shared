@@ -1,6 +1,6 @@
 # Summary
 
-- [Executive Brief](introduction.md)
-- [Product Positioning](positioning.md)
-- [API Contract](api-contract.md)
-- [Operating Model](operating-model.md)
+- [Fixture overview](introduction.md)
+- [Scenario coverage](positioning.md)
+- [Dummy Rust contract](api-contract.md)
+- [Build and inspect](operating-model.md)

@@ -1,60 +1,25 @@
-# Product Positioning
+# Scenario coverage
 
-`sum-numbers-ai-dummy` is positioned as a managed AI integration for focused
-addition workflows.
+Use the fixture to check that shared site behavior remains consistent across
+frameworks and generated documentation. Each surface intentionally presents the
+same small request in a different form.
 
-The product story is direct: a well-designed AI service should make provider
-routing, verification, documentation, and operational evidence easy to inspect.
+| Surface | Scenario | Expected evidence |
+| --- | --- | --- |
+| Rust library | Sum ordered `i64` operands | An `i128` total, route labels, and synthetic trace data |
+| Dioxus console | Edit up to three operands | Request, response, and trace panels update together |
+| Ratzilla terminal | Enter a JSON-style integer list | Parsed operands and the local response are printed |
+| Bevy UI | Edit three operand fields | The total updates after every field parses |
+| GPUI | Edit or reset three operand fields | The total updates and reset restores `8 + 13 + 21` |
+| Documentation pipeline | Build the book and LLM outputs | Generated pages describe the same fixture contract |
 
-## Audience
+## Review boundary
 
-The primary audience is a reviewer who cares about the shape around an AI
-feature:
+Interpret provider names, latency, token counts, request IDs, and trace messages
+as deterministic fixture data. The executable path performs local arithmetic
+and opens no provider connection. Use separate integration evidence for network,
+authentication, retry, model-quality, cost, or service-limit behavior.
 
-- Product leads evaluating whether the user-facing promise is specific.
-- Platform engineers checking provider routing and operational evidence.
-- Documentation owners checking that examples match implementation behavior.
-- Client owners validating that multiple surfaces use one contract.
-
-## Value Proposition
-
-### Clear contract
-
-The request accepts an ordered list of integers and a provider route. The
-response returns the answer, the model-facing result, provider metadata, and
-trace events as separate fields.
-
-### Transparent delegation
-
-The provider route is visible. Endpoint, model, latency, prompt tokens,
-completion tokens, and trace codes all remain part of the response story.
-
-### Deterministic verification
-
-The crate computes the answer locally with `i128` accumulation. The provider
-result is returned beside a `verified` flag so clients can show the AI boundary
-without depending on an external service.
-
-### Professional documentation target
-
-The focused workload supports fast review, while the site and book still
-exercise real documentation concerns: positioning, API examples, client surfaces,
-generated book output, llms text, route metadata, and static web output.
-
-## Message Framework
-
-| Question | Answer |
-| --- | --- |
-| What is it? | A Rust API and product site for an AI-assisted sum workflow. |
-| Why does it exist? | To make AI API integration discipline visible without domain noise. |
-| What should reviewers inspect? | Request shape, response envelope, trace data, verification, and client parity. |
-| What makes it credible? | The clients call the real local crate and render the response fields directly. |
-
-## Success Criteria
-
-A professional presentation of this product succeeds when a reader can answer
-three questions quickly:
-
-1. What does a caller send?
-2. What evidence comes back?
-3. Which generated docs and client surfaces prove the same contract?
+A useful fixture review confirms that all clients agree on the result, the route
+manifest includes the expected application and static paths, and generated
+documentation comes from the current book source.

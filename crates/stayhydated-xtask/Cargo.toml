@@ -15,6 +15,8 @@ bon = { workspace = true }
 cargo_metadata = { workspace = true }
 mdbook-driver = { workspace = true }
 path-slash = { workspace = true }
+pathdiff = { workspace = true }
+stayhydated-site = { workspace = true }
 strum = { features = [ "derive" ], workspace = true }
 walkdir = { workspace = true }
 

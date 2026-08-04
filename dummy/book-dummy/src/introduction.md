@@ -1,38 +1,31 @@
-# Executive Brief
+# Fixture overview
 
-`sum-numbers-ai-dummy` packages integer addition as a managed AI workflow with a
-clear request contract, provider metadata, verified responses, and generated
-documentation.
+This book is source material for the `sum-numbers-ai` documentation fixture in
+the `stayhydated/shared` workspace. Maintainers use it to exercise mdBook, LLM
+text generation, static-site assembly, and links between several Rust browser
+clients.
 
-The product surface is designed around operational clarity. A caller submits an
-ordered integer workload, the service records the provider route, and the
-response returns the answer beside verification and trace evidence.
+The fixture models an AI-style addition request, but every value is computed
+locally. The reserved `.invalid` endpoint, provider metadata, and trace events
+exist to give the shared presentation and generation code stable content.
 
-## What the crate provides
+## What the fixture exercises
 
-The crate computes the sum locally and returns provider-style metadata. That
-keeps every demo deterministic while exercising the shape of an AI-backed API:
+- `sum-numbers-ai-dummy` supplies one deterministic Rust contract.
+- Dioxus and Ratzilla present the contract as console and terminal experiences.
+- Bevy UI and GPUI present the same contract as browser demos.
+- The dummy xtask builds this book, LLM text files, route fallbacks, a sitemap,
+  and the assembled site.
 
-- A caller creates a `SumRequest` from an ordered list of `i64` operands.
-- The request carries the endpoint and model that would identify the provider
-  route.
-- `sum_with_request` returns a `SumResponse` with the numeric answer, provider
-  metadata, verification status, and trace events.
-- The Dioxus, terminal, Bevy UI, and GPUI clients call the same library boundary.
-- The mdBook, llms output, sitemap, and static web build all document the same
-  current behavior.
+The canonical scenario uses `8`, `13`, and `21`. Each client should display a
+sum of `42` and successful local verification.
 
-## Why the product is focused
+## Source and generated output
 
-An addition-focused AI workflow gives reviewers a compact surface for evaluating
-the parts of the product that matter operationally:
+Edit chapters under `dummy/book-dummy/src`. The dummy xtask writes rendered book
+and LLM artifacts under `dummy/web-dummy/public`; treat those files as generated
+output and rebuild them from this source.
 
-- Product reviewers can evaluate the value proposition without learning a
-  domain model.
-- API reviewers can see the full contract in one page.
-- Documentation reviewers can compare examples against the actual Rust types.
-- Demo reviewers can verify that all four clients agree on the same three-input
-  workload.
-
-The focused workload keeps the contract easy to inspect while preserving the
-same evidence model expected from a larger AI-backed service.
+See [Scenario coverage](positioning.md) for the surfaces under review,
+[Dummy Rust contract](api-contract.md) for the shared data shape, and
+[Build and inspect](operating-model.md) for repository commands.

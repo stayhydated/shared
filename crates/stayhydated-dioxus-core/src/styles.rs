@@ -1,8 +1,5 @@
 use dioxus::prelude::*;
 
-pub const DX_COMPONENTS_THEME_FILE_NAME: &str = "dx-components-theme.css";
-pub const DX_COMPONENTS_THEME_CSS: &str = include_str!("dx-components-theme.css");
-
 #[component]
 pub fn SharedStyles() -> Element {
     rsx! {
@@ -12,18 +9,18 @@ pub fn SharedStyles() -> Element {
         document::Stylesheet { href: asset!("./motion.css") }
         document::Stylesheet { href: asset!("./demo.css") }
         document::Stylesheet { href: asset!("./portal.css") }
+        document::Stylesheet { href: asset!("./dx-components-theme.css") }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
-    fn shared_dx_components_theme_exposes_expected_file() {
-        assert_eq!(DX_COMPONENTS_THEME_FILE_NAME, "dx-components-theme.css");
-        assert!(DX_COMPONENTS_THEME_CSS.contains("--primary-color"));
-        assert!(DX_COMPONENTS_THEME_CSS.contains("--focused-border-color"));
+    fn shared_dx_components_theme_exposes_expected_tokens() {
+        let theme = include_str!("dx-components-theme.css");
+
+        assert!(theme.contains("--primary-color"));
+        assert!(theme.contains("--focused-border-color"));
     }
 
     #[test]
@@ -34,5 +31,29 @@ mod tests {
         assert!(layout_css.contains("0 0 18px rgba(255, 255, 0, 0.34)"));
         assert!(layout_css.contains("0 0 44px rgba(255, 255, 0, 0.16)"));
         assert!(!layout_css.contains("rgba(255, 0, 230, 0.58)"));
+    }
+
+    #[test]
+    fn portal_header_constrains_and_wraps_project_copy() {
+        let portal_css = include_str!("portal.css");
+        let title_copy_rule = rule(portal_css, ".portal-title-copy");
+        let version_rule = rule(portal_css, ".portal-version");
+        let tagline_rule = rule(portal_css, ".portal-header p");
+
+        assert!(title_copy_rule.contains("flex: 1 1 auto"));
+        assert!(title_copy_rule.contains("min-width: 0"));
+        assert!(version_rule.contains("flex: 0 0 auto"));
+        assert!(version_rule.contains("white-space: nowrap"));
+        assert!(tagline_rule.contains("width: 100%"));
+        assert!(tagline_rule.contains("min-width: 0"));
+        assert!(tagline_rule.contains("overflow-wrap: anywhere"));
+        assert!(tagline_rule.contains("white-space: normal"));
+    }
+
+    fn rule<'a>(css: &'a str, selector: &str) -> &'a str {
+        css.split_once(&format!("{selector} {{"))
+            .and_then(|(_, declarations)| declarations.split_once('}'))
+            .map(|(declarations, _)| declarations)
+            .unwrap_or_else(|| panic!("missing CSS rule for {selector}"))
     }
 }

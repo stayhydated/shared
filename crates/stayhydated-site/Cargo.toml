@@ -9,14 +9,9 @@ publish.workspace = true
 repository.workspace = true
 readme = "README.md"
 
-[features]
-default = [ "web" ]
-web = [ "dep:dioxus", "dioxus/launch", "dioxus/web" ]
-
 [dependencies]
-bon = { workspace = true }
 derive_more = { features = [ "from" ], workspace = true }
-dioxus = { optional = true, workspace = true }
+dioxus = { features = [ "cli-config", "launch", "router", "web" ], workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

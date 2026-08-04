@@ -8483,6 +8483,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e91099d4268b0e11973f036e885d652fb0b21fedcf69738c627f94db6a44f42"
 
 [[package]]
+name = "pathdiff"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
+
+[[package]]
 name = "pathfinder_geometry"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10633,10 +10639,12 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "stayhydated-dioxus"
 version = "0.1.0"
 dependencies = [
+ "bon",
  "dioxus",
  "dioxus-free-icons",
  "dioxus-primitives",
  "stayhydated-dioxus-core",
+ "stayhydated-site",
  "web-sys",
 ]
 
@@ -10662,7 +10670,6 @@ dependencies = [
 name = "stayhydated-site"
 version = "0.1.0"
 dependencies = [
- "bon",
  "derive_more",
  "dioxus",
  "tempfile",
@@ -10677,6 +10684,8 @@ dependencies = [
  "cargo_metadata",
  "mdbook-driver",
  "path-slash",
+ "pathdiff",
+ "stayhydated-site",
  "strum 0.28.0",
  "tempfile",
  "walkdir",
