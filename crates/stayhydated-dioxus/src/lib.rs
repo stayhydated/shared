@@ -1,4 +1,5 @@
 mod app;
+mod embedded_demo;
 mod landing;
 mod portal;
 mod project;
@@ -6,6 +7,7 @@ mod project_site;
 mod single_page;
 
 pub use app::{StayhydatedDioxusApp, StayhydatedDocumentAssets, StayhydatedRouterApp};
+pub use embedded_demo::StayhydatedEmbeddedDemoProjectApp;
 pub use landing::StayhydatedProjectLanding;
 pub use portal::{StayhydatedProjectPortal, StayhydatedProjectPortalShell};
 pub use project::{Project, StayhydatedProjectPageMetadata};

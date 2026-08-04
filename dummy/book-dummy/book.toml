@@ -1,6 +1,6 @@
 [book]
 authors = [ "stayhydated" ]
-description = "Product, Rust API, and demo operating guide for the local sum-numbers-ai evaluation target."
+description = "Documentation fixture for the local sum-numbers-ai validation project."
 language = "en"
 src = "src"
-title = "sum-numbers-ai"
+title = "sum-numbers-ai fixture"

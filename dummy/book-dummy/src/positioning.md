@@ -1,48 +1,25 @@
-# Product fit
+# Scenario coverage
 
-`sum-numbers-ai` helps teams review the shape and presentation of an auditable
-AI integration without requiring a live provider. It is best suited to contract,
-documentation, and cross-client evaluations; its local evidence is not a
-substitute for production-provider testing.
+Use the fixture to check that shared site behavior remains consistent across
+frameworks and generated documentation. Each surface intentionally presents the
+same small request in a different form.
 
-## Intended reviewers
-
-- Product leads can test whether the addition workflow and its evidence are
-  understandable.
-- Platform and API reviewers can inspect route fields, response metadata, trace
-  ordering, and local verification.
-- Documentation owners can compare the book's examples with the public Rust
-  types and generated outputs.
-- Client owners can confirm that Dioxus, terminal, Bevy UI, and GPUI surfaces
-  call one Rust boundary.
-
-## Evidence and limits
-
-| Review concern | Evidence in this target | What the evidence means |
+| Surface | Scenario | Expected evidence |
 | --- | --- | --- |
-| Request contract | Ordered `i64` operands plus endpoint and model strings | Callers can inspect the intended route alongside the workload. |
-| Result correctness | Local `i128` accumulation and a matching result string | `verified: true` confirms local consistency only. |
-| Operational visibility | Synthetic latency, token counts, and five trace events | Reviewers can assess field naming and presentation, not live operations. |
-| Client parity | Four clients use `sum_with_request` | The same `8`, `13`, and `21` inputs produce `42` across frameworks. |
-| Generated documentation | mdBook, llms files, sitemap, and static site | Reviewers can compare outputs produced from one source tree. |
+| Rust library | Sum ordered `i64` operands | An `i128` total, route labels, and synthetic trace data |
+| Dioxus console | Edit up to three operands | Request, response, and trace panels update together |
+| Ratzilla terminal | Enter a JSON-style integer list | Parsed operands and the local response are printed |
+| Bevy UI | Edit three operand fields | The total updates after every field parses |
+| GPUI | Edit or reset three operand fields | The total updates and reset restores `8 + 13 + 21` |
+| Documentation pipeline | Build the book and LLM outputs | Generated pages describe the same fixture contract |
 
-The configured endpoint uses the reserved `.invalid` domain, and the crate never
-opens a network connection. Authentication, retries, timeouts, provider errors,
-and real cost or performance data require separate integration evidence.
+## Review boundary
 
-## Decision criteria
+Interpret provider names, latency, token counts, request IDs, and trace messages
+as deterministic fixture data. The executable path performs local arithmetic
+and opens no provider connection. Use separate integration evidence for network,
+authentication, retry, model-quality, cost, or service-limit behavior.
 
-This target is a fit when the decision is about:
-
-- the clarity of a Rust request and response contract;
-- the visibility of provider-routing fields and audit events;
-- deterministic demonstrations across multiple UI frameworks; or
-- alignment between product prose, API examples, and generated documentation.
-
-Use a provider-backed prototype when the decision depends on network behavior,
-credentials, model quality, service limits, fallback policy, or observed
-latency and token usage.
-
-An evaluation is successful when reviewers can identify what a caller sends,
-which fields come back, which values are synthetic, and whether all four clients
-show the same result.
+A useful fixture review confirms that all clients agree on the result, the route
+manifest includes the expected application and static paths, and generated
+documentation comes from the current book source.

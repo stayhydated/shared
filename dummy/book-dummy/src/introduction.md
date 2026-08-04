@@ -1,36 +1,31 @@
-# Overview
+# Fixture overview
 
-`sum-numbers-ai` is a deterministic evaluation target for an auditable
-AI-style addition API. Its Rust crate accepts ordered `i64` operands and returns
-an `i128` total together with a request ID, route metadata, verification status,
-and trace events.
+This book is source material for the `sum-numbers-ai` documentation fixture in
+the `stayhydated/shared` workspace. Maintainers use it to exercise mdBook, LLM
+text generation, static-site assembly, and links between several Rust browser
+clients.
 
-All calculation, verification, and provider-style evidence is generated locally.
-The examples do not contact the configured endpoint or invoke an AI model. Use
-them to review a contract and its presentation across clients, not to measure
-provider availability, latency, token use, or model accuracy.
+The fixture models an AI-style addition request, but every value is computed
+locally. The reserved `.invalid` endpoint, provider metadata, and trace events
+exist to give the shared presentation and generation code stable content.
 
-## What you can evaluate
+## What the fixture exercises
 
-- The `sum-numbers-ai-dummy` crate provides the executable Rust contract.
-- The Dioxus console displays an illustrative request, response, and trace.
-- The Ratzilla terminal accepts JSON-style integer lists through a `clap`
-  command parser.
-- The Bevy UI and GPUI browser demos recompute the same Rust sum from three
-  fields.
-- The build produces the mdBook, an llms text set, a sitemap, and the static demo
-  site from the same repository state.
+- `sum-numbers-ai-dummy` supplies one deterministic Rust contract.
+- Dioxus and Ratzilla present the contract as console and terminal experiences.
+- Bevy UI and GPUI present the same contract as browser demos.
+- The dummy xtask builds this book, LLM text files, route fallbacks, a sitemap,
+  and the assembled site.
 
-When reviewers use the operands `8`, `13`, and `21`, every client reports a
-total of `42` and a successful local verification.
+The canonical scenario uses `8`, `13`, and `21`. Each client should display a
+sum of `42` and successful local verification.
 
-## Choose your path
+## Source and generated output
 
-- Buyers and product reviewers can use [Product fit](positioning.md) to
-  understand what this target does and what it cannot prove.
-- Rust callers and API reviewers can use the
-  [Rust API contract](api-contract.md) for defaults, fields, examples, and input
-  boundaries.
-- Demo reviewers can use
-  [Evaluate and operate the demos](operating-model.md) to build the site and
-  compare all four clients.
+Edit chapters under `dummy/book-dummy/src`. The dummy xtask writes rendered book
+and LLM artifacts under `dummy/web-dummy/public`; treat those files as generated
+output and rebuild them from this source.
+
+See [Scenario coverage](positioning.md) for the surfaces under review,
+[Dummy Rust contract](api-contract.md) for the shared data shape, and
+[Build and inspect](operating-model.md) for repository commands.

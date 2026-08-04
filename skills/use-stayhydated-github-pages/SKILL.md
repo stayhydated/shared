@@ -1,89 +1,67 @@
 ---
 name: use-stayhydated-github-pages
-description: "Use when adding, reviewing, migrating, or updating a GitHub Pages site built on stayhydated/shared, including shared revision pins, consumer-owned project configuration, Dioxus routing and assets, xtask assembly, books and browser demos, static preview, Pages workflows, and Koruma or es-fluent patterns."
+description: "Adopt, migrate, review, or update a Rust/Dioxus GitHub Pages site that consumes stayhydated/shared. Use for synchronized shared SHA pins, consumer-owned Project or ProjectSite configuration, single-page or multi-route shells, route manifests, mdBook or LLM outputs, Trunk browser demos, static preview, reusable Pages workflows, revision automation, or audit_consumer.py."
 ---
 
 # Use stayhydated GitHub Pages
 
-## Scope boundary
+## Establish the source of truth
 
-Treat the shared repository as the source of truth for:
+1. Read the consumer repository's guidance and inspect `Cargo.toml`,
+   `Cargo.lock`, `justfile`, `web/`, `xtask/`, and `.github/workflows/`.
+2. Read `stayhydated/shared` guidance and source at the consumer's pinned full
+   SHA. Do not infer signatures from a newer checkout.
+3. Record the project slug, canonical URL, Dioxus base path, routes, generated
+   directories, books, LLM outputs, browser demos, and default branch.
+4. Preserve unrelated worktree changes and treat generated artifacts as build
+   outputs.
 
-- common Dioxus shells, landing pages, cards, navigation, and styles;
-- base-path, route, sitemap, and static-output types;
-- GitHub Pages build, fallback, preview, book, llms.txt, and Trunk helpers;
-- reusable Pages and shared-revision workflows.
+## Preserve ownership
 
-Keep the project name, tagline, canonical URL, docs/book/source destinations,
-optional demo destination, Skills command, landing theme, and other project
-identity in the consumer repository.
+Shared owns generic Dioxus shells and styles, base-path and route types, static
+assembly helpers, and reusable workflows. The consumer owns project identity,
+canonical URLs, destinations, routes, optional CSS, demo inputs, and its xtask
+sequence.
 
-Read the shared repository's own `AGENTS.md` before maintaining those
-implementations. Read the consumer repository's guidance before changing its
-site.
+Keep application routes root-relative. Let Dioxus configuration and shared
+routing helpers apply the GitHub Pages project prefix.
 
-## Core workflow
+## Select the workflow
 
-1. Inspect the consumer before editing:
-   - locate `AGENTS.md`, `Cargo.toml`, `Cargo.lock`, `justfile`, `web/`,
-     `xtask/`, and `.github/workflows/`;
-   - identify its project slug, Cargo repository metadata, Dioxus application
-     name and base path, default branch, static routes, generated directories,
-     books, llms.txt outputs, and browser demos;
-   - preserve dirty worktree changes.
-2. Resolve the shared source:
-   - prefer the local `shared` checkout when available;
-   - inspect its current commit and the exact requested revision;
-   - compare the consumer's pinned revision with the target before changing
-     call sites;
-   - never infer an API from a newer local checkout when the consumer remains
-     pinned to an older commit.
-3. Define project identity and destinations in the consumer:
-   - construct a local `stayhydated_dioxus::Project` value from the project
-     name and tagline;
-   - opt into the portal Skills control with `.with_skill_command(...)`;
-   - define the canonical site URL and docs, book, and source destinations beside
-     the consumer's routing constants, plus a demo destination when the project
-     has demos;
-   - pass theme and landing links explicitly where the landing component is
-     used.
-4. Pin `stayhydated-dioxus`, `stayhydated-site`, and
-   `stayhydated-xtask` to the same full shared SHA in workspace dependencies.
-   Regenerate `Cargo.lock` with package-scoped `cargo update` and review solver
-   churn.
-5. Wire the web crate around shared types:
-   - keep the package featureless and enable Dioxus Web unconditionally;
-   - launch directly with `stayhydated_site::launch(web::App)`;
-   - define one consumer-owned `ProjectSite` for both one-route and multi-route
-     sites;
-   - use `StayhydatedSinglePageProjectApp` as the one-route preset;
-   - use `StayhydatedProjectApp` for a custom `Routable` application;
-   - use `StayhydatedProjectPageMetadata` for every route;
-   - use `StayhydatedProjectSitePortal` when the configured docs, book, source,
-     version, and project identity fit the home portal;
-   - use `ProjectSite::static_href` for consumer-owned static destinations;
-   - export one `SiteRouteManifest` for fallback and sitemap generation;
-   - derive multi-route application paths from the app's `Routable` enum;
-   - test consumer-owned configuration directly without enabling Dioxus SSR.
-6. Assemble Pages through
-   `stayhydated_xtask::web::WebBuildConfig::github_pages`:
-   - pass the consumer's route manifest;
-   - keep the default public-assets pipeline when it fits;
-   - use explicit assets and demo inputs when the consumer already owns them.
-7. Expose the Pages workflow through three root `justfile` recipes:
-   - keep a dedicated `web-build` recipe that assembles every consumer-owned
-     prerequisite and finishes with `cargo xtask build web`;
-   - make `web: web-build` run `dx serve --package web`;
-   - make `web-preview: web-build` run `cargo xtask preview web`;
-   - wire the xtask preview command to the shared static preview helper with the
-     consumer's `web/dist` directory and project base path.
-8. Deploy through the shared reusable Pages workflow:
-   - do not introduce consumer-owned non-Cargo package manifests,
-     package-manager commands, or JavaScript or TypeScript tool configuration
-     solely for the Pages site;
-   - install Trunk and nightly only for browser demos that need them.
-9. Build and inspect the actual `web/dist` artifact under the project base path
-   before calling the site work complete.
+- For a revision-only update, inspect the pinned API, update all three shared
+  dependencies to one full SHA, refresh only those lockfile packages, and run
+  the consumer audit.
+- For a single-route portal, use `ProjectSite` with
+  `StayhydatedSinglePageProjectApp`.
+- For a portal that embeds one static demo, use
+  `StayhydatedEmbeddedDemoProjectApp` and its manifest preset.
+- For a multi-route site, derive application paths from the consumer's
+  `Routable` enum and use `StayhydatedProjectApp`.
+- For build, asset, demo, preview, deployment, or revision-automation work, load
+  the matching section of
+  [references/adoption-patterns.md](references/adoption-patterns.md) before
+  editing.
+
+Read the full reference for a new adoption or site-wide review. For a narrow
+change, load only the relevant section and verify every signature against the
+pinned source.
+
+## Apply the shared contract
+
+1. Pin `stayhydated-dioxus`, `stayhydated-site`, and `stayhydated-xtask` to one
+   full shared SHA in workspace dependencies.
+2. Define consumer-owned `Project` and `ProjectSite` values. Configure the
+   Skills command and demo path only when those destinations exist.
+3. Keep the web package featureless, enable Dioxus Web directly, and launch with
+   `stayhydated_site::launch(web::App)`.
+4. Export one `SiteRouteManifest`; use it for both fallback generation and the
+   sitemap.
+5. Assemble the site with `WebBuildConfig::github_pages`, adding explicit asset
+   and demo inputs only when the consumer owns them.
+6. Keep `web-build`, `web`, and `web-preview` as distinct repository tasks, with
+   the build task producing every prerequisite before final assembly.
+7. Use the shared reusable deployment and revision-update workflows. Install
+   Trunk or nightly only for demos that require them.
 
 ## Ownership rules
 
@@ -105,16 +83,13 @@ xtask, preview, or workflow shapes. For a narrow shared-revision update, inspect
 the pinned source and affected consumer surfaces first, then load the reference
 only when a signature or site contract needs comparison.
 
-Use locally available Koruma and es-fluent checkouts as consumer evidence, not
-as sources for shared project metadata. Preserve their distinct build variants
-instead of making either variant a requirement for the other.
+## Validate the assembled contract
 
-Prefer current local source at the pinned shared revision over the reference
-when signatures differ.
+Follow the reference's validation checklist, then run the bundled
+[consumer audit](scripts/audit_consumer.py). Pass the intended commit with
+`--expected-shared-revision` and use `--dist` after building the site.
 
-Follow the reference's validation checklist and run the bundled
-[consumer audit](scripts/audit_consumer.py). When shared itself changed,
-validate the focused shared crates and dummy site before validating consumers.
-Pass the intended commit with `--expected-shared-revision`. The audit checks
-structure and generated output; it does not replace a locked compile or
-consumer tests that assert every expected static route is in the manifest.
+Inspect `web/dist` under the configured base path. The audit checks shared
+structure and declared generated routes; retain consumer tests for every static
+destination the project promises. When shared itself changes, validate the
+focused shared crates and dummy site before validating consumers.

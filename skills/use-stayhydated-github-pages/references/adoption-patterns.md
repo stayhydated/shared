@@ -82,7 +82,7 @@ or its site constants module. Do not put project identity in shared.
 
 Use `ProjectSite` with `StayhydatedSinglePageProjectApp` when `/` is the only
 Dioxus route. The preset owns the standard metadata, router, portal,
-base-path-aware Book and optional Demos destinations, and route manifest while
+base-path-aware Book and optional direct Demos destination, and route manifest while
 leaving values in the consumer:
 
 ```rust
@@ -150,6 +150,30 @@ mod tests {
 
 Do not enable Dioxus SSR to test consumer configuration. Shared component
 tests own generic rendered markup behavior.
+
+Use `StayhydatedEmbeddedDemoProjectApp` when the portal should keep its shared
+header while a single static browser demo runs inside the page. Configure the
+raw artifact with `demo_path`, link the portal to the preset's `/demo/` route,
+and assemble both the application route and static output from one manifest:
+
+```rust
+use dioxus::prelude::*;
+use stayhydated_dioxus::{
+    Project, ProjectSite, StayhydatedEmbeddedDemoProjectApp,
+};
+
+#[component]
+pub fn App() -> Element {
+    rsx! { StayhydatedEmbeddedDemoProjectApp { site: site() } }
+}
+
+pub fn route_manifest() -> stayhydated_site::SiteRouteManifest {
+    site().embedded_demo_route_manifest()
+}
+```
+
+The manifest treats `/demo/` as a Dioxus application route and the configured
+`demo_path` as the raw static iframe source.
 
 ## Multi-route sites
 
@@ -356,11 +380,12 @@ and renders `sitemap.xml` from the manifest. It has no SSR build mode.
 
 ## Browser demo builds
 
-Use `stayhydated_xtask::trunk` instead of copying a Trunk subprocess and output
-verifier into the consumer. A checked-in GPUI demo page can use:
+Use `stayhydated_xtask::trunk` instead of copying a Trunk subprocess, output
+verifier, HTML shell, or initializer into the consumer. Generate the standard
+fullscreen page and shared loader with:
 
 ```rust
-use stayhydated_xtask::trunk::TrunkDemoBuildConfig;
+use stayhydated_xtask::trunk::{TrunkDemoBuildConfig, TrunkDemoPageConfig};
 
 let workspace_root = stayhydated_xtask::workspace_root_from_xtask_manifest()?;
 stayhydated_xtask::trunk::build(
@@ -371,12 +396,18 @@ stayhydated_xtask::trunk::build(
         .example_name("gpui-demo")
         .required_marker("my-project-gpui-demo")
         .toolchain("nightly")
+        .generated_page(
+            TrunkDemoPageConfig::builder()
+                .title("my-project GPUI demo")
+                .demo_name("GPUI")
+                .build(),
+        )
         .build(),
 )
 ```
 
-For a generated fullscreen page, add `TrunkDemoPageConfig` and optional
-`TrunkDemoCopyDir` values. The helper stages generated inputs under
+Add optional `TrunkDemoCopyDir` values when the demo needs copied assets. The
+helper stages generated inputs under
 `target/stayhydated-trunk/<example-name>/` and verifies JavaScript, Wasm, and
 the required marker.
 
