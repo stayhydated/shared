@@ -32,4 +32,28 @@ mod tests {
         assert!(layout_css.contains("0 0 44px rgba(255, 255, 0, 0.16)"));
         assert!(!layout_css.contains("rgba(255, 0, 230, 0.58)"));
     }
+
+    #[test]
+    fn portal_header_constrains_and_wraps_project_copy() {
+        let portal_css = include_str!("portal.css");
+        let title_copy_rule = rule(portal_css, ".portal-title-copy");
+        let version_rule = rule(portal_css, ".portal-version");
+        let tagline_rule = rule(portal_css, ".portal-header p");
+
+        assert!(title_copy_rule.contains("flex: 1 1 auto"));
+        assert!(title_copy_rule.contains("min-width: 0"));
+        assert!(version_rule.contains("flex: 0 0 auto"));
+        assert!(version_rule.contains("white-space: nowrap"));
+        assert!(tagline_rule.contains("width: 100%"));
+        assert!(tagline_rule.contains("min-width: 0"));
+        assert!(tagline_rule.contains("overflow-wrap: anywhere"));
+        assert!(tagline_rule.contains("white-space: normal"));
+    }
+
+    fn rule<'a>(css: &'a str, selector: &str) -> &'a str {
+        css.split_once(&format!("{selector} {{"))
+            .and_then(|(_, declarations)| declarations.split_once('}'))
+            .map(|(declarations, _)| declarations)
+            .unwrap_or_else(|| panic!("missing CSS rule for {selector}"))
+    }
 }
