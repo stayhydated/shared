@@ -20,5 +20,4 @@ identity and content stay in each consumer repository.
 
 Use the
 [`use-stayhydated-github-pages`](skills/use-stayhydated-github-pages/SKILL.md)
-skill for the complete adoption and maintenance workflow. Contributors can run
-`just --list` from the repository root to see the available workspace tasks.
+skill for the complete adoption and maintenance workflow.
