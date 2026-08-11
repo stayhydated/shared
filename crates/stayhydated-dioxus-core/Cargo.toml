@@ -18,8 +18,8 @@ stayhydated-site = { workspace = true }
 strum = { features = [ "derive" ], workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-bytemuck = { features = [ "derive" ], version = "1.25" }
-wasm-bindgen = "0.2.126"
+bytemuck = { features = [ "derive" ], workspace = true }
+wasm-bindgen = { workspace = true }
 web-sys = { features = [
   "console",
   "Document",
@@ -27,12 +27,12 @@ web-sys = { features = [
   "Element",
   "HtmlCanvasElement",
   "Window",
-], version = "0.3.103" }
-wgpu = { default-features = false, features = [ "std", "webgpu", "wgsl" ], version = "30.0.0" }
+], workspace = true }
+wgpu = { features = [ "std", "webgpu", "wgsl" ], workspace = true }
 
 [dev-dependencies]
 dioxus = { features = [ "ssr" ], workspace = true }
-naga = { features = [ "wgsl-in" ], version = "30.0.0" }
+naga = { features = [ "wgsl-in" ], workspace = true }
 trybuild = { workspace = true }
 
 [lints]
