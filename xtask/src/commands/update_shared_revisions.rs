@@ -1,11 +1,13 @@
 use std::{
+    collections::BTreeSet,
     fs::{self, OpenOptions},
     io::Write as _,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use anyhow::{Context as _, bail};
+use cargo_metadata::MetadataCommand;
 use toml_edit::{DocumentMut, Item, TableLike, Value, visit_mut};
 
 const SHARED_BRANCH: &str = "master";
@@ -41,6 +43,7 @@ impl std::fmt::Display for CommitSha {
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct UpdateReport {
     source_sha: CommitSha,
+    packages: Vec<String>,
     matched_revisions: usize,
     changed_revisions: usize,
     changed_manifests: usize,
@@ -74,11 +77,15 @@ struct ManifestUpdate {
 
 pub fn run(workspace_root: &Path) -> anyhow::Result<()> {
     let report = update_shared_revisions(workspace_root)?;
+    if report.changed() {
+        update_cargo_lockfile(workspace_root, &report.packages)?;
+    }
     print_report(&report);
     write_github_files(&report)
 }
 
 fn update_shared_revisions(workspace_root: &Path) -> anyhow::Result<UpdateReport> {
+    let packages = discover_shared_packages(workspace_root)?;
     let source_sha = resolve_source_sha(workspace_root)?;
     let manifests = discover_cargo_manifests(workspace_root)?;
     let (planned_updates, stats) = plan_manifest_updates(&manifests, &source_sha)?;
@@ -86,10 +93,59 @@ fn update_shared_revisions(workspace_root: &Path) -> anyhow::Result<UpdateReport
 
     Ok(UpdateReport {
         source_sha,
+        packages,
         matched_revisions: stats.matches,
         changed_revisions: stats.changes,
         changed_manifests,
     })
+}
+
+fn discover_shared_packages(workspace_root: &Path) -> anyhow::Result<Vec<String>> {
+    let metadata = MetadataCommand::new()
+        .current_dir(workspace_root)
+        .no_deps()
+        .exec()
+        .context("failed to read downstream Cargo metadata")?;
+    let packages = metadata
+        .workspace_packages()
+        .into_iter()
+        .flat_map(|package| &package.dependencies)
+        .filter(|dependency| {
+            dependency
+                .source
+                .as_ref()
+                .is_some_and(|source| is_shared_git_source(&source.repr))
+        })
+        .map(|dependency| dependency.name.to_string())
+        .collect::<BTreeSet<_>>();
+    Ok(packages.into_iter().collect())
+}
+
+fn update_cargo_lockfile(workspace_root: &Path, packages: &[String]) -> anyhow::Result<()> {
+    let mut command = cargo_lockfile_command(workspace_root, packages);
+    let status = command
+        .status()
+        .context("failed to run Cargo while updating the downstream lockfile")?;
+    if !status.success() {
+        bail!("failed to update the downstream Cargo lockfile");
+    }
+    Ok(())
+}
+
+fn cargo_lockfile_command(workspace_root: &Path, packages: &[String]) -> Command {
+    let mut command = Command::new("cargo");
+    command.current_dir(workspace_root);
+    if packages.is_empty() {
+        command
+            .args(["metadata", "--format-version", "1"])
+            .stdout(Stdio::null());
+    } else {
+        command.arg("update");
+        for package in packages {
+            command.args(["--package", package]);
+        }
+    }
+    command
 }
 
 fn resolve_source_sha(workspace_root: &Path) -> anyhow::Result<CommitSha> {
@@ -284,6 +340,12 @@ fn is_shared_git_url(value: &str) -> bool {
         == SHARED_GIT_URL
 }
 
+fn is_shared_git_source(value: &str) -> bool {
+    let value = value.strip_prefix("git+").unwrap_or(value);
+    let repository = value.split(['?', '#']).next().unwrap_or(value);
+    is_shared_git_url(repository)
+}
+
 fn print_report(report: &UpdateReport) {
     if report.changed() {
         println!(
@@ -349,6 +411,71 @@ mod tests {
 
     fn new_sha() -> CommitSha {
         CommitSha::parse(NEW_SHA).expect("fixture SHA should parse")
+    }
+
+    #[test]
+    fn discovers_real_package_names_for_renamed_shared_dependencies() {
+        let directory = tempfile::tempdir().expect("temporary directory should be created");
+        let source_directory = directory.path().join("src");
+        fs::create_dir(&source_directory).expect("source directory should be created");
+        fs::write(
+            directory.path().join("Cargo.toml"),
+            format!(
+                r#"[package]
+name = "fixture"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+site = {{ package = "stayhydated-site", git = "{SHARED_GIT_URL}", rev = "{OLD_SHA}" }}
+direct = {{ package = "stayhydated-dioxus", git = "{SHARED_GIT_URL}.git", rev = "{OLD_SHA}" }}
+other = {{ git = "https://github.com/example/other", rev = "{OTHER_SHA}" }}
+"#
+            ),
+        )
+        .expect("fixture manifest should be written");
+        fs::write(source_directory.join("lib.rs"), "").expect("fixture source should be written");
+
+        let packages = discover_shared_packages(directory.path())
+            .expect("shared package names should be discovered");
+
+        assert_eq!(packages, ["stayhydated-dioxus", "stayhydated-site"]);
+    }
+
+    #[test]
+    fn cargo_update_targets_only_discovered_shared_packages() {
+        let packages = vec![
+            "stayhydated-dioxus".to_owned(),
+            "stayhydated-site".to_owned(),
+        ];
+        let command = cargo_lockfile_command(Path::new("workspace"), &packages);
+        let arguments = command
+            .get_args()
+            .map(|argument| argument.to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            arguments,
+            [
+                "update",
+                "--package",
+                "stayhydated-dioxus",
+                "--package",
+                "stayhydated-site",
+            ]
+        );
+        assert_eq!(command.get_current_dir(), Some(Path::new("workspace")));
+    }
+
+    #[test]
+    fn cargo_metadata_refreshes_lockfile_without_resolved_shared_packages() {
+        let command = cargo_lockfile_command(Path::new("workspace"), &[]);
+        let arguments = command
+            .get_args()
+            .map(|argument| argument.to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+
+        assert_eq!(arguments, ["metadata", "--format-version", "1"]);
     }
 
     #[test]

@@ -1,5 +1,5 @@
 name: update shared Cargo revisions
-description: Update pinned Cargo dependencies sourced from stayhydated/shared
+description: Update pinned Cargo dependencies sourced from stayhydated/shared and refresh Cargo.lock
 
 outputs:
   changed:
@@ -15,7 +15,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Update Cargo manifests
+    - name: Update Cargo manifests and lockfile
       id: update
       env:
         ACTION_PATH: ${{ github.action_path }}

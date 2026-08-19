@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
+cargo_metadata = { workspace = true }
 clap = { workspace = true }
 toml_edit = { workspace = true }
 

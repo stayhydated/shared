@@ -27,7 +27,7 @@ jobs:
         id: update
         uses: stayhydated/shared/.github/actions/update-shared-revisions@master
 
-      - name: Update Cargo lockfile
+      - name: Validate Cargo update
         if: steps.update.outputs.changed == 'true'
         shell: bash
         run: |

@@ -16,7 +16,7 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Update pinned Cargo dependencies from stayhydated/shared master.
+    /// Update pinned Cargo dependencies from stayhydated/shared master and refresh Cargo.lock.
     UpdateSharedRevisions {
         /// Git workspace containing the Cargo manifests to update.
         #[arg(long, default_value = ".")]
