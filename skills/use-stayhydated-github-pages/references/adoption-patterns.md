@@ -490,15 +490,21 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   update:
     uses: stayhydated/shared/.github/workflows/update-shared-revisions.yml@master
+    secrets:
+      pull_request_token: ${{ secrets.SHARED_REVISION_PR_TOKEN }}
 ```
 
-It updates dependencies sourced from `stayhydated/shared` and regenerates the
-lockfile. It does not update immutable reusable-workflow SHAs.
+Configure `SHARED_REVISION_PR_TOKEN` as a fine-grained personal access token
+with access to the consumer repository and `Pull requests: Read and write`
+permission. The built-in `GITHUB_TOKEN` pushes the update branch using the
+workflow's `contents: write` permission, while the dedicated token creates or
+updates the pull request. The updater refreshes dependencies sourced from
+`stayhydated/shared` and their lockfile entries; immutable reusable-workflow
+SHAs remain unchanged.
 
 ## Validation checklist
 
