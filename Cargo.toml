@@ -35,7 +35,7 @@ dioxus = { default-features = false, version = "0.7" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
-gpui-component = { git = "https://github.com/stayhydated/gpui-component", rev = "fc7ea7a1a56daa54cfe48b0bcb688493eaff198b" }
+gpui-component = { git = "https://github.com/stayhydated/gpui-component", rev = "33f25d368447a47ab5da2c674b2e833826c79fb1" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "runtime_shaders",
