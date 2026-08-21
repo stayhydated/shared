@@ -19,7 +19,7 @@ license = "MIT OR Apache-2.0"
 publish = false
 readme = "README.md"
 repository = "https://github.com/stayhydated/shared"
-rust-version = "1.96"
+rust-version = "1.98"
 version = "0.1.0"
 
 [workspace.dependencies]
@@ -35,7 +35,7 @@ dioxus = { default-features = false, version = "0.7" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "87103d0e73b240bdbee9ee4fe8604f92c1e9590a" }
+gpui-component = { git = "https://github.com/stayhydated/gpui-component", rev = "fc7ea7a1a56daa54cfe48b0bcb688493eaff198b" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "runtime_shaders",
