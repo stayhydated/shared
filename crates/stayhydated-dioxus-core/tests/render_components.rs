@@ -164,6 +164,8 @@ fn renders_shared_demo_gallery_layout_and_offsets() {
     assert!(html.contains("columns-3"));
     assert!(html.contains("demo-card-accent-red"));
     assert!(html.contains("demo-card-accent-cyan"));
+    assert!(html.contains("--demo-card-entry-delay: 0ms;"));
+    assert!(html.contains("--demo-card-entry-delay: 160ms;"));
     assert!(html.contains("id=\"internal-shader\""));
     assert!(html.contains("id=\"external-shader\""));
 }
