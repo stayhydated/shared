@@ -28,7 +28,7 @@ web-sys = { features = [
   "HtmlCanvasElement",
   "Window",
 ], workspace = true }
-wgpu = { features = [ "std", "webgpu", "wgsl" ], workspace = true }
+wgpu = { features = [ "std", "webgl", "wgsl" ], workspace = true }
 
 [dev-dependencies]
 dioxus = { features = [ "ssr" ], workspace = true }

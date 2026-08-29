@@ -84,10 +84,6 @@ async fn run(
     let canvas = element
         .dyn_into::<HtmlCanvasElement>()
         .map_err(|_| format!("#{canvas_id} is not a canvas"))?;
-    if !wgpu::util::is_browser_webgpu_supported().await {
-        return Ok(());
-    }
-
     let renderer = ShaderBackgroundRenderer::new(canvas, time_offset).await?;
 
     start_render_loop(Rc::new(RefCell::new(renderer)), running, frame_callback)
@@ -160,7 +156,7 @@ struct ShaderBackgroundRenderer {
 impl ShaderBackgroundRenderer {
     async fn new(canvas: HtmlCanvasElement, time_offset: f32) -> Result<Self, String> {
         let mut instance_descriptor = InstanceDescriptor::new_without_display_handle();
-        instance_descriptor.backends = Backends::BROWSER_WEBGPU;
+        instance_descriptor.backends = Backends::GL;
         let instance = Instance::new(instance_descriptor);
         let surface = instance
             .create_surface(SurfaceTarget::Canvas(canvas.clone()))
@@ -182,7 +178,7 @@ impl ShaderBackgroundRenderer {
             .await
             .map_err(|error| error.to_string())?;
         device.on_uncaptured_error(Arc::new(|error| {
-            log_error(&format!("shader background WebGPU error: {error}"));
+            log_error(&format!("shader background WebGL error: {error}"));
         }));
         let size = resize_canvas(&canvas);
         let mut config = surface
