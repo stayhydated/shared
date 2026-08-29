@@ -25,7 +25,7 @@ version = "0.1.0"
 [workspace.dependencies]
 anyhow = "1.0"
 bevy = { default-features = false, features = [ "ui" ], version = "0.19" }
-bon = "3.9.3"
+bon = "3.10.0"
 bytemuck = "1.25"
 cargo_metadata = "0.23"
 clap = { features = [ "derive" ], version = "4.6" }
@@ -44,7 +44,7 @@ gpui_platform = { branch = "linux-headless-renderer", features = [
 ], git = "https://github.com/stayhydated/zed" }
 js-sys = "0.3"
 mdbook-driver = "0.5"
-naga = "30.0.0"
+naga = "30.0.1"
 path-slash = "0.2"
 pathdiff = "0.2"
 ratzilla = "0.3.1"
@@ -62,7 +62,7 @@ walkdir = "2.5"
 wasm-bindgen = "0.2.127"
 web-dummy = { path = "dummy/web-dummy", version = "0.1.0" }
 web-sys = "0.3.104"
-wgpu = { default-features = false, version = "30.0.0" }
+wgpu = { default-features = false, version = "30.0.1" }
 
 [patch."https://github.com/zed-industries/zed"]
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "=0.2.2" }

@@ -8,7 +8,7 @@ const SHADER_BACKGROUND_PREPAINT_STYLE: &str =
     "html, body, #main { background: #000; }\n#main { min-height: 100vh; }";
 const SHADER_BACKGROUND_CANVAS_PREPAINT_STYLE: &str = "background-color: #000;";
 
-/// Animated WebGPU background canvas with a CSS fallback.
+/// Animated GPU-rendered background canvas with a CSS fallback.
 ///
 /// `canvas_id` must be unique within the rendered document.
 #[component]

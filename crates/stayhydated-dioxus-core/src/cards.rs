@@ -1,7 +1,9 @@
 use dioxus::prelude::*;
 use strum::IntoStaticStr;
 
-use crate::{CssClass, DisplayText, Href, ShaderBackground, motion::page_entry_reveal_style};
+use crate::{CssClass, DisplayText, Href, ShaderBackground};
+
+const DEMO_CARD_STAGGER_MS: usize = 160;
 
 /// Saturated RGB-edge accent applied to a project demo card.
 #[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
@@ -126,15 +128,18 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
     #[props(into)] title: DisplayText,
     #[props(into)] shader_id: String,
     #[props(default)] time_offset: f32,
+    #[props(default)] entry_delay_ms: usize,
 ) -> Element {
     let aria_label = format!("Open {title}");
     let class = format!("demo-card demo-card-accent-{}", accent.token());
+    let style = format!("--demo-card-entry-delay: {entry_delay_ms}ms;");
 
     match target {
         NavigationTarget::Internal(route) if try_router().is_some() => {
             rsx! {
                 Link {
                     class,
+                    style,
                     to: route,
                     aria_label,
                     DemoCardContents { title, shader_id, time_offset }
@@ -145,6 +150,7 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
             rsx! {
                 a {
                     class,
+                    style,
                     href: route.to_string(),
                     aria_label,
                     DemoCardContents { title, shader_id, time_offset }
@@ -155,6 +161,7 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
             rsx! {
                 a {
                     class,
+                    style,
                     href,
                     aria_label,
                     DemoCardContents { title, shader_id, time_offset }
@@ -171,12 +178,11 @@ pub fn DemoGallery<R: Routable + Clone + PartialEq + 'static>(
     #[props(default)] columns: DemoGalleryColumns,
 ) -> Element {
     let item_count = items.len();
-    let grid_class = format!("grid {} demo-example-cards motion-reveal", columns.class());
-    let reveal_style = page_entry_reveal_style().into_string();
+    let grid_class = format!("grid {} demo-example-cards", columns.class());
 
     rsx! {
         div { class: "demo-page demo-gallery",
-            section { class: grid_class, style: reveal_style,
+            section { class: grid_class,
                 for (position, item) in items.into_iter().enumerate() {
                     DemoCard::<R> {
                         key: "{item.shader_id}",
@@ -185,6 +191,7 @@ pub fn DemoGallery<R: Routable + Clone + PartialEq + 'static>(
                         title: item.title,
                         shader_id: item.shader_id,
                         time_offset: position as f32 * 13.0,
+                        entry_delay_ms: position * DEMO_CARD_STAGGER_MS,
                     }
                 }
             }
@@ -226,6 +233,9 @@ mod tests {
             assert!(stylesheet.contains(&format!(".demo-card-accent-{token}")));
             assert!(stylesheet.contains(color));
         }
+
+        assert!(stylesheet.contains("animation: demo-card-appear"));
+        assert!(stylesheet.contains("@keyframes demo-card-appear"));
     }
 
     #[test]
