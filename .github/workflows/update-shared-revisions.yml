@@ -2,13 +2,17 @@ name: update shared revisions
 
 on:
   workflow_call:
+    inputs:
+      app_client_id:
+        description: Client ID for the GitHub App installed in the caller repository
+        required: true
+        type: string
     secrets:
-      pull_request_token:
-        description: Token allowed to create and update pull requests in the caller repository
+      app_private_key:
+        description: Private key for the GitHub App installed in the caller repository
         required: true
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: update-shared-revisions-${{ github.repository }}
@@ -19,10 +23,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Create GitHub App token
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ inputs.app_client_id }}
+          private-key: ${{ secrets.app_private_key }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
           ref: ${{ github.event.repository.default_branch }}
+          token: ${{ steps.app_token.outputs.token }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -37,9 +52,21 @@ jobs:
           cargo metadata --format-version 1 > /dev/null
           git diff --check
 
+      - name: Resolve GitHub App bot user
+        id: app_bot
+        if: steps.update.outputs.changed == 'true'
+        env:
+          APP_SLUG: ${{ steps.app_token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+        shell: bash
+        run: echo "user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
       - name: Commit and push update
         if: steps.update.outputs.changed == 'true'
         env:
+          APP_SLUG: ${{ steps.app_token.outputs.app-slug }}
+          APP_USER_ID: ${{ steps.app_bot.outputs.user_id }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
           SOURCE_SHORT_SHA: ${{ steps.update.outputs.source_short_sha }}
         shell: bash
         run: |
@@ -47,8 +74,9 @@ jobs:
 
           update_branch="automation/update-shared-revisions"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh auth setup-git
           git checkout -B "$update_branch"
           git add -A
           git diff --cached --check
@@ -59,7 +87,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         env:
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
-          GH_TOKEN: ${{ secrets.pull_request_token }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
           SOURCE_SHA: ${{ steps.update.outputs.source_sha }}
           SOURCE_SHORT_SHA: ${{ steps.update.outputs.source_short_sha }}
         shell: bash

@@ -332,6 +332,17 @@ def check_workflows(root: Path) -> None:
         raise AuditError("gh-pages workflow must call the shared Pages workflow")
     if "stayhydated/shared/.github/workflows/update-shared-revisions.yml@" not in revisions:
         raise AuditError("shared revision workflow must call the reusable updater")
+    if "app_client_id: ${{ vars.SHARED_REVISION_APP_CLIENT_ID }}" not in revisions:
+        raise AuditError(
+            "shared revision workflow must pass SHARED_REVISION_APP_CLIENT_ID"
+        )
+    if (
+        "app_private_key: ${{ secrets.SHARED_REVISION_APP_PRIVATE_KEY }}"
+        not in revisions
+    ):
+        raise AuditError(
+            "shared revision workflow must pass SHARED_REVISION_APP_PRIVATE_KEY"
+        )
 
 
 def just_recipe(justfile: str, name: str) -> tuple[tuple[str, ...], tuple[str, ...]]:

@@ -488,23 +488,29 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   update:
     uses: stayhydated/shared/.github/workflows/update-shared-revisions.yml@master
+    with:
+      app_client_id: ${{ vars.SHARED_REVISION_APP_CLIENT_ID }}
     secrets:
-      pull_request_token: ${{ secrets.SHARED_REVISION_PR_TOKEN }}
+      app_private_key: ${{ secrets.SHARED_REVISION_APP_PRIVATE_KEY }}
 ```
 
-Configure `SHARED_REVISION_PR_TOKEN` as a fine-grained personal access token
-with access to the consumer repository and `Pull requests: Read and write`
-permission. The built-in `GITHUB_TOKEN` pushes the update branch using the
-workflow's `contents: write` permission, while the dedicated token creates or
-updates the pull request. The updater refreshes dependencies sourced from
-`stayhydated/shared` and their lockfile entries; immutable reusable-workflow
-SHAs remain unchanged.
+Register a GitHub App with `Contents: Read and write` and
+`Pull requests: Read and write`, then install it on the selected consumer
+repositories. Store its client ID in the `SHARED_REVISION_APP_CLIENT_ID`
+Actions variable and its private key in the `SHARED_REVISION_APP_PRIVATE_KEY`
+Actions secret. Organization-level configuration can serve trusted consumer
+repositories without duplicating the credential.
+
+The reusable workflow mints a short-lived installation token scoped to the
+caller repository. It uses the App identity to push the update branch and
+create or refresh the pull request, so the resulting checks run as normal App
+activity. The updater refreshes dependencies sourced from `stayhydated/shared`
+and their lockfile entries; immutable reusable-workflow SHAs remain unchanged.
 
 ## Validation checklist
 

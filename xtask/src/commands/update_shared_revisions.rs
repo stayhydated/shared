@@ -568,4 +568,52 @@ rev = "{OLD_SHA}"
     fn commit_type_rejects_non_full_sha() {
         assert!(CommitSha::parse("short").is_err());
     }
+
+    #[test]
+    fn github_workflow_uses_one_app_identity_for_updates_and_pull_requests() {
+        let repository_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let workflow = fs::read_to_string(
+            repository_root.join(".github/workflows/update-shared-revisions.yml"),
+        )
+        .expect("revision workflow should be readable");
+        let action = fs::read_to_string(
+            repository_root.join(".github/actions/update-shared-revisions/action.yml"),
+        )
+        .expect("revision action should be readable");
+        let guidance = fs::read_to_string(
+            repository_root
+                .join("skills/use-stayhydated-github-pages/references/adoption-patterns.md"),
+        )
+        .expect("consumer guidance should be readable");
+        let audit = fs::read_to_string(
+            repository_root.join("skills/use-stayhydated-github-pages/scripts/audit_consumer.py"),
+        )
+        .expect("consumer audit should be readable");
+
+        assert!(workflow.contains("uses: actions/create-github-app-token@v3"));
+        assert!(workflow.contains("permission-contents: write"));
+        assert!(workflow.contains("permission-pull-requests: write"));
+        assert!(workflow.contains("permissions: {}"));
+        assert!(workflow.contains("persist-credentials: false"));
+        assert!(workflow.contains("token: ${{ steps.app_token.outputs.token }}"));
+        assert_eq!(
+            workflow
+                .matches("GH_TOKEN: ${{ steps.app_token.outputs.token }}")
+                .count(),
+            3
+        );
+        assert!(workflow.contains("gh auth setup-git"));
+        assert!(
+            workflow.contains(
+                "uses: stayhydated/shared/.github/actions/update-shared-revisions@master"
+            )
+        );
+        assert!(action.contains("update-shared-revisions"));
+        assert!(workflow.contains("app_client_id"));
+        assert!(workflow.contains("app_private_key"));
+        for source in [&guidance, &audit] {
+            assert!(source.contains("SHARED_REVISION_APP_CLIENT_ID"));
+            assert!(source.contains("SHARED_REVISION_APP_PRIVATE_KEY"));
+        }
+    }
 }
