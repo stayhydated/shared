@@ -32,7 +32,7 @@ pub enum BuildCommand {
     BevyDemo,
     /// Build mdBook documentation to dummy/web-dummy/public/book.
     Book,
-    /// Build the GPUI and gpui-component wasm example into the Dioxus public tree.
+    /// Build the GPUI Kit wasm example into the Dioxus public tree.
     GpuiDemo,
     /// Build llms.txt from mdBook sources to dummy/web-dummy/public/llms.txt.
     LlmsTxt,

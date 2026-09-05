@@ -28,7 +28,7 @@ pub(crate) fn DemosPage() -> Element {
         ),
         DemoGalleryItem::href(
             site().static_href("gpui-demo"),
-            "GPUI + gpui-component",
+            "GPUI Kit",
             "gpui-demo-card-shader",
         ),
     ];

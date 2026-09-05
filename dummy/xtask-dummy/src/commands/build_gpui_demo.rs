@@ -13,7 +13,7 @@ pub fn run() -> anyhow::Result<()> {
             .generated_page(
                 TrunkDemoPageConfig::builder()
                     .title("sum-numbers-ai GPUI demo")
-                    .demo_name("GPUI + gpui-component")
+                    .demo_name("GPUI Kit")
                     .build(),
             )
             .build(),

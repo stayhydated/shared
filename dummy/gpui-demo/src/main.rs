@@ -1,12 +1,12 @@
-use gpui::prelude::*;
-use gpui::{
-    App, Application, Bounds, Context, Entity, Subscription, Window, WindowBounds, WindowOptions,
-};
-use gpui_component::{
+use gpui_kit::component::{
     Root, Theme, ThemeMode,
     button::Button,
     input::{Input, InputEvent, InputState},
     v_flex,
+};
+use gpui_kit::prelude::*;
+use gpui_kit::{
+    App, Application, Bounds, Context, Entity, Subscription, Window, WindowBounds, WindowOptions,
 };
 use sum_numbers_ai_dummy::{MAX_DEMO_INPUTS, SumRequest, sum_with_request};
 #[cfg(target_family = "wasm")]
@@ -52,7 +52,12 @@ impl SumDemo {
         }
     }
 
-    fn reset(&mut self, _event: &gpui::ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
+    fn reset(
+        &mut self,
+        _event: &gpui_kit::ClickEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         for (input, value) in self.inputs.iter().zip(DEFAULT_INPUTS) {
             input.update(cx, |input, cx| input.set_value(value, window, cx));
         }
@@ -100,27 +105,27 @@ impl Render for SumDemo {
             .items_center()
             .justify_center()
             .p_6()
-            .bg(gpui::rgb(0x000000))
-            .text_color(gpui::rgb(0xf5f5f5))
+            .bg(gpui_kit::rgb(0x000000))
+            .text_color(gpui_kit::rgb(0xf5f5f5))
             .child(
                 v_flex()
-                    .w(gpui::px(560.))
+                    .w(gpui_kit::px(560.))
                     .gap_4()
                     .p_6()
                     .rounded_xl()
                     .border_1()
-                    .border_color(gpui::rgb(0x2a2a2a))
-                    .bg(gpui::rgb(0x0a0a0a))
+                    .border_color(gpui_kit::rgb(0x2a2a2a))
+                    .bg(gpui_kit::rgb(0x0a0a0a))
                     .child(
-                        gpui::div()
+                        gpui_kit::div()
                             .text_2xl()
-                            .font_weight(gpui::FontWeight::BOLD)
+                            .font_weight(gpui_kit::FontWeight::BOLD)
                             .child(DEMO_MARKER),
                     )
                     .child(
-                        gpui::div().text_color(gpui::rgb(0xa3a3a3)).child(
-                            "Three gpui-component inputs share the verified Rust sum contract.",
-                        ),
+                        gpui_kit::div()
+                            .text_color(gpui_kit::rgb(0xa3a3a3))
+                            .child("Three GPUI Kit inputs share the verified Rust sum contract."),
                     )
                     .children(input_rows)
                     .child(
@@ -129,9 +134,9 @@ impl Render for SumDemo {
                             .on_click(cx.listener(Self::reset)),
                     )
                     .child(
-                        gpui::div()
+                        gpui_kit::div()
                             .text_lg()
-                            .text_color(gpui::rgb(0xb6ff00))
+                            .text_color(gpui_kit::rgb(0xb6ff00))
                             .child(self.status(cx)),
                     ),
             )
@@ -140,7 +145,7 @@ impl Render for SumDemo {
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
-    run_with_app(gpui_platform::application());
+    run_with_app(gpui_kit::application().with_assets(gpui_kit::assets::Assets));
 }
 
 #[cfg(target_family = "wasm")]
@@ -149,15 +154,17 @@ fn main() {}
 #[cfg(target_family = "wasm")]
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
-    gpui_platform::web_init();
-    let app = keep_web_application_alive(gpui_platform::single_threaded_web());
+    gpui_kit::platform::web_init();
+    let app = keep_web_application_alive(
+        gpui_kit::platform::single_threaded_web().with_assets(gpui_kit::assets::Assets),
+    );
     run_with_app(app);
     Ok(())
 }
 
 #[cfg(target_family = "wasm")]
 fn keep_web_application_alive(app: Application) -> Application {
-    struct WasmApplication(std::rc::Rc<gpui::AppCell>);
+    struct WasmApplication(std::rc::Rc<gpui_kit::AppCell>);
 
     // SAFETY: GPUI's web application must outlive the wasm entry point. The
     // wrapper exposes the application cell so one strong reference can be
@@ -171,9 +178,13 @@ fn keep_web_application_alive(app: Application) -> Application {
 
 fn run_with_app(app: Application) {
     app.run(|cx: &mut App| {
-        gpui_component::init(cx);
+        gpui_kit::init(cx);
         Theme::change(ThemeMode::Dark, None, cx);
-        let bounds = Bounds::centered(None, gpui::size(gpui::px(820.), gpui::px(620.)), cx);
+        let bounds = Bounds::centered(
+            None,
+            gpui_kit::size(gpui_kit::px(820.), gpui_kit::px(620.)),
+            cx,
+        );
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),

@@ -34,14 +34,7 @@ derive_more = "2.1"
 dioxus = { default-features = false, version = "0.7" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
-gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
-gpui-component = { git = "https://github.com/stayhydated/gpui-component", rev = "33f25d368447a47ab5da2c674b2e833826c79fb1" }
-gpui_platform = { branch = "linux-headless-renderer", features = [
-  "font-kit",
-  "runtime_shaders",
-  "wayland",
-  "x11",
-], git = "https://github.com/stayhydated/zed" }
+gpui-kit = "0.6.0"
 js-sys = "0.3"
 mdbook-driver = "0.5"
 naga = "30.0.1"
@@ -63,10 +56,6 @@ wasm-bindgen = "0.2.127"
 web-dummy = { path = "dummy/web-dummy", version = "0.1.0" }
 web-sys = "0.3.104"
 wgpu = { default-features = false, version = "30.0.1" }
-
-[patch."https://github.com/zed-industries/zed"]
-gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "=0.2.2" }
-gpui_macros = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.1.0" }
 
 [profile.dev]
 codegen-units = 16

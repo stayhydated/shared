@@ -45,7 +45,7 @@ Use it to decide:
 
 - `dummy/gpui-demo`
   Audience: Local validation.
-  Role: GPUI WebAssembly example using gpui-component inputs for the dummy sum contract.
+  Role: GPUI WebAssembly example using GPUI Kit inputs for the dummy sum contract.
   Sync: shared Trunk page inputs are staged from `dummy/xtask-dummy/src/commands/build_gpui_demo.rs`, which also owns the build output; gallery positioning lives in `dummy/web-dummy/src/pages/demos.rs`.
 
 - `dummy/book-dummy`
