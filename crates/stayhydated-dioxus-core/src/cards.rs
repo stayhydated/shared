@@ -3,8 +3,6 @@ use strum::IntoStaticStr;
 
 use crate::{CssClass, DisplayText, Href, ShaderBackground};
 
-const DEMO_CARD_STAGGER_MS: usize = 160;
-
 /// Saturated RGB-edge accent applied to a project demo card.
 #[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
 #[strum(const_into_str, serialize_all = "kebab-case")]
@@ -128,18 +126,15 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
     #[props(into)] title: DisplayText,
     #[props(into)] shader_id: String,
     #[props(default)] time_offset: f32,
-    #[props(default)] entry_delay_ms: usize,
 ) -> Element {
     let aria_label = format!("Open {title}");
     let class = format!("demo-card demo-card-accent-{}", accent.token());
-    let style = format!("--demo-card-entry-delay: {entry_delay_ms}ms;");
 
     match target {
         NavigationTarget::Internal(route) if try_router().is_some() => {
             rsx! {
                 Link {
                     class,
-                    style,
                     to: route,
                     aria_label,
                     DemoCardContents { title, shader_id, time_offset }
@@ -150,7 +145,6 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
             rsx! {
                 a {
                     class,
-                    style,
                     href: route.to_string(),
                     aria_label,
                     DemoCardContents { title, shader_id, time_offset }
@@ -161,7 +155,6 @@ pub fn DemoCard<R: Routable + Clone + PartialEq + 'static>(
             rsx! {
                 a {
                     class,
-                    style,
                     href,
                     aria_label,
                     DemoCardContents { title, shader_id, time_offset }
@@ -191,7 +184,6 @@ pub fn DemoGallery<R: Routable + Clone + PartialEq + 'static>(
                         title: item.title,
                         shader_id: item.shader_id,
                         time_offset: position as f32 * 13.0,
-                        entry_delay_ms: position * DEMO_CARD_STAGGER_MS,
                     }
                 }
             }
@@ -236,6 +228,9 @@ mod tests {
 
         assert!(stylesheet.contains("animation: demo-card-appear"));
         assert!(stylesheet.contains("@keyframes demo-card-appear"));
+        assert!(stylesheet.contains("--demo-card-entry-x: -100vw"));
+        assert!(stylesheet.contains("--demo-card-entry-x: 100vw"));
+        assert!(!stylesheet.contains("demo-card-entry-delay"));
     }
 
     #[test]
