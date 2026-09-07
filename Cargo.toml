@@ -29,6 +29,7 @@ bon = "3.10.0"
 bytemuck = "1.25"
 cargo_metadata = "0.23"
 clap = { features = [ "derive" ], version = "4.6" }
+console_error_panic_hook = "0.1"
 critical-section = "1.2"
 derive_more = "2.1"
 dioxus = { default-features = false, version = "0.7" }
@@ -48,6 +49,7 @@ stayhydated-xtask = { path = "crates/stayhydated-xtask", version = "0.1.0" }
 strum = "0.28"
 sum-numbers-ai-dummy = { path = "dummy/sum-numbers-ai-dummy", version = "0.1.0" }
 tempfile = "3"
+ttf-inter = { default-features = false, features = [ "regular" ], version = "0.1.0" }
 toml_edit = "0.25"
 tracing = "0.1"
 trybuild = "1.0"

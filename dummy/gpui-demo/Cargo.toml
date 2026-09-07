@@ -18,5 +18,9 @@ gpui-kit = { workspace = true }
 sum-numbers-ai-dummy = { workspace = true }
 wasm-bindgen = { workspace = true }
 
+[target.'cfg(target_family = "wasm")'.dependencies]
+console_error_panic_hook = { workspace = true }
+ttf-inter = { workspace = true }
+
 [lints]
 workspace = true

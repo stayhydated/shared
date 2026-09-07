@@ -11095,8 +11095,10 @@ dependencies = [
 name = "sum-numbers-ai-gpui-demo"
 version = "0.1.0"
 dependencies = [
+ "console_error_panic_hook",
  "gpui-kit",
  "sum-numbers-ai-dummy",
+ "ttf-inter",
  "wasm-bindgen",
 ]
 
@@ -11914,6 +11916,12 @@ dependencies = [
  "termcolor",
  "toml 1.1.4+spec-1.1.0",
 ]
+
+[[package]]
+name = "ttf-inter"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9534e06e2c84c1eba866fadc5a21425822386c94bbff295b0341b05e69c064a"
 
 [[package]]
 name = "ttf-parser"

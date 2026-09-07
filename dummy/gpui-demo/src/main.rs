@@ -1,13 +1,16 @@
+#[cfg(target_family = "wasm")]
+use std::{borrow::Cow, cell::RefCell};
+
 use gpui_kit::component::{
-    Root, Theme, ThemeMode,
+    ActiveTheme as _, Root, Theme, ThemeMode,
     button::Button,
     input::{Input, InputEvent, InputState},
     v_flex,
 };
 use gpui_kit::prelude::*;
-use gpui_kit::{
-    App, Application, Bounds, Context, Entity, Subscription, Window, WindowBounds, WindowOptions,
-};
+use gpui_kit::{App, Context, Entity, Subscription, Window, WindowOptions};
+#[cfg(not(target_family = "wasm"))]
+use gpui_kit::{Bounds, WindowBounds};
 use sum_numbers_ai_dummy::{MAX_DEMO_INPUTS, SumRequest, sum_with_request};
 #[cfg(target_family = "wasm")]
 use wasm_bindgen::prelude::*;
@@ -105,17 +108,19 @@ impl Render for SumDemo {
             .items_center()
             .justify_center()
             .p_6()
-            .bg(gpui_kit::rgb(0x000000))
-            .text_color(gpui_kit::rgb(0xf5f5f5))
+            .bg(cx.theme().background)
+            .text_color(cx.theme().foreground)
             .child(
                 v_flex()
-                    .w(gpui_kit::px(560.))
+                    .w_full()
+                    .max_w(gpui_kit::rems(35.))
                     .gap_4()
                     .p_6()
-                    .rounded_xl()
+                    .rounded(cx.theme().radius_lg)
                     .border_1()
-                    .border_color(gpui_kit::rgb(0x2a2a2a))
-                    .bg(gpui_kit::rgb(0x0a0a0a))
+                    .border_color(cx.theme().border)
+                    .bg(cx.theme().group_box)
+                    .text_color(cx.theme().group_box_foreground)
                     .child(
                         gpui_kit::div()
                             .text_2xl()
@@ -124,7 +129,7 @@ impl Render for SumDemo {
                     )
                     .child(
                         gpui_kit::div()
-                            .text_color(gpui_kit::rgb(0xa3a3a3))
+                            .text_color(cx.theme().muted_foreground)
                             .child("Three GPUI Kit inputs share the verified Rust sum contract."),
                     )
                     .children(input_rows)
@@ -136,7 +141,7 @@ impl Render for SumDemo {
                     .child(
                         gpui_kit::div()
                             .text_lg()
-                            .text_color(gpui_kit::rgb(0xb6ff00))
+                            .font_weight(gpui_kit::FontWeight::SEMIBOLD)
                             .child(self.status(cx)),
                     ),
             )
@@ -145,59 +150,70 @@ impl Render for SumDemo {
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
-    run_with_app(gpui_kit::application().with_assets(gpui_kit::assets::Assets::new("")));
+    gpui_kit::application()
+        .with_assets(gpui_kit::assets::Assets::new(""))
+        .run(launch);
 }
 
 #[cfg(target_family = "wasm")]
 fn main() {}
 
 #[cfg(target_family = "wasm")]
-#[wasm_bindgen(start)]
-pub fn start() -> Result<(), JsValue> {
-    gpui_kit::platform::web_init();
-    let app = keep_web_application_alive(
-        gpui_kit::platform::single_threaded_web().with_assets(gpui_kit::assets::Assets::new("")),
-    );
-    run_with_app(app);
-    Ok(())
+thread_local! {
+    static APPLICATION: RefCell<Option<gpui_kit::ApplicationHandle>> = const { RefCell::new(None) };
 }
 
 #[cfg(target_family = "wasm")]
-fn keep_web_application_alive(app: Application) -> Application {
-    struct WasmApplication(std::rc::Rc<gpui_kit::AppCell>);
-
-    // SAFETY: GPUI's web application must outlive the wasm entry point. The
-    // wrapper exposes the application cell so one strong reference can be
-    // intentionally retained for the browser process lifetime.
-    unsafe {
-        let wasm_app = std::mem::transmute::<Application, WasmApplication>(app);
-        std::mem::forget(wasm_app.0.clone());
-        std::mem::transmute::<WasmApplication, Application>(wasm_app)
-    }
+#[wasm_bindgen(start)]
+pub fn start() -> Result<(), JsValue> {
+    console_error_panic_hook::set_once();
+    gpui_kit::platform::web_init();
+    let app =
+        gpui_kit::platform::single_threaded_web().with_assets(gpui_kit::assets::Assets::new(""));
+    APPLICATION.with(|application| {
+        *application.borrow_mut() = Some(app.run_embedded(launch));
+    });
+    Ok(())
 }
 
-fn run_with_app(app: Application) {
-    app.run(|cx: &mut App| {
-        gpui_kit::init(cx);
-        Theme::change(ThemeMode::Dark, None, cx);
+fn launch(cx: &mut App) {
+    gpui_kit::init(cx);
+
+    #[cfg(target_family = "wasm")]
+    {
+        cx.text_system()
+            .add_fonts(vec![Cow::Borrowed(ttf_inter::REGULAR)])
+            .expect("the GPUI demo font should load");
+    }
+
+    Theme::change(ThemeMode::Dark, None, cx);
+    #[cfg(target_family = "wasm")]
+    {
+        Theme::global_mut(cx).font_family = "Inter".into();
+        Theme::sync_base(cx);
+    }
+
+    #[cfg(not(target_family = "wasm"))]
+    let options = {
         let bounds = Bounds::centered(
             None,
             gpui_kit::size(gpui_kit::px(820.), gpui_kit::px(620.)),
             cx,
         );
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                ..Default::default()
-            },
-            |window, cx| {
-                let view = cx.new(|cx| SumDemo::new(window, cx));
-                cx.new(|cx| Root::new(view, window, cx))
-            },
-        )
-        .expect("the GPUI demo window should open");
-        cx.activate(true);
-    });
+        WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(bounds)),
+            ..Default::default()
+        }
+    };
+    #[cfg(target_family = "wasm")]
+    let options = WindowOptions::default();
+
+    cx.open_window(options, |window, cx| {
+        let view = cx.new(|cx| SumDemo::new(window, cx));
+        cx.new(|cx| Root::new(view, window, cx).bg(cx.theme().background))
+    })
+    .expect("the GPUI demo window should open");
+    cx.activate(true);
 }
 
 #[cfg(test)]
