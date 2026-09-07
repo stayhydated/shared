@@ -145,7 +145,7 @@ impl Render for SumDemo {
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
-    run_with_app(gpui_kit::application().with_assets(gpui_kit::assets::Assets));
+    run_with_app(gpui_kit::application().with_assets(gpui_kit::assets::Assets::new("")));
 }
 
 #[cfg(target_family = "wasm")]
@@ -156,7 +156,7 @@ fn main() {}
 pub fn start() -> Result<(), JsValue> {
     gpui_kit::platform::web_init();
     let app = keep_web_application_alive(
-        gpui_kit::platform::single_threaded_web().with_assets(gpui_kit::assets::Assets),
+        gpui_kit::platform::single_threaded_web().with_assets(gpui_kit::assets::Assets::new("")),
     );
     run_with_app(app);
     Ok(())
