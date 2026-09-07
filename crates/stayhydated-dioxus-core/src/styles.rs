@@ -50,6 +50,17 @@ mod tests {
         assert!(tagline_rule.contains("white-space: normal"));
     }
 
+    #[test]
+    fn portal_width_is_capped_at_sixteen_ninths_of_viewport_height() {
+        let portal_css = include_str!("portal.css");
+        let portal_rule = rule(portal_css, ".project-portal");
+
+        assert!(portal_rule.contains("width: 100%"));
+        assert!(portal_rule.contains("max-width: 177.777778vh"));
+        assert!(portal_rule.contains("max-width: 177.777778dvh"));
+        assert!(portal_rule.contains("margin-inline: auto"));
+    }
+
     fn rule<'a>(css: &'a str, selector: &str) -> &'a str {
         css.split_once(&format!("{selector} {{"))
             .and_then(|(_, declarations)| declarations.split_once('}'))
