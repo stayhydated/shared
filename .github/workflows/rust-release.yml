@@ -31,6 +31,10 @@ on:
           - gpui-storybook
           - gpui-table
 
+concurrency:
+  group: rust-release-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Publish crates
@@ -83,9 +87,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    concurrency:
-      group: rust-release-pr-${{ github.repository }}-${{ github.ref }}
-      cancel-in-progress: false
     steps:
       - name: Create GitHub App token
         id: app-token
