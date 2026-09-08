@@ -1,0 +1,69 @@
+name: Rust release bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Repository whose first crate versions should be published.
+        required: true
+        type: choice
+        options:
+          - component-shape
+          - frame-capture
+          - gpui-es-fluent
+          - gpui-form
+          - gpui-storybook
+          - gpui-table
+
+jobs:
+  bootstrap:
+    name: Bootstrap ${{ inputs.target }}
+    if: github.repository == 'stayhydated/shared'
+    runs-on: ubuntu-latest
+    environment: release-bootstrap
+    permissions:
+      contents: read
+    steps:
+      - name: Create target-scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SHARED_REVISION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SHARED_REVISION_APP_PRIVATE_KEY }}
+          owner: stayhydated
+          repositories: ${{ inputs.target }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Resolve target master revision
+        id: target
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_REPOSITORY: stayhydated/${{ inputs.target }}
+        run: |
+          target_sha="$(gh api "repos/${TARGET_REPOSITORY}/commits/master" --jq .sha)"
+          test -n "$target_sha"
+          echo "sha=$target_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: stayhydated/${{ inputs.target }}
+          ref: ${{ steps.target.outputs.sha }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Rust 1.98.0
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable on 2026-09-03
+        with:
+          toolchain: 1.98.0
+
+      - name: Publish first crate versions
+        uses: release-plz/action@aec534bbd8631793b9b3b8f1ee6cd886c322e17f # v0.5.133
+        with:
+          command: release
+          version: 0.3.162
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
