@@ -12,6 +12,7 @@ use toml_edit::{DocumentMut, Item, TableLike, Value, visit_mut};
 
 const SHARED_BRANCH: &str = "master";
 const SHARED_GIT_URL: &str = "https://github.com/stayhydated/shared";
+const RUST_RELEASE_WORKFLOW: &str = "stayhydated/shared/.github/workflows/rust-release.yml@";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct CommitSha(String);
@@ -47,10 +48,17 @@ struct UpdateReport {
     matched_revisions: usize,
     changed_revisions: usize,
     changed_manifests: usize,
+    matched_workflow_revisions: usize,
+    changed_workflow_revisions: usize,
+    changed_workflows: usize,
 }
 
 impl UpdateReport {
     fn changed(&self) -> bool {
+        self.changed_revisions > 0 || self.changed_workflow_revisions > 0
+    }
+
+    fn cargo_changed(&self) -> bool {
         self.changed_revisions > 0
     }
 }
@@ -69,7 +77,7 @@ impl std::ops::AddAssign for UpdateStats {
 }
 
 #[derive(Debug)]
-struct ManifestUpdate {
+struct FileUpdate {
     path: PathBuf,
     rendered: String,
     stats: UpdateStats,
@@ -77,7 +85,7 @@ struct ManifestUpdate {
 
 pub fn run(workspace_root: &Path) -> anyhow::Result<()> {
     let report = update_shared_revisions(workspace_root)?;
-    if report.changed() {
+    if report.cargo_changed() {
         update_cargo_lockfile(workspace_root, &report.packages)?;
     }
     print_report(&report);
@@ -88,15 +96,26 @@ fn update_shared_revisions(workspace_root: &Path) -> anyhow::Result<UpdateReport
     let packages = discover_shared_packages(workspace_root)?;
     let source_sha = resolve_source_sha(workspace_root)?;
     let manifests = discover_cargo_manifests(workspace_root)?;
-    let (planned_updates, stats) = plan_manifest_updates(&manifests, &source_sha)?;
-    let changed_manifests = write_manifest_updates(&planned_updates)?;
+    let workflows = discover_github_workflows(workspace_root)?;
+    let (planned_manifest_updates, manifest_stats) =
+        plan_manifest_updates(&manifests, &source_sha)?;
+    let (planned_workflow_updates, workflow_stats) =
+        plan_workflow_updates(&workflows, &source_sha)?;
+    if manifest_stats.matches == 0 && workflow_stats.matches == 0 {
+        bail!("no shared Cargo dependencies or Rust release workflow revisions were found");
+    }
+    let changed_manifests = write_file_updates(&planned_manifest_updates)?;
+    let changed_workflows = write_file_updates(&planned_workflow_updates)?;
 
     Ok(UpdateReport {
         source_sha,
         packages,
-        matched_revisions: stats.matches,
-        changed_revisions: stats.changes,
+        matched_revisions: manifest_stats.matches,
+        changed_revisions: manifest_stats.changes,
         changed_manifests,
+        matched_workflow_revisions: workflow_stats.matches,
+        changed_workflow_revisions: workflow_stats.changes,
+        changed_workflows,
     })
 }
 
@@ -206,10 +225,41 @@ fn discover_cargo_manifests(workspace_root: &Path) -> anyhow::Result<Vec<PathBuf
     Ok(manifests)
 }
 
+fn discover_github_workflows(workspace_root: &Path) -> anyhow::Result<Vec<PathBuf>> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(workspace_root)
+        .args([
+            "ls-files",
+            "-z",
+            "--",
+            ":(glob).github/workflows/*.yml",
+            ":(glob).github/workflows/*.yaml",
+        ])
+        .output()
+        .context("failed to list tracked GitHub workflows")?;
+    if !output.status.success() {
+        bail!(
+            "failed to list tracked GitHub workflows: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+
+    let stdout = String::from_utf8(output.stdout).context("git ls-files returned non-UTF-8")?;
+    let mut workflows = stdout
+        .split('\0')
+        .filter(|path| !path.is_empty())
+        .map(|path| workspace_root.join(path))
+        .collect::<Vec<_>>();
+    workflows.sort();
+    workflows.dedup();
+    Ok(workflows)
+}
+
 fn plan_manifest_updates(
     manifests: &[PathBuf],
     source_sha: &CommitSha,
-) -> anyhow::Result<(Vec<ManifestUpdate>, UpdateStats)> {
+) -> anyhow::Result<(Vec<FileUpdate>, UpdateStats)> {
     let mut planned_updates = Vec::new();
     let mut total_stats = UpdateStats::default();
 
@@ -220,7 +270,7 @@ fn plan_manifest_updates(
             .with_context(|| format!("failed to update {}", manifest.display()))?;
         total_stats += stats;
         if stats.matches > 0 {
-            planned_updates.push(ManifestUpdate {
+            planned_updates.push(FileUpdate {
                 path: manifest.clone(),
                 rendered,
                 stats,
@@ -228,23 +278,45 @@ fn plan_manifest_updates(
         }
     }
 
-    if total_stats.matches == 0 {
-        bail!("no Cargo dependencies sourced from stayhydated/shared were found");
-    }
     Ok((planned_updates, total_stats))
 }
 
-fn write_manifest_updates(planned_updates: &[ManifestUpdate]) -> anyhow::Result<usize> {
-    let mut changed_manifests = 0;
+fn plan_workflow_updates(
+    workflows: &[PathBuf],
+    source_sha: &CommitSha,
+) -> anyhow::Result<(Vec<FileUpdate>, UpdateStats)> {
+    let mut planned_updates = Vec::new();
+    let mut total_stats = UpdateStats::default();
+
+    for workflow in workflows {
+        let original = fs::read_to_string(workflow)
+            .with_context(|| format!("failed to read {}", workflow.display()))?;
+        let (rendered, stats) = update_workflow_text(&original, source_sha)
+            .with_context(|| format!("failed to update {}", workflow.display()))?;
+        total_stats += stats;
+        if stats.matches > 0 {
+            planned_updates.push(FileUpdate {
+                path: workflow.clone(),
+                rendered,
+                stats,
+            });
+        }
+    }
+
+    Ok((planned_updates, total_stats))
+}
+
+fn write_file_updates(planned_updates: &[FileUpdate]) -> anyhow::Result<usize> {
+    let mut changed_files = 0;
     for update in planned_updates {
         if update.stats.changes == 0 {
             continue;
         }
         fs::write(&update.path, &update.rendered)
             .with_context(|| format!("failed to write {}", update.path.display()))?;
-        changed_manifests += 1;
+        changed_files += 1;
     }
-    Ok(changed_manifests)
+    Ok(changed_files)
 }
 
 fn update_manifest_text(
@@ -258,6 +330,40 @@ fn update_manifest_text(
     visit_mut::VisitMut::visit_document_mut(&mut updater, &mut document);
     let stats = updater.finish()?;
     Ok((document.to_string(), stats))
+}
+
+fn update_workflow_text(
+    text: &str,
+    source_sha: &CommitSha,
+) -> anyhow::Result<(String, UpdateStats)> {
+    let mut rendered = String::with_capacity(text.len());
+    let mut stats = UpdateStats::default();
+
+    for line in text.split_inclusive('\n') {
+        let Some(reference_start) = line.find(RUST_RELEASE_WORKFLOW) else {
+            rendered.push_str(line);
+            continue;
+        };
+        let revision_start = reference_start + RUST_RELEASE_WORKFLOW.len();
+        let revision_end = line[revision_start..]
+            .find(|character: char| character.is_ascii_whitespace() || character == '#')
+            .map_or(line.len(), |offset| revision_start + offset);
+        let current_revision = &line[revision_start..revision_end];
+        CommitSha::parse(current_revision).context("release workflow has an invalid revision")?;
+
+        let changed = !current_revision.eq_ignore_ascii_case(source_sha.as_str());
+        rendered.push_str(&line[..revision_start]);
+        if changed {
+            rendered.push_str(source_sha.as_str());
+        } else {
+            rendered.push_str(current_revision);
+        }
+        rendered.push_str(&line[revision_end..]);
+        stats.matches += 1;
+        stats.changes += usize::from(changed);
+    }
+
+    Ok((rendered, stats))
 }
 
 struct RevisionUpdater<'a> {
@@ -349,13 +455,17 @@ fn is_shared_git_source(value: &str) -> bool {
 fn print_report(report: &UpdateReport) {
     if report.changed() {
         println!(
-            "Updated {} shared revisions in {} Cargo manifests to {}.",
-            report.changed_revisions, report.changed_manifests, report.source_sha
+            "Updated {} Cargo revisions in {} manifests and {} release-workflow revisions in {} workflows to {}.",
+            report.changed_revisions,
+            report.changed_manifests,
+            report.changed_workflow_revisions,
+            report.changed_workflows,
+            report.source_sha
         );
     } else {
         println!(
-            "All {} shared revisions already point to {}.",
-            report.matched_revisions, report.source_sha
+            "All {} Cargo revisions and {} release-workflow revisions already point to {}.",
+            report.matched_revisions, report.matched_workflow_revisions, report.source_sha
         );
     }
 }
@@ -375,13 +485,17 @@ fn write_github_files(report: &UpdateReport) -> anyhow::Result<()> {
     if let Some(path) = std::env::var_os("GITHUB_STEP_SUMMARY") {
         let summary = if report.changed() {
             format!(
-                "Updated {} shared revisions in {} Cargo manifests to {}.",
-                report.changed_revisions, report.changed_manifests, report.source_sha
+                "Updated {} Cargo revisions in {} manifests and {} release-workflow revisions in {} workflows to {}.",
+                report.changed_revisions,
+                report.changed_manifests,
+                report.changed_workflow_revisions,
+                report.changed_workflows,
+                report.source_sha
             )
         } else {
             format!(
-                "All {} shared revisions already point to {}.",
-                report.matched_revisions, report.source_sha
+                "All {} Cargo revisions and {} release-workflow revisions already point to {}.",
+                report.matched_revisions, report.matched_workflow_revisions, report.source_sha
             )
         };
         append_lines(Path::new(&path), &[summary])?;
@@ -513,6 +627,60 @@ rev = "{OLD_SHA}"
 
         let (rendered, stats) =
             update_manifest_text(&original, &new_sha()).expect("manifest should parse");
+
+        assert_eq!(stats.matches, 1);
+        assert_eq!(stats.changes, 0);
+        assert_eq!(rendered, original);
+    }
+
+    #[test]
+    fn manifest_planning_allows_workflow_only_consumers() {
+        let directory = tempfile::tempdir().expect("temporary directory should be created");
+        let manifest = directory.path().join("Cargo.toml");
+        fs::write(
+            &manifest,
+            "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\n",
+        )
+        .expect("fixture manifest should be written");
+
+        let (updates, stats) = plan_manifest_updates(&[manifest], &new_sha())
+            .expect("workflow-only consumers should be supported");
+
+        assert!(updates.is_empty());
+        assert_eq!(stats, UpdateStats::default());
+    }
+
+    #[test]
+    fn updates_pinned_rust_release_workflow_revisions() {
+        let original = format!(
+            "jobs:\n  release:\n    uses: {RUST_RELEASE_WORKFLOW}{OLD_SHA} # shared release\n  other:\n    uses: example/actions/.github/workflows/ci.yml@{OTHER_SHA}\n"
+        );
+
+        let (rendered, stats) =
+            update_workflow_text(&original, &new_sha()).expect("workflow should update");
+
+        assert_eq!(stats.matches, 1);
+        assert_eq!(stats.changes, 1);
+        assert_eq!(rendered, original.replace(OLD_SHA, NEW_SHA));
+        assert!(rendered.contains(OTHER_SHA));
+    }
+
+    #[test]
+    fn rejects_unpinned_rust_release_workflow_revisions() {
+        let original = format!("jobs:\n  release:\n    uses: {RUST_RELEASE_WORKFLOW}master\n");
+
+        let error = update_workflow_text(&original, &new_sha())
+            .expect_err("branch workflow revision should fail");
+
+        assert!(error.to_string().contains("invalid revision"));
+    }
+
+    #[test]
+    fn noop_preserves_rust_release_workflow_exactly() {
+        let original = format!("jobs:\n  release:\n    uses: {RUST_RELEASE_WORKFLOW}{NEW_SHA}\n");
+
+        let (rendered, stats) =
+            update_workflow_text(&original, &new_sha()).expect("workflow should parse");
 
         assert_eq!(stats.matches, 1);
         assert_eq!(stats.changes, 0);

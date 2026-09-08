@@ -1,9 +1,9 @@
-name: update shared Cargo revisions
-description: Update pinned Cargo dependencies sourced from stayhydated/shared and refresh Cargo.lock
+name: update shared revisions
+description: Update pinned shared Cargo dependencies and Rust release workflow references
 
 outputs:
   changed:
-    description: Whether any Cargo manifest changed
+    description: Whether any supported revision changed
     value: ${{ steps.update.outputs.changed }}
   source_sha:
     description: Resolved source commit
@@ -15,7 +15,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Update Cargo manifests and lockfile
+    - name: Update shared dependency and workflow revisions
       id: update
       env:
         ACTION_PATH: ${{ github.action_path }}

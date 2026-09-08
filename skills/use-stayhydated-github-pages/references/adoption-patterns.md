@@ -510,7 +510,9 @@ The reusable workflow mints a short-lived installation token scoped to the
 caller repository. It uses the App identity to push the update branch and
 create or refresh the pull request, so the resulting checks run as normal App
 activity. The updater refreshes dependencies sourced from `stayhydated/shared`
-and their lockfile entries; immutable reusable-workflow SHAs remain unchanged.
+and their lockfile entries. It also refreshes SHA-pinned references to
+`shared/.github/workflows/rust-release.yml`; other immutable reusable-workflow
+SHAs remain unchanged.
 
 ## Validation checklist
 

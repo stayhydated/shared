@@ -70,7 +70,7 @@ Use it to decide:
 
 - `xtask`
   Audience: Internal workflow.
-  Role: repository-owned maintenance commands, including the GitHub Action that updates downstream Cargo revisions to `stayhydated/shared` `master`.
+Role: repository-owned maintenance commands, including the GitHub Action that updates downstream Cargo revisions and Rust release workflow pins to `stayhydated/shared` `master`.
   Sync: revision-update behavior is owned by `src/commands/update_shared_revisions.rs`; keep its tests, `.github/actions/update-shared-revisions/action.yml`, and `.github/workflows/update-shared-revisions.yml` aligned.
 
 - `crates/stayhydated-dioxus-core/tests`

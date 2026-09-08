@@ -45,7 +45,7 @@ jobs:
         id: update
         uses: stayhydated/shared/.github/actions/update-shared-revisions@master
 
-      - name: Validate Cargo update
+      - name: Validate shared revision update
         if: steps.update.outputs.changed == 'true'
         shell: bash
         run: |
@@ -96,7 +96,7 @@ jobs:
 
           update_branch="automation/update-shared-revisions"
           title="chore(deps): update shared revisions"
-          body="This automated pull request updates Cargo dependencies sourced from [stayhydated/shared](https://github.com/stayhydated/shared) to commit [\`${SOURCE_SHORT_SHA}\`](https://github.com/stayhydated/shared/commit/${SOURCE_SHA})."
+          body="This automated pull request updates Cargo dependencies and the Rust release workflow sourced from [stayhydated/shared](https://github.com/stayhydated/shared) to commit [\`${SOURCE_SHORT_SHA}\`](https://github.com/stayhydated/shared/commit/${SOURCE_SHA})."
           pull_request_url="$(gh pr list \
             --base "$BASE_BRANCH" \
             --head "$update_branch" \
