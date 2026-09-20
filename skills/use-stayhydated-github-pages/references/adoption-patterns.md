@@ -49,10 +49,6 @@ stayhydated-xtask = { workspace = true }
 web = { workspace = true }
 ```
 
-The web package has one browser shape. Do not add a `web` feature, a native
-fallback `main`, or a Dioxus SSR dev-dependency. The published artifact is
-always produced by the shared `dx build --platform web --ssg` command.
-
 Update the lockfile without broad dependency upgrades:
 
 ```sh
@@ -67,7 +63,9 @@ uses core-only APIs.
 
 ## Featureless web package
 
-The binary launches the only supported application shape directly:
+The web package enables Dioxus Web directly. Keep it free of a `web` feature,
+native fallback `main`, or Dioxus SSR dev-dependency. Its binary launches the
+application with:
 
 ```rust
 fn main() {
@@ -374,9 +372,11 @@ WebBuildConfig::github_pages(&workspace_root)
     .build()
 ```
 
-The builder always runs a release Dioxus Web SSG build, assembles `web/dist`,
-copies available book/LLM/public assets, writes route fallbacks and `404.html`,
-and renders `sitemap.xml` from the manifest. It has no SSR build mode.
+The builder runs a release Dioxus Web build with static-site generation,
+assembles `web/dist`, copies available book/LLM/public assets, writes route
+fallbacks and `404.html`,
+and renders `sitemap.xml` from the manifest. Build every declared static output
+before assembly so the sitemap points to files that exist.
 
 ## Browser demo builds
 
@@ -474,7 +474,8 @@ jobs:
 Omit `install-trunk` and `install-nightly` when unused. The default artifact is
 `web/dist`; override `artifact-path` only for a genuinely different layout.
 Keep an explicit workflow only when it owns setup the reusable inputs cannot
-express.
+express. The bundled consumer audit expects the standard reusable workflow in
+`.github/workflows/gh-pages.yml`; review custom workflow behavior separately.
 
 ## Revision automation
 
@@ -514,10 +515,10 @@ and their lockfile entries; immutable reusable-workflow SHAs remain unchanged.
 
 ## Validation checklist
 
-Run the consumer's repository-standard commands first. A focused sequence is:
+For edits, use the consumer's repository-standard checks for the changed
+surface. A site integration change can use this sequence from the consumer root:
 
 ```sh
-just fmt
 cargo test -p web --lib --locked
 cargo check -p xtask --locked
 just web-build
@@ -529,6 +530,16 @@ python3 <shared-checkout>/skills/use-stayhydated-github-pages/scripts/audit_cons
   --site-url https://my-organization.github.io/my-project/
 git diff --check
 ```
+
+Use `just fmt` for authorized formatting changes. For a read-only review, run
+the audit against existing source and artifacts; run builds or other checks
+that write files in an isolated checkout.
+
+The audit requires Python 3.11 or later. If the consumer owns a tracked
+stylesheet, add `--project-style-input web/public/assets/site.css` (or its
+actual source path). Omit `--dist` and `--site-url` to check source before a
+build. Audit success covers the standard layout and the destinations already
+declared in the sitemap.
 
 Run `just check`, `just clippy`, and `just test` when repository guidance or
 the change scope calls for them. Run the consumer's localization or other
@@ -542,9 +553,6 @@ Inspect `web/dist` for:
 - requested `book/`, `llms.txt`, `llms-full.txt`, `llms/`, and demo outputs;
 - a hashed `assets/dx-components-theme*.css` bundled by Dioxus;
 - `assets/site.css` only when the app explicitly configures project CSS.
-
-The shared component theme is bundled into Dioxus assets, so a root
-`dx-components-theme.css` is not part of the assembled contract.
 
 The audit validates declared sitemap entries but cannot infer a missing
 consumer-owned static destination. Keep direct manifest tests for every book,

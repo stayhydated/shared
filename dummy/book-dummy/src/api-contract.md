@@ -28,7 +28,7 @@ and synthetic provider metadata.
 | `numbers` | Operands in their original order |
 | `sum` | Local `i128` accumulation |
 | `model_result` | Decimal string of the local total |
-| `verified` | Local result and result string agree |
+| `verified` | Always `true` for the locally constructed response |
 | `provider` | Endpoint, model, latency, and token fixture values |
 | `trace` | Five ordered provider-style events |
 
@@ -37,7 +37,7 @@ The default endpoint is
 `sum-numbers-ai/addition-router-2026-07`. Both are labels; the crate performs no
 network operation.
 
-## Fixture invariants
+## Behavior to preserve
 
 - Convert each `i64` operand to `i128` before accumulation.
 - Preserve operand order in the response.
@@ -49,4 +49,4 @@ network operation.
 
 `numbers_from_entropy` and `request_from_entropy` provide deterministic
 workloads for generated examples. They include extreme and mixed-sign operands
-so clients can exercise the `i128` result boundary.
+so clients can display totals beyond the `i64` range.
