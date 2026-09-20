@@ -1,15 +1,14 @@
 # Build and inspect
 
-Build the dummy outputs from the `shared` repository root. A successful fixture
-review produces the requested artifact and shows `42` for the operands `8`,
-`13`, and `21` in every client.
+Build the dummy outputs from the `shared` repository root, then inspect the
+artifact for the behavior you changed. For client changes, use `8`, `13`, and
+`21` as a common input: each client should show `42`.
 
 ## Prerequisites
 
-Run the commands in this chapter from the `shared` repository root. The complete
-site build requires:
+The complete site build requires:
 
-- a Rust toolchain compatible with the workspace's Rust `1.96` requirement;
+- a Rust toolchain compatible with the workspace's Rust `1.98` requirement;
 - the `wasm32-unknown-unknown` target for stable Rust;
 - nightly Rust with the `wasm32-unknown-unknown` target for the GPUI demo;
 - `just`, Trunk, and the Dioxus CLI (`dx`) on `PATH`; and

@@ -1,23 +1,38 @@
 # shared
 
-Reusable Rust crates and workflows for stayhydated GitHub Pages sites. This
-repository is primarily a source dependency and maintenance workspace; project
-identity and content stay in each consumer repository.
+[![CI][ci-badge]][ci]
+[![Codecov][codecov-badge]][codecov]
 
-[![Build Status](https://github.com/stayhydated/shared/actions/workflows/ci.yml/badge.svg)](https://github.com/stayhydated/shared/actions/workflows/ci.yml)
-[![Codecov](https://codecov.io/github/stayhydated/shared/graph/badge.svg?token=34CV04UOU1)](https://codecov.io/github/stayhydated/shared)
+`shared` provides reusable Rust crates and GitHub Actions workflows for authors
+of public repository sites. It combines Dioxus UI primitives, configured
+application shells, base-path-aware static-site assembly, and build automation
+while each consumer owns its identity, content, routes, and sequencing.
 
-## Workspace crates
+## Overview
 
-- [`stayhydated-dioxus-core`](crates/stayhydated-dioxus-core/README.md) provides
-  generic Dioxus components and shared visual assets.
-- [`stayhydated-dioxus`](crates/stayhydated-dioxus/README.md) provides configured
-  project-site shells and presets.
-- [`stayhydated-site`](crates/stayhydated-site/README.md) owns base-path routing,
-  route manifests, sitemaps, and static-output helpers.
-- [`stayhydated-xtask`](crates/stayhydated-xtask/README.md) provides reusable
-  build and preview helpers for consumer xtasks.
+Consumer repositories define their project configuration and route manifest;
+the shared crates keep application routes, generated outputs, and GitHub Pages
+assembly aligned. Runnable fixtures under `dummy/` exercise Dioxus, Bevy, GPUI,
+documentation, and static-site integrations.
 
-Use the
-[`use-stayhydated-github-pages`](skills/use-stayhydated-github-pages/SKILL.md)
-skill for the complete adoption and maintenance workflow.
+The [consumer adoption skill][adoption] covers revision synchronization,
+application setup, build assembly, deployment, and integration audits.
+
+## Crates
+
+| Crate | Purpose | Source |
+| --- | --- | --- |
+| `stayhydated-dioxus` | Configured project-site shells and presets | [README][dioxus-readme] |
+| `stayhydated-dioxus-core` | Generic Dioxus components and shared visual assets | [README][dioxus-core-readme] |
+| `stayhydated-site` | Base-path routing, route manifests, sitemaps, and static-output helpers | [README][site-readme] |
+| `stayhydated-xtask` | Reusable documentation, build, preview, and release helpers | [README][xtask-readme] |
+
+[adoption]: skills/use-stayhydated-github-pages/SKILL.md
+[ci-badge]: https://github.com/stayhydated/shared/actions/workflows/ci.yml/badge.svg?branch=master
+[ci]: https://github.com/stayhydated/shared/actions/workflows/ci.yml
+[codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg
+[codecov]: https://app.codecov.io/github/stayhydated/shared
+[dioxus-core-readme]: crates/stayhydated-dioxus-core/README.md
+[dioxus-readme]: crates/stayhydated-dioxus/README.md
+[site-readme]: crates/stayhydated-site/README.md
+[xtask-readme]: crates/stayhydated-xtask/README.md
