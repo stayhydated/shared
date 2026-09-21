@@ -4,8 +4,7 @@
 
 `stayhydated-xtask` provides reusable helpers for maintainers of repository-owned
 Rust xtasks. It generates documentation and LLM text outputs, assembles Dioxus
-static sites, builds Trunk browser demos, serves assembled artifacts, and
-coordinates workspace release publishing.
+static sites, builds Trunk browser demos, and serves assembled artifacts.
 
 Call these helpers from a consumer's own xtask so project paths, packages,
 routes, and optional outputs remain consumer-owned. The

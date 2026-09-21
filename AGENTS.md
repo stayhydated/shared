@@ -14,7 +14,7 @@ crate's `src/lib.rs` for its public exports.
 | Generic Dioxus components and visual assets | `crates/stayhydated-dioxus-core/src/`; render tests and `tests/pass/` cover public component use |
 | Project identity, configured shells, and presets | `crates/stayhydated-dioxus/src/`; module and render tests cover `Project`, `ProjectSite`, and wrappers |
 | Base paths, route manifests, sitemaps, and route caches | `crates/stayhydated-site/src/`; adjacent module tests define path and output behavior |
-| Reusable build, preview, and release helpers | `crates/stayhydated-xtask/src/`; each module owns its command contract, embedded assets, and tests |
+| Reusable build and preview helpers | `crates/stayhydated-xtask/src/`; each module owns its command contract, embedded assets, and tests |
 | Downstream revision updates | `xtask/src/commands/update_shared_revisions.rs`; its tests, composite action, and reusable workflow define the integration |
 | Dummy arithmetic contract | `dummy/sum-numbers-ai-dummy/src/lib.rs`; consumed by the Dioxus, Ratzilla, Bevy, and GPUI clients |
 | Static browser clients | `dummy/bevy-demo/` and `dummy/gpui-demo/`; their `build_bevy_demo.rs` and `build_gpui_demo.rs` commands under `dummy/xtask-dummy/src/commands/` stage Trunk inputs |
@@ -40,9 +40,6 @@ crate's `src/lib.rs` for its public exports.
 - For consumer-facing Pages workflows or helper APIs, update the affected
   READMEs and `skills/use-stayhydated-github-pages`. Update fixture chapters
   when their documented commands or behavior change.
-- For release helpers, keep `crates/stayhydated-xtask/src/release.rs` tests for
-  package order, arguments, dirty-worktree guards, resume points, and registry
-  handling aligned.
 - For revision updates, keep the owning Rust command,
   `.github/actions/update-shared-revisions/action.yml`, and
   `.github/workflows/update-shared-revisions.yml` aligned.

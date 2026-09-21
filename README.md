@@ -25,7 +25,7 @@ application setup, build assembly, deployment, and integration audits.
 | `stayhydated-dioxus` | Configured project-site shells and presets | [README][dioxus-readme] |
 | `stayhydated-dioxus-core` | Generic Dioxus components and shared visual assets | [README][dioxus-core-readme] |
 | `stayhydated-site` | Base-path routing, route manifests, sitemaps, and static-output helpers | [README][site-readme] |
-| `stayhydated-xtask` | Reusable documentation, build, preview, and release helpers | [README][xtask-readme] |
+| `stayhydated-xtask` | Reusable documentation, build, and preview helpers | [README][xtask-readme] |
 
 [adoption]: skills/use-stayhydated-github-pages/SKILL.md
 [ci-badge]: https://github.com/stayhydated/shared/actions/workflows/ci.yml/badge.svg?branch=master

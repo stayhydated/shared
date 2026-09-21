@@ -6,7 +6,6 @@ use cargo_metadata::MetadataCommand;
 pub mod book;
 pub mod llms;
 pub mod preview;
-pub mod release;
 pub mod trunk;
 pub mod web;
 
