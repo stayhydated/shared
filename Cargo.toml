@@ -41,6 +41,7 @@ mdbook-driver = "0.5"
 naga = "30.0.1"
 path-slash = "0.2"
 pathdiff = "0.2"
+quick-xml = "0.41"
 ratzilla = "0.3.1"
 stayhydated-dioxus = { path = "crates/stayhydated-dioxus", version = "0.1.0" }
 stayhydated-dioxus-core = { path = "crates/stayhydated-dioxus-core", version = "0.1.0" }

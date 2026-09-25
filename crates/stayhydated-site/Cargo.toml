@@ -12,6 +12,7 @@ readme = "README.md"
 [dependencies]
 derive_more = { features = [ "from" ], workspace = true }
 dioxus = { features = [ "cli-config", "launch", "router", "web" ], workspace = true }
+quick-xml = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
