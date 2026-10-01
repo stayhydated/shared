@@ -13,8 +13,7 @@ adoption, updates, or fixes.
 
 - Read the consumer's repository guidance, manifests, `justfile`, web and xtask
   sources, and relevant workflows.
-- Read shared source at the consumer's full pinned SHA. For a revision update,
-  compare it with the intended target revision before changing the consumer.
+- Read shared source at the consumer's full pinned SHA.
 - Identify the project slug, canonical URL, Dioxus base path, routes, generated
   outputs, optional browser demos, and default branch.
 
@@ -29,10 +28,7 @@ adoption, updates, or fixes.
 For a new adoption or full-site review, read
 [references/adoption-patterns.md](references/adoption-patterns.md). For a narrow
 change, read its matching section for dependency pins, application setup,
-assets, build tasks, demos, preview, deployment, or revision automation.
-
-A revision-only update should synchronize the shared pins and affected
-lockfile packages, adapt any changed APIs, and run the consumer audit.
+assets, build tasks, demos, preview, or deployment.
 
 ## Apply the ownership contract
 
@@ -58,7 +54,7 @@ destinations, routes, project-specific CSS, demo inputs, and build sequencing.
   explicit assets and demos only when the consumer owns them.
 - Keep `web-build`, `web`, and `web-preview` distinct. Build prerequisites before
   final assembly, and regenerate output through its owning task.
-- Use the reusable Pages and revision-update workflows for the standard
+- Use the reusable Pages workflow for the standard
   integration. Install Trunk or nightly only for demos that require them.
 
 ## Validate the consumer
