@@ -12,7 +12,6 @@
 - [Browser demo builds](#browser-demo-builds)
 - [Static preview](#static-preview)
 - [Deployment workflow](#deployment-workflow)
-- [Revision automation](#revision-automation)
 - [Validation checklist](#validation-checklist)
 
 ## Workspace dependencies
@@ -47,15 +46,6 @@ stayhydated-site = { workspace = true }
 anyhow = { workspace = true }
 stayhydated-xtask = { workspace = true }
 web = { workspace = true }
-```
-
-Update the lockfile without broad dependency upgrades:
-
-```sh
-cargo update \
-  -p stayhydated-dioxus \
-  -p stayhydated-site \
-  -p stayhydated-xtask
 ```
 
 `stayhydated-dioxus-core` arrives transitively unless the consumer directly
@@ -476,42 +466,6 @@ Omit `install-trunk` and `install-nightly` when unused. The default artifact is
 Keep an explicit workflow only when it owns setup the reusable inputs cannot
 express. The bundled consumer audit expects the standard reusable workflow in
 `.github/workflows/gh-pages.yml`; review custom workflow behavior separately.
-
-## Revision automation
-
-Every pinned consumer should use the reusable updater:
-
-```yaml
-name: update shared revisions
-
-on:
-  schedule:
-    - cron: "0 0 * * *"
-  workflow_dispatch:
-
-permissions: {}
-
-jobs:
-  update:
-    uses: stayhydated/shared/.github/workflows/update-shared-revisions.yml@master
-    with:
-      app_client_id: ${{ vars.SHARED_REVISION_APP_CLIENT_ID }}
-    secrets:
-      app_private_key: ${{ secrets.SHARED_REVISION_APP_PRIVATE_KEY }}
-```
-
-Register a GitHub App with `Contents: Read and write` and
-`Pull requests: Read and write`, then install it on the selected consumer
-repositories. Store its client ID in the `SHARED_REVISION_APP_CLIENT_ID`
-Actions variable and its private key in the `SHARED_REVISION_APP_PRIVATE_KEY`
-Actions secret. Organization-level configuration can serve trusted consumer
-repositories without duplicating the credential.
-
-The reusable workflow mints a short-lived installation token scoped to the
-caller repository. It uses the App identity to push the update branch and
-create or refresh the pull request, so the resulting checks run as normal App
-activity. The updater refreshes dependencies sourced from `stayhydated/shared`
-and their lockfile entries; immutable reusable-workflow SHAs remain unchanged.
 
 ## Validation checklist
 

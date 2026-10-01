@@ -15,7 +15,6 @@ crate's `src/lib.rs` for its public exports.
 | Project identity, configured shells, and presets | `crates/stayhydated-dioxus/src/`; module and render tests cover `Project`, `ProjectSite`, and wrappers |
 | Base paths, route manifests, sitemaps, and route caches | `crates/stayhydated-site/src/`; adjacent module tests define path and output behavior |
 | Reusable build and preview helpers | `crates/stayhydated-xtask/src/`; each module owns its command contract, embedded assets, and tests |
-| Downstream revision updates | `xtask/src/commands/update_shared_revisions.rs`; its tests, composite action, and reusable workflow define the integration |
 | Dummy arithmetic contract | `dummy/sum-numbers-ai-dummy/src/lib.rs`; consumed by the Dioxus, Ratzilla, Bevy, and GPUI clients |
 | Static browser clients | `dummy/bevy-demo/` and `dummy/gpui-demo/`; their `build_bevy_demo.rs` and `build_gpui_demo.rs` commands under `dummy/xtask-dummy/src/commands/` stage Trunk inputs |
 | Dummy site and generated outputs | `dummy/web-dummy/` and `dummy/xtask-dummy/src/commands/`; `dummy.just` sequences their builds |
@@ -40,9 +39,6 @@ crate's `src/lib.rs` for its public exports.
 - For consumer-facing Pages workflows or helper APIs, update the affected
   READMEs and `skills/use-stayhydated-github-pages`. Update fixture chapters
   when their documented commands or behavior change.
-- For revision updates, keep the owning Rust command,
-  `.github/actions/update-shared-revisions/action.yml`, and
-  `.github/workflows/update-shared-revisions.yml` aligned.
 
 ## Validation
 
@@ -50,7 +46,6 @@ Choose checks for the edited surface before running the workspace suite:
 
 - Component compile-pass fixtures:
   `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass`.
-- Revision updater: `cargo test -p xtask`.
 - Dummy documentation:
   `MDBOOK_BUILD__CREATE_MISSING=false cargo run -p xtask-dummy -- build book`;
   rebuild LLM output with `cargo run -p xtask-dummy -- build llms-txt`.
