@@ -24,6 +24,8 @@ crate's `src/lib.rs` for its public exports.
 
 - For public API changes, update the owning module, its `src/lib.rs` exports,
   affected crate READMEs, and tests or compile-pass fixtures that use the API.
+- Crate README code fences are not included in `src/lib.rs`. Validate changed
+  examples explicitly; crate doctests do not cover those README examples.
 - For shared theme changes, keep adjacent CSS/WGSL assets, the declarations and
   token tests in `crates/stayhydated-dioxus-core/src/styles.rs`, and render tests
   aligned. Consumers use the bundled theme asset.
@@ -46,6 +48,12 @@ Choose checks for the edited surface before running the workspace suite:
 
 - Component compile-pass fixtures:
   `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass`.
+- Shader lifecycle changes: run
+  `cargo test -p stayhydated-dioxus-core --all-features shader_animation_frame`
+  for the callback ownership guard, and
+  `cargo check -p stayhydated-dioxus-core --all-features --target wasm32-unknown-unknown`
+  for the browser renderer. The latter requires the installed WebAssembly target;
+  native tests do not compile the browser-only renderer.
 - Dummy documentation:
   `MDBOOK_BUILD__CREATE_MISSING=false cargo run -p xtask-dummy -- build book`;
   rebuild LLM output with `cargo run -p xtask-dummy -- build llms-txt`.
