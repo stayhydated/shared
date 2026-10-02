@@ -46,6 +46,16 @@ crate's `src/lib.rs` for its public exports.
 
 Choose checks for the edited surface before running the workspace suite:
 
+- Routing, manifest, and sitemap properties:
+  `cargo test -p stayhydated-site --test properties --locked`.
+  The generated segment, route-ID, and XML-text specifications are independent
+  oracles; preserve their bounded domains and scenario relationships when
+  extending the strategies. Constructors join paths rather than canonicalize
+  URLs, and base stripping removes only one complete prefix. Retain focused
+  examples for these boundaries alongside generated cases. Replay a reported
+  seed with `PROPTEST_RNG_SEED`, and increase the case budget with
+  `PROPTEST_CASES=1024` when exercising a wider input sample. Commit useful
+  minimized regressions and any generated failure-persistence files.
 - Component compile-pass fixtures:
   `cargo test -p stayhydated-dioxus-core --all-features --test compile_pass`.
 - Shader lifecycle changes: run

@@ -34,5 +34,10 @@ Keep manifest paths relative to the site root. The canonical `SiteUrl` supplies
 the project prefix for sitemap URLs; the `routing` module resolves navigation
 and asset hrefs against the active Dioxus base path.
 
+Manifest entries retain first-occurrence order within application and static
+paths. Base-path matching uses complete segments, and sitemap text preserves
+XML metacharacters through escaping. These helpers join site paths; they do not
+perform general URL canonicalization.
+
 [codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg?component=stayhydated-site
 [codecov]: https://app.codecov.io/github/stayhydated/shared
