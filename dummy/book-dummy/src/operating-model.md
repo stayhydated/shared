@@ -8,7 +8,7 @@ artifact for the behavior you changed. For client changes, use `8`, `13`, and
 
 The complete site build requires:
 
-- a Rust toolchain compatible with the workspace's Rust `1.98` requirement;
+- Rust `1.99.0`, pinned by `rust-toolchain.toml` (workspace MSRV `1.99`);
 - the `wasm32-unknown-unknown` target for stable Rust;
 - nightly Rust with the `wasm32-unknown-unknown` target for the GPUI demo;
 - `just`, Trunk, and the Dioxus CLI (`dx`) on `PATH`; and

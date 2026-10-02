@@ -138,10 +138,7 @@ fn run_sum_command(numbers: &str) -> TerminalCommandOutput {
 
 fn parse_number_list(input: &str) -> Result<Vec<i64>, NumberListError> {
     let trimmed = input.trim();
-    let Some(inner) = trimmed
-        .strip_prefix('[')
-        .and_then(|value| value.strip_suffix(']'))
-    else {
+    let Some(inner) = trimmed.strip_circumfix('[', ']') else {
         return Err(NumberListError::MissingBrackets);
     };
 
@@ -204,6 +201,18 @@ impl fmt::Display for NumberListError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn number_lists_require_both_brackets_without_overlap() {
+        for input in ["[1,2", "1,2]", "[", "]", "1,2"] {
+            assert_eq!(
+                parse_number_list(input),
+                Err(NumberListError::MissingBrackets)
+            );
+        }
+        assert_eq!(parse_number_list("[]"), Err(NumberListError::EmptyList));
+        assert_eq!(parse_number_list(" [1, -2, 3] "), Ok(vec![1, -2, 3]));
+    }
 
     #[test]
     fn bare_list_runs_sum_command() {

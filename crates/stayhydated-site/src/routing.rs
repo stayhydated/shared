@@ -191,7 +191,7 @@ pub fn site_root_prefix(output_dir: &OutputDir) -> String {
 }
 
 pub fn normalized_path_segments<'a>(path: &'a str, base_path: Option<&BasePath>) -> Vec<&'a str> {
-    let segments = path
+    let mut segments = path
         .split('/')
         .filter(|segment| !segment.is_empty())
         .collect::<Vec<_>>();
@@ -202,15 +202,10 @@ pub fn normalized_path_segments<'a>(path: &'a str, base_path: Option<&BasePath>)
         .filter(|segment| !segment.is_empty())
         .collect::<Vec<_>>();
 
-    if base_path_segments.is_empty()
-        || !segments
-            .as_slice()
-            .starts_with(base_path_segments.as_slice())
-    {
-        segments
-    } else {
-        segments[base_path_segments.len()..].to_vec()
+    if segments.starts_with(&base_path_segments) {
+        segments.drain(..base_path_segments.len());
     }
+    segments
 }
 
 fn trailing_slash(value: &str) -> String {
@@ -282,6 +277,32 @@ mod tests {
         assert_eq!(
             normalized_path_segments("/other/zh/demos/", Some(&BasePath::new("repo"))),
             ["other", "zh", "demos"]
+        );
+    }
+
+    #[test]
+    fn normalized_segments_strip_only_complete_base_paths() {
+        let base = BasePath::new("repo/docs");
+        assert_eq!(
+            normalized_path_segments("/repo/docs/", Some(&base)),
+            [] as [&str; 0]
+        );
+        assert_eq!(normalized_path_segments("/repo/", Some(&base)), ["repo"]);
+        assert_eq!(
+            normalized_path_segments("/repo/docs-other/", Some(&base)),
+            ["repo", "docs-other"]
+        );
+        assert_eq!(
+            normalized_path_segments("//repo///docs/guide//", Some(&base)),
+            ["guide"]
+        );
+        assert_eq!(
+            normalized_path_segments("/repo/docs/", None),
+            ["repo", "docs"]
+        );
+        assert_eq!(
+            normalized_path_segments("/repo/docs/", Some(&BasePath::new(""))),
+            ["repo", "docs"]
         );
     }
 
