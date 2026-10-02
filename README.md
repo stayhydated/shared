@@ -8,6 +8,8 @@ of public repository sites. It combines Dioxus UI primitives, configured
 application shells, base-path-aware static-site assembly, and build automation
 while each consumer owns its identity, content, routes, and sequencing.
 
+The workspace requires Rust 1.99 or newer.
+
 ## Overview
 
 Consumer repositories define their project configuration and route manifest;

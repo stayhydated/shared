@@ -41,10 +41,10 @@ pub fn build_workspace_llms(
     )
 }
 
-struct ChapterInfo {
-    name: String,
+struct ChapterInfo<'a> {
+    name: &'a str,
     path: String,
-    content: String,
+    content: &'a str,
 }
 
 pub fn build(config: LlmsConfig<'_>) -> anyhow::Result<()> {
@@ -61,7 +61,7 @@ pub fn build(config: LlmsConfig<'_>) -> anyhow::Result<()> {
     let mdbook = MDBook::load(config.book_root)
         .with_context(|| format!("Failed to load book from {}", config.book_root.display()))?;
 
-    let chapters: Vec<ChapterInfo> = mdbook
+    let chapters: Vec<ChapterInfo<'_>> = mdbook
         .iter()
         .filter_map(|item| match item {
             BookItem::Chapter(chapter) if !chapter.is_draft_chapter() => Some(chapter),
@@ -74,9 +74,9 @@ pub fn build(config: LlmsConfig<'_>) -> anyhow::Result<()> {
                 .with_context(|| format!("Missing path for book chapter '{}'", chapter.name))?;
 
             Ok(ChapterInfo {
-                name: chapter.name.clone(),
+                name: &chapter.name,
                 path: book_markdown_path(path)?,
-                content: chapter.content.clone(),
+                content: &chapter.content,
             })
         })
         .collect::<anyhow::Result<_>>()?;
@@ -117,7 +117,7 @@ fn book_markdown_path(path: &Path) -> anyhow::Result<String> {
 }
 
 fn write_llms_markdown_files(
-    chapters: &[ChapterInfo],
+    chapters: &[ChapterInfo<'_>],
     llms_markdown_dir: &Path,
 ) -> anyhow::Result<()> {
     if llms_markdown_dir.exists() {
@@ -139,14 +139,14 @@ fn write_llms_markdown_files(
     for chapter in chapters {
         let path = llms_markdown_dir.join(&chapter.path);
         ensure_parent_dir(&path)?;
-        fs::write(&path, &chapter.content)
+        fs::write(&path, chapter.content)
             .with_context(|| format!("Failed to write llms Markdown file {}", path.display()))?;
     }
 
     Ok(())
 }
 
-fn build_llms_txt(chapters: &[ChapterInfo], base_url: &str, markdown_dir_name: &str) -> String {
+fn build_llms_txt(chapters: &[ChapterInfo<'_>], base_url: &str, markdown_dir_name: &str) -> String {
     let mut output = String::new();
     output.push_str("## Docs\n\n");
 
@@ -158,12 +158,12 @@ fn build_llms_txt(chapters: &[ChapterInfo], base_url: &str, markdown_dir_name: &
     output
 }
 
-fn build_llms_full_txt(chapters: &[ChapterInfo]) -> String {
+fn build_llms_full_txt(chapters: &[ChapterInfo<'_>]) -> String {
     let mut output = String::new();
     output.push_str("## Docs\n\n");
 
     for chapter in chapters {
-        output.push_str(&chapter.content);
+        output.push_str(chapter.content);
         output.push_str("\n\n---\n\n");
     }
 
@@ -198,11 +198,11 @@ mod tests {
         .expect("nested chapter should be written");
     }
 
-    fn chapter(name: &str, path: &str, content: &str) -> ChapterInfo {
+    fn chapter<'a>(name: &'a str, path: &str, content: &'a str) -> ChapterInfo<'a> {
         ChapterInfo {
-            name: name.to_owned(),
+            name,
             path: path.to_owned(),
-            content: content.to_owned(),
+            content,
         }
     }
 

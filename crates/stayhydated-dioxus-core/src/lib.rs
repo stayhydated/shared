@@ -7,6 +7,8 @@ mod links;
 mod metadata;
 mod motion;
 mod portal;
+#[cfg(any(target_arch = "wasm32", test))]
+mod shader_animation_frame;
 mod shader_background;
 #[cfg(target_arch = "wasm32")]
 mod shader_background_renderer;

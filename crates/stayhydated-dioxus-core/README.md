@@ -14,6 +14,9 @@ Use this crate for individual primitives. Use
 project configuration, routing, and a complete application shell. Those
 configured shells include the shared styles automatically.
 
+When rendering multiple `ShaderBackground` components, give each a distinct
+`canvas_id` so each renderer selects its own canvas.
+
 ## Example
 
 Compose the primitives in a Dioxus component and include `SharedStyles` once at

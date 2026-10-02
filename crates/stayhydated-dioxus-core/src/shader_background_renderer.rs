@@ -16,6 +16,8 @@ use wgpu::{
     SurfaceConfiguration, SurfaceTarget, TextureUsages, TextureViewDescriptor, VertexState,
 };
 
+use crate::shader_animation_frame::AnimationFrameHandle;
+
 const TARGET_FRAME_MS: f64 = 1000.0 / 20.0;
 const ANIMATION_TIME_SCALE: f64 = 0.5;
 const MAX_CANVAS_PIXELS: f64 = 480.0 * 270.0;
@@ -26,18 +28,7 @@ const SHADER_BACKGROUND_STATUS_READY: &str = "ready";
 
 type AnimationFrameCallback = Closure<dyn FnMut(f64)>;
 
-pub(crate) struct ShaderBackgroundHandle {
-    running: Rc<Cell<bool>>,
-    frame_callback: Rc<RefCell<Option<AnimationFrameCallback>>>,
-}
-
-impl Drop for ShaderBackgroundHandle {
-    fn drop(&mut self) {
-        self.running.set(false);
-        // The callback captures this shared slot, so removing it also breaks the reference cycle.
-        self.frame_callback.borrow_mut().take();
-    }
-}
+pub(crate) type ShaderBackgroundHandle = AnimationFrameHandle<AnimationFrameCallback>;
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
@@ -48,15 +39,21 @@ struct Uniforms {
 }
 
 pub(crate) fn start(canvas_id: String, time_offset: f32) -> ShaderBackgroundHandle {
-    let handle = ShaderBackgroundHandle {
-        running: Rc::new(Cell::new(true)),
-        frame_callback: Rc::new(RefCell::new(None)),
-    };
+    let handle = ShaderBackgroundHandle::new(cancel_animation_frame);
     let running = Rc::clone(&handle.running);
     let frame_callback = Rc::clone(&handle.frame_callback);
+    let pending_frame = Rc::clone(&handle.pending_frame);
 
     dioxus::prelude::spawn(async move {
-        if let Err(error) = run(&canvas_id, time_offset, running, frame_callback).await {
+        if let Err(error) = run(
+            &canvas_id,
+            time_offset,
+            running,
+            frame_callback,
+            pending_frame,
+        )
+        .await
+        {
             log_error(&format!("failed to start shader background: {error}"));
         }
     });
@@ -69,6 +66,7 @@ async fn run(
     time_offset: f32,
     running: Rc<Cell<bool>>,
     frame_callback: Rc<RefCell<Option<AnimationFrameCallback>>>,
+    pending_frame: Rc<Cell<Option<i32>>>,
 ) -> Result<(), String> {
     if !running.get() {
         return Ok(());
@@ -86,13 +84,19 @@ async fn run(
         .map_err(|_| format!("#{canvas_id} is not a canvas"))?;
     let renderer = ShaderBackgroundRenderer::new(canvas, time_offset).await?;
 
-    start_render_loop(Rc::new(RefCell::new(renderer)), running, frame_callback)
+    start_render_loop(
+        Rc::new(RefCell::new(renderer)),
+        running,
+        frame_callback,
+        pending_frame,
+    )
 }
 
 fn start_render_loop(
     renderer: Rc<RefCell<ShaderBackgroundRenderer>>,
     running: Rc<Cell<bool>>,
     frame_callback: Rc<RefCell<Option<AnimationFrameCallback>>>,
+    pending_frame: Rc<Cell<Option<i32>>>,
 ) -> Result<(), String> {
     if !running.get() {
         return Ok(());
@@ -100,8 +104,10 @@ fn start_render_loop(
 
     let mut is_ready = false;
     let callback_handle = Rc::clone(&frame_callback);
+    let pending_frame_handle = Rc::clone(&pending_frame);
 
     *callback_handle.borrow_mut() = Some(Closure::new(move |time_ms| {
+        pending_frame.take();
         if !running.get() {
             return;
         }
@@ -115,7 +121,7 @@ fn start_render_loop(
         let borrowed_callback = frame_callback.borrow();
         if running.get()
             && let Some(callback) = borrowed_callback.as_ref()
-            && let Err(error) = request_animation_frame(callback)
+            && let Err(error) = request_animation_frame(callback, &pending_frame)
         {
             log_error(&format!("failed to request animation frame: {error}"));
         }
@@ -126,18 +132,30 @@ fn start_render_loop(
         let callback = borrowed_callback
             .as_ref()
             .ok_or_else(|| "animation callback missing".to_string())?;
-        request_animation_frame(callback)?;
+        request_animation_frame(callback, &pending_frame_handle)?;
     }
 
     Ok(())
 }
 
-fn request_animation_frame(callback: &AnimationFrameCallback) -> Result<(), String> {
-    web_sys::window()
+fn request_animation_frame(
+    callback: &AnimationFrameCallback,
+    pending_frame: &Cell<Option<i32>>,
+) -> Result<(), String> {
+    let frame = web_sys::window()
         .ok_or_else(|| "window unavailable".to_string())?
         .request_animation_frame(callback.as_ref().unchecked_ref())
-        .map(drop)
-        .map_err(|error| format!("{error:?}"))
+        .map_err(|error| format!("{error:?}"))?;
+    pending_frame.set(Some(frame));
+    Ok(())
+}
+
+fn cancel_animation_frame(frame: i32) {
+    if let Some(window) = web_sys::window()
+        && let Err(error) = window.cancel_animation_frame(frame)
+    {
+        log_error(&format!("failed to cancel animation frame: {error:?}"));
+    }
 }
 
 struct ShaderBackgroundRenderer {
