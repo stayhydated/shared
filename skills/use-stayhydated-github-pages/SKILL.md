@@ -52,6 +52,8 @@ destinations, routes, project-specific CSS, demo inputs, and build sequencing.
   CSS in the consumer, and configure its stylesheet explicitly.
 - Assemble the standard layout with `WebBuildConfig::github_pages`, adding
   explicit assets and demos only when the consumer owns them.
+- Commit an up-to-date `Cargo.lock` before building; shared Dioxus commands
+  use `--locked`.
 - Keep `web-build`, `web`, and `web-preview` distinct. Build prerequisites before
   final assembly, and regenerate output through its owning task.
 - Use the reusable Pages workflow for the standard

@@ -21,14 +21,15 @@ binary.
 
 | Output | Command |
 | --- | --- |
-| mdBook | `cargo run -p xtask-dummy -- build book` |
-| LLM text files | `cargo run -p xtask-dummy -- build llms-txt` |
-| Bevy browser demo | `cargo run -p xtask-dummy -- build bevy-demo` |
-| GPUI browser demo | `cargo run -p xtask-dummy -- build gpui-demo` |
-| Dioxus static site | `cargo run -p xtask-dummy -- build web` |
+| mdBook | `cargo run --locked -p xtask-dummy -- build book` |
+| LLM text files | `cargo run --locked -p xtask-dummy -- build llms-txt` |
+| Bevy browser demo | `cargo run --locked -p xtask-dummy -- build bevy-demo` |
+| GPUI browser demo | `cargo run --locked -p xtask-dummy -- build gpui-demo` |
+| Dioxus static site | `cargo run --locked -p xtask-dummy -- build web` |
 
 Run `just dummy web-build` to build the demos, book, LLM outputs, and final site
-in dependency order.
+in dependency order. The Dioxus helper also uses `--locked`; commit an
+up-to-date `Cargo.lock` before building.
 
 ## Preview the assembled site
 
@@ -36,7 +37,7 @@ Run `just dummy web-preview` to rebuild and serve the complete artifact. To
 serve an existing `dummy/web-dummy/dist` without rebuilding, run:
 
 ```console
-cargo run -p xtask-dummy -- preview web
+cargo run --locked -p xtask-dummy -- preview web
 ```
 
 Open the base-path URL printed by the preview command.
