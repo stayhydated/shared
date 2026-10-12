@@ -32,7 +32,8 @@ pub fn run() -> anyhow::Result<()> {
 ```
 
 This runs a release Dioxus Web build with static-site generation and assembles
-`web/dist`. Build generated inputs before this command. Add consumer-owned
+`web/dist`. Dioxus builds use `--locked`, so commit an up-to-date `Cargo.lock`
+before building. Build generated inputs before this command. Add consumer-owned
 demo outputs with `.extra_dir(...)`, then serve the assembled artifact through
 `preview::serve` to check direct navigation under the project base path.
 

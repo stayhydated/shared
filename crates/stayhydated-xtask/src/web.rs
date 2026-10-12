@@ -65,6 +65,7 @@ impl DioxusBuildCommand {
             args.push(package.0.clone());
         }
         args.extend([
+            "--locked".to_owned(),
             "--platform".to_owned(),
             self.platform.as_arg().to_owned(),
             "--ssg".to_owned(),
@@ -495,6 +496,7 @@ mod tests {
                 "build",
                 "--package",
                 "web",
+                "--locked",
                 "--platform",
                 "web",
                 "--ssg",
@@ -518,6 +520,7 @@ mod tests {
                 "build",
                 "--package",
                 "web",
+                "--locked",
                 "--platform",
                 "web",
                 "--ssg",

@@ -5,8 +5,8 @@
     "": {
       "name": "stayhydated",
       "devDependencies": {
-        "oxfmt": "^0.47.0",
-        "oxlint": "^1.62.0",
+        "oxfmt": "0.47.0",
+        "oxlint": "1.67.0",
       },
     },
   },

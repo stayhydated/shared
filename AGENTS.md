@@ -73,5 +73,7 @@ Choose checks for the edited surface before running the workspace suite:
   `git diff --check`.
 
 The root recipes provide formatting, checking, Clippy, tests, and coverage.
-CI checks formatting and Clippy, runs workspace tests on Linux, macOS, and
-Windows, checks unused dependencies, and collects coverage for the shared crates.
+CI checks formatting, spelling, workflows, shell scripts, frontend assets, and
+Clippy; runs workspace tests on Linux, macOS, and Windows; checks dependency
+advisories, sources, and unused dependencies; compiles the browser renderer and
+assembles the dummy site; and collects coverage for the shared crates.

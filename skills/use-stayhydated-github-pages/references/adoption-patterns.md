@@ -362,7 +362,8 @@ WebBuildConfig::github_pages(&workspace_root)
     .build()
 ```
 
-The builder runs a release Dioxus Web build with static-site generation,
+The builder runs a release Dioxus Web build with `--locked` and static-site
+generation. Commit an up-to-date `Cargo.lock` before building. It
 assembles `web/dist`, copies available book/LLM/public assets, writes route
 fallbacks and `404.html`,
 and renders `sitemap.xml` from the manifest. Build every declared static output

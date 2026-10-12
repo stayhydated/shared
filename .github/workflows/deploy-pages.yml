@@ -42,6 +42,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      RUSTUP_TOOLCHAIN: stable
       DIOXUS_CLI_VERSION: ${{ inputs.dioxus-cli-version }}
       TRUNK_SKIP_VERSION_CHECK: "true"
       TRUNK_VERSION: ${{ inputs.trunk-version }}
@@ -53,7 +54,7 @@ jobs:
         with:
           version: "v0.16.0"
 
-      - uses: dtolnay/rust-toolchain@1.99.0
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
 
@@ -64,7 +65,9 @@ jobs:
           rustup toolchain install nightly --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      - uses: cargo-bins/cargo-binstall@main
+      - uses: cargo-bins/cargo-binstall@v1.25.3
+        with:
+          version: "1.25.1"
 
       - name: Install Dioxus CLI
         shell: bash
