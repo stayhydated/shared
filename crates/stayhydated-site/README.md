@@ -7,9 +7,13 @@ application authors. It supplies the browser launch boundary, base-path-aware
 href types, route manifests, sitemap rendering, and route-cache helpers used
 during static-site assembly.
 
-Application crates normally consume these types through `stayhydated-dioxus`;
-repository xtasks pass the resulting `SiteRouteManifest` to
-`stayhydated-xtask`.
+Depend on this package directly for browser launch, custom routing, or an
+exported `SiteRouteManifest`. [`stayhydated-dioxus`][dioxus] supplies configured
+UI shells; consumer xtasks pass the resulting manifest to
+[`stayhydated-xtask`][xtask].
+
+Requires Rust 1.99 or newer and Dioxus 0.7. This is an unpublished Git-sourced
+package; keep directly used shared packages on the same revision.
 
 ## Example
 
@@ -39,5 +43,10 @@ paths. Base-path matching uses complete segments, and sitemap text preserves
 XML metacharacters through escaping. These helpers join site paths; they do not
 perform general URL canonicalization.
 
+The [manifest API and tests][manifest] own these routing and sitemap semantics.
+
 [codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg?component=stayhydated-site
 [codecov]: https://app.codecov.io/github/stayhydated/shared
+[dioxus]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-dioxus/README.md
+[xtask]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-xtask/README.md
+[manifest]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-site/src/manifest.rs
