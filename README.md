@@ -14,13 +14,11 @@ used packages on one shared revision.
 
 ## Overview
 
-Consumer repositories define their project configuration and route manifest;
-the shared crates keep application routes, generated outputs, and GitHub Pages
-assembly aligned. Runnable fixtures under `dummy/` exercise Dioxus, Bevy, GPUI,
-documentation, and static-site integrations.
+The dummy applications exercise Dioxus, Bevy, GPUI, documentation, and static-site
+integrations.
 
-The [consumer adoption skill][adoption] covers revision synchronization,
-application setup, build assembly, deployment, and integration audits.
+Use the [consumer adoption skill][adoption] for revision pins, route manifests,
+build assembly, and deployment.
 
 ## Crates
 

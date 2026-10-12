@@ -38,14 +38,8 @@ fn App() -> Element {
 }
 ```
 
-The component displays a code block with the bundled theme. The
-[compile-pass examples][compile-pass] demonstrate additional component
-compositions; the [component source][code-block] and [shared style source][styles]
-define the markup and stylesheet used here.
+The component displays a code block with the bundled theme.
 
-[compile-pass]: https://github.com/stayhydated/shared/tree/master/crates/stayhydated-dioxus-core/tests/pass
 [stayhydated-dioxus]: https://github.com/stayhydated/shared/tree/master/crates/stayhydated-dioxus
 [codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg?component=stayhydated-dioxus-core
 [codecov]: https://app.codecov.io/github/stayhydated/shared
-[code-block]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-dioxus-core/src/cards.rs
-[styles]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-dioxus-core/src/styles.rs

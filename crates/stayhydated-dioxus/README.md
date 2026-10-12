@@ -21,19 +21,15 @@ package; keep directly used shared packages on the same revision.
 | Portal with one embedded static demo | `StayhydatedEmbeddedDemoProjectApp` |
 | Consumer-defined routes | `StayhydatedProjectApp<R>` |
 
-Create one `ProjectSite` for the application's identity, URLs, version, and
-optional demo or stylesheet. Export its route manifest for the build task so
-the rendered site, fallback pages, and sitemap use the same destinations.
+Export the site's route manifest for the build task so fallback pages and the
+sitemap use the same destinations.
 
-The crate re-exports the common components from `stayhydated-dioxus-core`. The
-[consumer adoption skill][adoption] covers revision synchronization, routing,
-build assembly, deployment, and integration audits.
+Use the [consumer adoption skill][adoption] for route manifests, build assembly,
+and deployment.
 
 ## Example
 
 Construct consumer-owned configuration once and pass it to the selected shell.
-The following self-contained example uses the public builder; the
-[dummy site's configuration][dummy-site] shows its application context.
 
 ```rust
 use stayhydated_dioxus::{Project, ProjectSite};
@@ -53,12 +49,7 @@ fn main() {
 }
 ```
 
-The shell uses this identity and explicitly configured stylesheet. The
-[configuration tests][tests] cover the same builder and destination behavior.
-
 [adoption]: https://github.com/stayhydated/shared/blob/master/skills/use-stayhydated-github-pages/SKILL.md
 [codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg?component=stayhydated-dioxus
 [codecov]: https://app.codecov.io/github/stayhydated/shared
 [core]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-dioxus-core/README.md
-[dummy-site]: https://github.com/stayhydated/shared/blob/master/dummy/web-dummy/src/site/constants.rs
-[tests]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-dioxus/src/project_site.rs
