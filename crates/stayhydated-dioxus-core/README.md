@@ -7,6 +7,9 @@ for authors of public repository sites, including landing and portal primitives,
 metadata, demo cards, tabs, selects, full-screen demo framing, motion styles,
 and the shared shader background.
 
+Requires Rust 1.99 or newer and Dioxus 0.7. This is an unpublished Git-sourced
+package; keep it on the same shared revision as any configured facade.
+
 ## Overview
 
 Use this crate for individual primitives. Use
@@ -35,10 +38,8 @@ fn App() -> Element {
 }
 ```
 
-The [compile-pass examples][compile-pass] demonstrate additional component
-compositions.
+The component displays a code block with the bundled theme.
 
-[compile-pass]: https://github.com/stayhydated/shared/tree/master/crates/stayhydated-dioxus-core/tests/pass
 [stayhydated-dioxus]: https://github.com/stayhydated/shared/tree/master/crates/stayhydated-dioxus
 [codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg?component=stayhydated-dioxus-core
 [codecov]: https://app.codecov.io/github/stayhydated/shared
