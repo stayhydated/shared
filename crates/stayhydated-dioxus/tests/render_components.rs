@@ -32,6 +32,26 @@ fn test_site() -> ProjectSite {
         .build()
 }
 
+#[component]
+fn SearchableSelectApp() -> Element {
+    rsx! {
+        select::SearchableSelect::<u8> {
+            items: vec![select::SelectItem::new(1, "English")],
+            aria_label: "Language",
+            placeholder: "Search languages...",
+        }
+    }
+}
+
+#[test]
+fn reexports_searchable_select() {
+    let html = dioxus::ssr::render_element(rsx! { SearchableSelectApp {} });
+
+    assert!(html.contains("dx-select-search-input"));
+    assert!(html.contains("role=\"combobox\""));
+    assert!(html.contains("aria-label=\"Language\""));
+}
+
 #[test]
 fn router_app_keeps_shader_local_to_rendered_surfaces() {
     let html = dioxus::ssr::render_element(rsx! {

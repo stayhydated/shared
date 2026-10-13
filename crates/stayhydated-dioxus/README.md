@@ -27,6 +27,10 @@ sitemap use the same destinations.
 Use the [consumer adoption skill][adoption] for route manifests, build assembly,
 and deployment.
 
+The `select` module includes `SearchableSelect<T>` for filtering typed options
+through a search bar. See the [core component guide][core] for its language
+selector example.
+
 ## Example
 
 Construct consumer-owned configuration once and pass it to the selected shell.

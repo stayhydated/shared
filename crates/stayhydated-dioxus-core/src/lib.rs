@@ -16,6 +16,7 @@ mod styles;
 mod tabs;
 mod types;
 
+/// Select primitives and the search-input-based `select::SearchableSelect`.
 pub use base::select;
 pub use cards::{
     CodeBlock, DemoCard, DemoCardAccent, DemoGallery, DemoGalleryColumns, DemoGalleryItem,
