@@ -15,7 +15,7 @@ fn App() -> Element {
         SharedStyles {}
         select::SearchableSelect::<Locale> {
             items: vec![
-                select::SelectItem::new(Locale::En, "English"),
+                select::SelectItem::new(Locale::En, "English").with_icon("/assets/language.svg"),
                 select::SelectItem::new(Locale::Fr, "Français"),
             ],
             aria_label: "Language",

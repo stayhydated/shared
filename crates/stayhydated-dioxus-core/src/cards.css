@@ -75,6 +75,7 @@
   padding: clamp(1.5rem, 3vw, 2.5rem);
   overflow: hidden;
   isolation: isolate;
+  container-type: inline-size;
   border: 0;
   border-radius: 0;
   background: var(--demo-card-accent);
@@ -216,12 +217,17 @@
 
 .demo-example-cards .demo-card .demo-card-title {
   margin: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   color: var(--demo-card-accent);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(2.15rem, 4vw, 3.35rem);
+  font-size: clamp(1.65rem, 12cqi, 3.35rem);
   font-weight: 900;
   letter-spacing: -0.055em;
-  line-height: 0.9;
+  line-height: 1.05;
   text-shadow:
     0 0 0.08rem #fff,
     0 0 0.75rem color-mix(in srgb, var(--demo-card-accent) 68%, transparent),

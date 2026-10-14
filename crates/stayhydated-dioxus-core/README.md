@@ -26,6 +26,9 @@ empty state when nothing matches. The [language selector example][language-selec
 uses typed locale values and a controlled selection. Labels are indexed when the
 items change, filtering runs once per query, and option rows mount when the popup
 opens. Keyboard navigation keeps the active option in view.
+Use `SelectItem::new(value, label).with_icon(image_url)` to show a decorative
+image beside the selected label and each option; labels remain the searchable
+and accessible names. Popup images load lazily.
 
 ## Example
 

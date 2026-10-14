@@ -11,6 +11,8 @@ pub struct SelectItem<T> {
     pub value: T,
     /// Label displayed in the list and searched by the input.
     pub label: String,
+    /// Optional decorative image URL, displayed beside the label.
+    pub icon: Option<String>,
     /// Keeps the option visible while preventing selection.
     pub disabled: bool,
 }
@@ -21,8 +23,15 @@ impl<T> SelectItem<T> {
         Self {
             value,
             label: label.into(),
+            icon: None,
             disabled: false,
         }
+    }
+
+    /// Adds a decorative image without changing the searchable label.
+    pub fn with_icon(mut self, src: impl Into<String>) -> Self {
+        self.icon = Some(src.into());
+        self
     }
 }
 
@@ -61,13 +70,13 @@ pub fn SearchableSelect<T: Clone + PartialEq + 'static>(
         Some(value) => value.cloned(),
         None => internal_value.cloned(),
     }));
-    let selected_label = use_memo(move || {
+    let selected_display = use_memo(move || {
         let selected = selected();
         data.read()
             .items
             .iter()
             .find(|item| Some(&item.value) == selected.as_ref())
-            .map(|item| item.label.clone())
+            .map(|item| (item.label.clone(), item.icon.clone()))
             .unwrap_or_default()
     });
     let mut open = use_signal(move || default_open.cloned());
@@ -94,7 +103,11 @@ pub fn SearchableSelect<T: Clone + PartialEq + 'static>(
     let active_id = expanded
         .then(|| active_index.map(|index| format!("{id}-{index}")))
         .flatten();
-    let display = if expanded { query() } else { selected_label() };
+    let display = if expanded {
+        query()
+    } else {
+        selected_display().0
+    };
 
     let close = use_callback(move |()| {
         open.set(false);
@@ -202,7 +215,12 @@ pub fn SearchableSelect<T: Clone + PartialEq + 'static>(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("./style.css") }
         div { "data-state": if expanded { "open" } else { "closed" }, "data-disabled": disabled(), ..attributes,
-            div { class: "dx-select-search-field",
+            div { class: "dx-select-search-field", "data-has-icon": !expanded && selected_display().1.is_some(),
+                if !expanded {
+                    if let Some(src) = selected_display().1 {
+                        img { class: "dx-select-value-icon", src, alt: "", aria_hidden: "true", width: 24, height: 24 }
+                    }
+                }
                 input {
                     class: "dx-select-trigger dx-select-search-input",
                     r#type: "text", role: "combobox", aria_autocomplete: "list", aria_haspopup: "listbox",
@@ -213,7 +231,7 @@ pub fn SearchableSelect<T: Clone + PartialEq + 'static>(
                     oninput: move |event| {
                         let incoming = event.value();
                         let next = if open() { incoming } else {
-                            incoming.strip_prefix(&selected_label()).map(str::to_owned).unwrap_or(incoming)
+                            incoming.strip_prefix(&selected_display().0).map(str::to_owned).unwrap_or(incoming)
                         };
                         query.set(next); active.set(None); scroll_target.set(None); open.set(true);
                     },
@@ -229,17 +247,18 @@ pub fn SearchableSelect<T: Clone + PartialEq + 'static>(
                     onpointercancel: move |_| pointer_start.set(None),
                     for index in matches() {
                         {
-                            let (label, item_disabled, is_selected) = {
+                            let (label, icon, item_disabled, is_selected) = {
                                 let data = data.read();
                                 let item = &data.items[index];
-                                (item.label.clone(), item.disabled, selected().as_ref() == Some(&item.value))
+                                (item.label.clone(), item.icon.clone(), item.disabled, selected().as_ref() == Some(&item.value))
                             };
+                            let has_icon = icon.is_some();
                             rsx! {
                                 div {
                                     key: "{index}", id: "{id}-{index}", class: "dx-select-option", role: "option",
                                     aria_selected: is_selected, aria_disabled: item_disabled,
                                     "data-highlighted": active_index == Some(index),
-                                    "data-disabled": item_disabled, "data-selected": is_selected,
+                                    "data-disabled": item_disabled, "data-selected": is_selected, "data-has-icon": has_icon,
                                     onmouseenter: move |_| { if !item_disabled { active.set(Some(index)); } },
                                     onpointerdown: move |event| {
                                         if item_disabled || event.trigger_button() != Some(MouseButton::Primary) { return; }
@@ -255,7 +274,10 @@ pub fn SearchableSelect<T: Clone + PartialEq + 'static>(
                                             commit.call(index);
                                         }
                                     },
-                                    "{label}"
+                                    if let Some(src) = icon {
+                                        img { class: "dx-select-option-icon", src, alt: "", aria_hidden: "true", width: 24, height: 24, loading: "lazy", decoding: "async" }
+                                    }
+                                    span { class: "dx-select-option-label", "{label}" }
                                     if is_selected { Icon { class: "dx-select-check-icon".to_owned(), width: 16, height: 16, icon: LdCheck } }
                                 }
                             }

@@ -22,7 +22,7 @@ fn LanguageSelect() -> Element {
         SearchableSelect::<Locale> {
             items: vec![
                 SelectItem::new(Locale::En, "English"),
-                SelectItem::new(Locale::Fr, "Français"),
+                SelectItem::new(Locale::Fr, "Français").with_icon("/flags/fr.svg"),
                 SelectItem { disabled: true, ..SelectItem::new(Locale::De, "Deutsch") },
             ],
             aria_label: "Language",
@@ -215,9 +215,13 @@ fn keyboard_selects_filtered_typed_value_and_reopening_clears_search() {
     assert!(selected.contains("value=\"Français\""));
     assert!(selected.contains("aria-expanded=false"));
 
+    assert!(selected.contains("/flags/fr.svg"));
     press_key(&mut dom, input, Key::ArrowDown);
     let reopened = dioxus::ssr::render(&dom);
     assert!(reopened.contains("value=\"\""));
+    assert!(reopened.contains("/flags/fr.svg"));
+    assert!(reopened.contains("loading=\"lazy\""));
+    assert!(reopened.contains("aria-hidden=\"true\""));
     assert_eq!(reopened.matches("role=\"option\"").count(), 3);
 }
 
@@ -246,11 +250,11 @@ fn disabled_match_cannot_be_selected_and_escape_restores_previous_label() {
 fn ChangingItemsSelect() -> Element {
     let mut selected = use_signal(|| None::<Locale>);
     let items = if selected() == Some(Locale::Fr) {
-        vec![SelectItem::new(Locale::Fr, "Français canadien")]
+        vec![SelectItem::new(Locale::Fr, "Français canadien").with_icon("/flags/ca.svg")]
     } else {
         vec![
             SelectItem::new(Locale::En, "English"),
-            SelectItem::new(Locale::Fr, "Français"),
+            SelectItem::new(Locale::Fr, "Français").with_icon("/flags/fr.svg"),
         ]
     };
     rsx! {
@@ -275,8 +279,13 @@ fn controlled_none_overrides_default_and_replacement_items_refresh_the_index_and
     let selected = dioxus::ssr::render(&dom);
     assert!(selected.contains("Some(Fr)"));
     assert!(selected.contains("value=\"Français canadien\""));
+    assert!(selected.contains("/flags/ca.svg"));
+    assert!(!selected.contains("/flags/fr.svg"));
     press_key(&mut dom, input, Key::ArrowDown);
     let reopened = dioxus::ssr::render(&dom);
+    assert!(reopened.contains("/flags/ca.svg"));
+    assert!(reopened.contains("loading=\"lazy\""));
+    assert!(reopened.contains("aria-hidden=\"true\""));
     assert_eq!(reopened.matches("role=\"option\"").count(), 1);
     assert!(reopened.contains("Français canadien"));
     type_query(&mut dom, input, "english");
