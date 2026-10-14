@@ -23,7 +23,9 @@ When rendering multiple `ShaderBackground` components, give each a distinct
 Use `select::SearchableSelect<T>` for a select with a search bar. It filters
 `SelectItem<T>` labels as you type, supports keyboard selection, and shows an
 empty state when nothing matches. The [language selector example][language-select]
-uses typed locale values and a controlled selection.
+uses typed locale values and a controlled selection. Labels are indexed when the
+items change, filtering runs once per query, and option rows mount when the popup
+opens. Keyboard navigation keeps the active option in view.
 
 ## Example
 

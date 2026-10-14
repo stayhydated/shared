@@ -43,9 +43,13 @@ fn settle(dom: &mut VirtualDom) {
 }
 
 fn language_select() -> (VirtualDom, ElementId) {
+    select_app(LanguageSelect)
+}
+
+fn select_app(app: fn() -> Element) -> (VirtualDom, ElementId) {
     static EVENTS: std::sync::Once = std::sync::Once::new();
     EVENTS.call_once(|| dioxus::html::set_event_converter(Box::new(TestEventConverter)));
-    let mut dom = VirtualDom::new(LanguageSelect);
+    let mut dom = VirtualDom::new(app);
     let mutations = dom.rebuild_to_vec();
     let input = mutations
         .edits
@@ -236,4 +240,94 @@ fn disabled_match_cannot_be_selected_and_escape_restores_previous_label() {
     assert!(closed.contains("Some(En)"));
     assert!(closed.contains("value=\"English\""));
     assert!(closed.contains("aria-expanded=false"));
+}
+
+#[component]
+fn ChangingItemsSelect() -> Element {
+    let mut selected = use_signal(|| None::<Locale>);
+    let items = if selected() == Some(Locale::Fr) {
+        vec![SelectItem::new(Locale::Fr, "Français canadien")]
+    } else {
+        vec![
+            SelectItem::new(Locale::En, "English"),
+            SelectItem::new(Locale::Fr, "Français"),
+        ]
+    };
+    rsx! {
+        SearchableSelect::<Locale> {
+            items, aria_label: "Language", value: Some(selected.into()),
+            default_value: Locale::En,
+            on_value_change: move |next| selected.set(next),
+        }
+        output { "{selected():?}" }
+    }
+}
+
+#[test]
+fn controlled_none_overrides_default_and_replacement_items_refresh_the_index_and_label() {
+    let (mut dom, input) = select_app(ChangingItemsSelect);
+    let initial = dioxus::ssr::render(&dom);
+    assert!(initial.contains("value=\"\""));
+    assert!(!initial.contains("role=\"option\""));
+    type_query(&mut dom, input, "fran");
+    press_key(&mut dom, input, Key::ArrowDown);
+    press_key(&mut dom, input, Key::Enter);
+    let selected = dioxus::ssr::render(&dom);
+    assert!(selected.contains("Some(Fr)"));
+    assert!(selected.contains("value=\"Français canadien\""));
+    press_key(&mut dom, input, Key::ArrowDown);
+    let reopened = dioxus::ssr::render(&dom);
+    assert_eq!(reopened.matches("role=\"option\"").count(), 1);
+    assert!(reopened.contains("Français canadien"));
+    type_query(&mut dom, input, "english");
+    assert!(dioxus::ssr::render(&dom).contains("No matches found"));
+}
+
+#[component]
+fn LargeSelect() -> Element {
+    rsx! {
+        SearchableSelect::<usize> {
+            items: (0..5_027).map(|index| SelectItem::new(index, format!("Area {index:04}"))).collect(),
+            aria_label: "Area", default_value: 0,
+        }
+    }
+}
+
+#[test]
+fn large_catalog_search_reaches_the_last_item_and_closed_popup_has_no_option_rows() {
+    let (mut dom, input) = select_app(LargeSelect);
+    assert!(!dioxus::ssr::render(&dom).contains("role=\"option\""));
+    type_query(&mut dom, input, "area 5026");
+    let filtered = dioxus::ssr::render(&dom);
+    assert_eq!(filtered.matches("role=\"option\"").count(), 1);
+    press_key(&mut dom, input, Key::End);
+    press_key(&mut dom, input, Key::Enter);
+    let selected = dioxus::ssr::render(&dom);
+    assert!(selected.contains("value=\"Area 5026\""));
+    assert!(!selected.contains("role=\"option\""));
+}
+
+#[test]
+fn navigation_wraps_skips_disabled_options_and_handles_no_matches() {
+    let (mut dom, input) = language_select();
+    press_key(&mut dom, input, Key::ArrowUp);
+    press_key(&mut dom, input, Key::Enter);
+    assert!(dioxus::ssr::render(&dom).contains("Some(Fr)"));
+    press_key(&mut dom, input, Key::ArrowDown);
+    press_key(&mut dom, input, Key::ArrowUp);
+    press_key(&mut dom, input, Key::Enter);
+    assert!(dioxus::ssr::render(&dom).contains("Some(Fr)"));
+    type_query(&mut dom, input, "no match");
+    for key in [
+        Key::ArrowDown,
+        Key::ArrowUp,
+        Key::Home,
+        Key::End,
+        Key::Enter,
+    ] {
+        press_key(&mut dom, input, key);
+    }
+    let empty = dioxus::ssr::render(&dom);
+    assert!(empty.contains("Some(Fr)"));
+    assert!(!empty.contains("aria-activedescendant="));
 }
