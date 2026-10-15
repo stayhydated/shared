@@ -32,13 +32,9 @@ fn invalid_directories_preserve_all_existing_content() {
         r"..\outside",
         outside_dir.to_str().expect("UTF-8 temporary path"),
     ] {
-        let error = cleanup_generated_route_cache(
-            &public_dir,
-            MARKER,
-            ["demos", invalid],
-            |_, _| true,
-        )
-        .expect_err("invalid directory must be rejected");
+        let error =
+            cleanup_generated_route_cache(&public_dir, MARKER, ["demos", invalid], |_, _| true)
+                .expect_err("invalid directory must be rejected");
 
         assert_eq!(error.kind(), ErrorKind::InvalidInput, "input: {invalid:?}");
         for (path, expected) in [
