@@ -369,6 +369,12 @@ fallbacks and `404.html`,
 and renders `sitemap.xml` from the manifest. Build every declared static output
 before assembly so the sitemap points to files that exist.
 
+If a custom build task cleans generated route caches, keep the marker check.
+Pass only direct child directory names to
+`stayhydated_site::route_cache::cleanup_generated_route_cache`; invalid names
+return an error before cleanup removes generated pages. Use
+`cleanup_generated_route_cache_for_outputs` for nested route output paths.
+
 ## Browser demo builds
 
 Use `stayhydated_xtask::trunk` instead of copying a Trunk subprocess, output

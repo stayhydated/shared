@@ -1,0 +1,10 @@
+[book]
+authors = [ "stayhydated" ]
+description = "Build repository sites with the shared Rust crates."
+language = "en"
+src = "src"
+title = "Shared site user guide"
+
+[build]
+build-dir = "../target/shared-user-book"
+create-missing = false
