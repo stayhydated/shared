@@ -2,6 +2,7 @@ use bevy::{
     input_focus::{AutoFocus, tab_navigation::TabIndex},
     prelude::*,
     text::{EditableText, EditableTextFilter, TextCursorStyle},
+    ui_widgets::TextInput,
     window::{WindowPlugin, WindowResolution},
 };
 use sum_numbers_ai_dummy::{MAX_DEMO_INPUTS, SumRequest, sum_with_request};
@@ -89,6 +90,7 @@ fn setup(mut commands: Commands) {
                             border_radius: BorderRadius::all(px(10)),
                             ..default()
                         },
+                        TextInput,
                         EditableText::new(value.to_string()),
                         EditableTextFilter::new(|character| {
                             character.is_ascii_digit() || character == '-'
@@ -156,5 +158,31 @@ mod tests {
     fn default_bevy_inputs_match_the_demo_limit_and_sum_to_42() {
         assert_eq!(DEFAULT_INPUTS.len(), MAX_DEMO_INPUTS);
         assert!(result_text(&DEFAULT_INPUTS).contains("Total 42"));
+    }
+
+    #[test]
+    fn editable_operand_widgets_drive_the_total() {
+        let mut app = App::new();
+        app.add_systems(Startup, setup)
+            .add_systems(Update, update_total);
+        app.update();
+
+        let world = app.world_mut();
+        let mut inputs = world.query::<(&OperandInput, &mut EditableText, &TextInput)>();
+        assert_eq!(inputs.iter(world).count(), MAX_DEMO_INPUTS);
+        for (operand, mut text, _) in inputs.iter_mut(world) {
+            if operand.0 == 0 {
+                *text = EditableText::new("9");
+            }
+        }
+
+        app.update();
+
+        let world = app.world_mut();
+        let mut output = world.query_filtered::<&Text, With<TotalOutput>>();
+        assert_eq!(
+            output.single(world).unwrap().0,
+            "Total 43 · 3 operands · verified true"
+        );
     }
 }

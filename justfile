@@ -5,6 +5,9 @@ mod dummy
 default:
     @just --list --list-submodules
 
+book-build:
+    cargo run -p stayhydated-xtask --example build_user_book --locked
+
 fmt:
     cargo sort-derives
     cargo fmt

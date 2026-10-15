@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Component, Path};
 
 pub fn mark_generated_route_cache(
     public_dir: &Path,
@@ -11,6 +11,13 @@ pub fn mark_generated_route_cache(
     fs::write(public_dir.join(marker_file_name), marker_message)
 }
 
+/// Removes marked generated pages and their top-level directories.
+///
+/// Cleanup is a no-op when the marker is absent. For a marked cache, empty
+/// directory names are ignored and every other name must be a single normal
+/// path component; invalid names return `InvalidInput` before any files are
+/// removed. Use [`cleanup_generated_route_cache_for_outputs`] for nested route
+/// output paths.
 pub fn cleanup_generated_route_cache<I, S, F>(
     public_dir: &Path,
     marker_file_name: &str,
@@ -30,9 +37,6 @@ where
         return Ok(());
     }
 
-    remove_file_if_exists(&public_dir.join("index.html"))?;
-    remove_file_if_exists(&public_dir.join("404.html"))?;
-
     let generated_top_level_dirs = generated_top_level_dirs
         .into_iter()
         .filter_map(|dir| {
@@ -40,6 +44,22 @@ where
             (!dir.is_empty()).then(|| dir.to_owned())
         })
         .collect::<HashSet<_>>();
+
+    for dir in &generated_top_level_dirs {
+        let mut components = Path::new(dir).components();
+        if !matches!(components.next(), Some(Component::Normal(name)) if name == dir.as_str())
+            || components.next().is_some()
+            || dir.contains('\\')
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("generated directory must be a single normal path component: {dir:?}"),
+            ));
+        }
+    }
+
+    remove_file_if_exists(&public_dir.join("index.html"))?;
+    remove_file_if_exists(&public_dir.join("404.html"))?;
 
     for dir in &generated_top_level_dirs {
         remove_dir_if_exists(&public_dir.join(dir))?;

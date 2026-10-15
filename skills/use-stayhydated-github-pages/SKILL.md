@@ -11,6 +11,9 @@ adoption, updates, or fixes.
 
 ## Establish the source of truth
 
+- Use the [workspace user guide](https://github.com/stayhydated/shared/blob/master/book/src/introduction.md) for shared
+  package roles and the end-to-end consumer workflow. Keep its guidance aligned
+  when changing public adoption behavior.
 - Read the consumer's repository guidance, manifests, `justfile`, web and xtask
   sources, and relevant workflows.
 - Read shared source at the consumer's full pinned SHA.

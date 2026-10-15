@@ -40,8 +40,14 @@ and asset hrefs against the active Dioxus base path.
 
 See the [manifest API][manifest] for detailed routing and sitemap semantics.
 
+Route-cache cleanup requires a generated-cache marker. Its direct-directory
+API accepts only top-level directory names; use the [route-cache API][route-cache]
+for cleanup from nested route outputs. For a marked cache, invalid directory
+names return an error before generated pages are removed.
+
 [codecov-badge]: https://codecov.io/github/stayhydated/shared/branch/master/graph/badge.svg?component=stayhydated-site
 [codecov]: https://app.codecov.io/github/stayhydated/shared
 [dioxus]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-dioxus/README.md
 [xtask]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-xtask/README.md
 [manifest]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-site/src/manifest.rs
+[route-cache]: https://github.com/stayhydated/shared/blob/master/crates/stayhydated-site/src/route_cache.rs

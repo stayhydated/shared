@@ -15,6 +15,7 @@ crate's `src/lib.rs` for its public exports.
 | Project identity, configured shells, and presets | `crates/stayhydated-dioxus/src/`; module and render tests cover `Project`, `ProjectSite`, and wrappers |
 | Base paths, route manifests, sitemaps, and route caches | `crates/stayhydated-site/src/`; adjacent module tests define path and output behavior |
 | Reusable build and preview helpers | `crates/stayhydated-xtask/src/`; each module owns its command contract, embedded assets, and tests |
+| Public workspace user guide | `book/src/`; covers the four shared packages and their consumer workflow |
 | Dummy arithmetic contract | `dummy/sum-numbers-ai-dummy/src/lib.rs`; consumed by the Dioxus, Ratzilla, Bevy, and GPUI clients |
 | Static browser clients | `dummy/bevy-demo/` and `dummy/gpui-demo/`; their `build_bevy_demo.rs` and `build_gpui_demo.rs` commands under `dummy/xtask-dummy/src/commands/` stage Trunk inputs |
 | Dummy site and generated outputs | `dummy/web-dummy/` and `dummy/xtask-dummy/src/commands/`; `dummy.just` sequences their builds |
@@ -23,7 +24,9 @@ crate's `src/lib.rs` for its public exports.
 ## Keep related surfaces aligned
 
 - For public API changes, update the owning module, its `src/lib.rs` exports,
-  affected crate READMEs, and tests or compile-pass fixtures that use the API.
+  affected crate READMEs, the relevant `book/src/` chapters, and tests or
+  compile-pass fixtures that use the API. Keep public package guidance in this
+  canonical book; `dummy/book-dummy` remains a separate maintainer fixture.
 - Crate README code fences are not included in `src/lib.rs`. Validate changed
   examples explicitly; crate doctests do not cover those README examples.
 - For shared theme changes, keep adjacent CSS/WGSL assets, the declarations and
@@ -67,6 +70,9 @@ Choose checks for the edited surface before running the workspace suite:
 - Dummy documentation:
   `MDBOOK_BUILD__CREATE_MISSING=false cargo run -p xtask-dummy -- build book`;
   rebuild LLM output with `cargo run -p xtask-dummy -- build llms-txt`.
+- Public user documentation: `MDBOOK_BUILD__CREATE_MISSING=false just book-build`
+  builds `book/` with the existing mdBook helper into `target/shared-user-book`.
+  Keep `book/src/SUMMARY.md` aligned with chapters and inspect rendered navigation.
 - Dummy site assembly: `just dummy web-build`; inspect it with
   `just dummy web-preview` when routes, assets, or browser behavior change.
 - Markdown: use the repository's `rumdl` tooling on the edited files and run
