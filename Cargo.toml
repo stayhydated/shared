@@ -34,7 +34,7 @@ derive_more = "2.1.1"
 dioxus = { default-features = false, version = "0.7.10" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
-gpui-kit = "0.7.3"
+gpui-kit = "0.8.0"
 js-sys = "0.3.106"
 mdbook-driver = "0.5.4"
 naga = "30.0.1"
