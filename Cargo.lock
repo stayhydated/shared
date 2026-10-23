@@ -10866,7 +10866,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "stayhydated-dioxus"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bon",
  "dioxus",
@@ -10879,7 +10879,7 @@ dependencies = [
 
 [[package]]
 name = "stayhydated-dioxus-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytemuck",
  "derive_more",
@@ -10897,7 +10897,7 @@ dependencies = [
 
 [[package]]
 name = "stayhydated-site"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "derive_more",
  "dioxus",
@@ -10908,7 +10908,7 @@ dependencies = [
 
 [[package]]
 name = "stayhydated-xtask"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "bon",
@@ -11049,7 +11049,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "sum-numbers-ai-bevy-demo"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bevy",
  "sum-numbers-ai-dummy",
@@ -11057,14 +11057,14 @@ dependencies = [
 
 [[package]]
 name = "sum-numbers-ai-dummy"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "tracing",
 ]
 
 [[package]]
 name = "sum-numbers-ai-gpui-demo"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "console_error_panic_hook",
  "gpui-kit",
@@ -12401,7 +12401,7 @@ dependencies = [
 
 [[package]]
 name = "web-dummy"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "critical-section",
@@ -13859,7 +13859,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xtask-dummy"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
