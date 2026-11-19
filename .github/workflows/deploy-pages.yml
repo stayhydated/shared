@@ -65,9 +65,9 @@ jobs:
           rustup toolchain install nightly --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.26.2
         with:
-          version: "1.25.1"
+          version: "1.26.2"
 
       - name: Install Dioxus CLI
         shell: bash
