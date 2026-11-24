@@ -14,7 +14,7 @@ on:
         type: string
       dioxus-cli-version:
         description: dioxus-cli version installed for the build.
-        default: 0.7.9
+        default: 0.7.10
         required: false
         type: string
       trunk-version:
@@ -65,9 +65,9 @@ jobs:
           rustup toolchain install nightly --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      - uses: cargo-bins/cargo-binstall@v1.27.0
+      - uses: cargo-bins/cargo-binstall@v1.28.0
         with:
-          version: "1.26.2"
+          version: "1.28.0"
 
       - name: Install Dioxus CLI
         shell: bash
