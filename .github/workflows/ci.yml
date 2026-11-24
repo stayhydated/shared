@@ -236,6 +236,9 @@ jobs:
 
   browser-renderer:
     runs-on: ubuntu-latest
+    env:
+      # Keep this targeted check independent of remote cache startup.
+      RUSTC_WRAPPER: ""
     steps:
       - uses: actions/checkout@v7
         with:
@@ -245,11 +248,6 @@ jobs:
         with:
           toolchain: ${{ env.RUSTUP_TOOLCHAIN }}
           targets: wasm32-unknown-unknown
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.11
-        with:
-          version: "v0.20.0"
 
       - name: Compile browser-only renderer
         run: cargo check -p stayhydated-dioxus-core --all-features --target wasm32-unknown-unknown --locked
