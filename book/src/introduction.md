@@ -4,7 +4,7 @@ Use the shared crates to build a Dioxus repository site while keeping its
 identity, content, routes, and build sequence in your own repository. This
 guide covers the four public Git-sourced packages in one workflow.
 
-Requires Rust 1.99 or newer. The UI and browser boundary use Dioxus 0.7.
+Requires Rust 1.100 or newer. The UI and browser boundary use Dioxus 0.7.
 These packages are unpublished: pin every directly used shared package to the
 same full Git commit in your workspace dependencies. Inherit those dependencies
 in the web and build-task packages. Update the consumer lockfile when changing

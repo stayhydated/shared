@@ -12,7 +12,7 @@ exported `SiteRouteManifest`. [`stayhydated-dioxus`][dioxus] supplies configured
 UI shells; consumer xtasks pass the resulting manifest to
 [`stayhydated-xtask`][xtask].
 
-Requires Rust 1.99 or newer and Dioxus 0.7. This is an unpublished Git-sourced
+Requires Rust 1.100 or newer and Dioxus 0.7. This is an unpublished Git-sourced
 package; keep directly used shared packages on the same revision.
 
 ## Example

@@ -10,7 +10,7 @@ Call these helpers from a consumer's own xtask so project paths, packages,
 routes, and optional outputs remain consumer-owned. Follow the
 [GitHub Pages integration guidance][adoption] for standard site assembly.
 
-Requires Rust 1.99 or newer. This is an unpublished Git-sourced package; keep
+Requires Rust 1.100 or newer. This is an unpublished Git-sourced package; keep
 directly used shared packages on the same revision. Web assembly invokes the
 consumer's Dioxus 0.7 Web build with `--locked`; it requires an up-to-date consumer
 `Cargo.lock` and generated inputs.
