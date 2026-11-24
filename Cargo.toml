@@ -16,28 +16,26 @@ resolver = "3"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 publish = false
-readme = "README.md"
 repository = "https://github.com/stayhydated/shared"
-rust-version = "1.99"
+rust-version = "1.100"
 version = "0.1.1"
 
 [workspace.dependencies]
-anyhow = "1.0.104"
+anyhow = "1.0.105"
 bevy = { default-features = false, features = [ "ui" ], version = "0.20.1" }
 bon = "3.10.3"
 bytemuck = "1.25.2"
 cargo_metadata = "0.23.1"
-clap = { features = [ "derive" ], version = "4.6.7" }
+clap = { features = [ "derive" ], version = "4.6.9" }
 console_error_panic_hook = "0.1.7"
 critical-section = "1.2.0"
 derive_more = "2.1.1"
 dioxus = { default-features = false, version = "0.7.10" }
 dioxus-free-icons = { default-features = false, version = "0.10.0" }
 dioxus-primitives = { default-features = false, git = "https://github.com/DioxusLabs/components", version = "0.0.1" }
-gpui-kit = "0.9.0"
-js-sys = "0.3.107"
+gpui-kit = "0.11.0"
 mdbook-driver = "0.5.4"
-naga = "30.0.1"
+naga = "30.0.2"
 path-slash = "0.2.1"
 pathdiff = "0.2.3"
 quick-xml = "0.42.0"
@@ -50,9 +48,9 @@ strum = "0.28.0"
 sum-numbers-ai-dummy = { path = "dummy/sum-numbers-ai-dummy", version = "0.1.1" }
 tempfile = "3.27.0"
 tracing = "0.1.44"
-trybuild = "1.0.122"
+trybuild = "1.0.125"
 ttf-inter = { default-features = false, features = [ "regular" ], version = "0.1.0" }
-walkdir = "2.5.0"
+walkdir = "2.5.1"
 wasm-bindgen = "0.2.130"
 web-dummy = { path = "dummy/web-dummy", version = "0.1.1" }
 web-sys = "0.3.107"

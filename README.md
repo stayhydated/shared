@@ -8,7 +8,7 @@ of public repository sites. It combines Dioxus UI primitives, configured
 application shells, base-path-aware static-site assembly, and build automation
 while each consumer owns its identity, content, routes, and sequencing.
 
-Requires Rust 1.99 or newer for all workspace packages. The shared crates use
+Requires Rust 1.100 or newer for all workspace packages. The shared crates use
 Dioxus 0.7 and are unpublished Git-sourced packages; consumers keep directly
 used packages on one shared revision.
 

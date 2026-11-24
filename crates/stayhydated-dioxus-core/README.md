@@ -7,7 +7,7 @@ for authors of public repository sites, including landing and portal primitives,
 metadata, demo cards, tabs, selects, full-screen demo framing, motion styles,
 and the shared shader background.
 
-Requires Rust 1.99 or newer and Dioxus 0.7. This is an unpublished Git-sourced
+Requires Rust 1.100 or newer and Dioxus 0.7. This is an unpublished Git-sourced
 package; keep it on the same shared revision as any configured facade.
 
 ## Overview

@@ -128,8 +128,8 @@ mod tests {
         Home {},
         #[route("/guide/", TestGuide)]
         Guide {},
-        #[route("/articles/:slug/", TestArticle)]
-        Article { slug: String },
+        #[route("/articles/:id/", TestArticle)]
+        Article { id: u64 },
     }
 
     #[component]
@@ -143,8 +143,8 @@ mod tests {
     }
 
     #[component]
-    fn TestArticle(slug: String) -> Element {
-        rsx! { "{slug}" }
+    fn TestArticle(id: u64) -> Element {
+        rsx! { "{id}" }
     }
 
     #[test]
@@ -157,6 +157,10 @@ mod tests {
             manifest.application_paths(),
             [Href::new("/"), Href::new("/guide/")]
         );
+        assert!(matches!(
+            "/articles/42/".parse(),
+            Ok(TestRoute::Article { id: 42 })
+        ));
         assert!(
             !manifest
                 .application_paths()
