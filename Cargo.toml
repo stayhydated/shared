@@ -18,7 +18,7 @@ license = "MIT OR Apache-2.0"
 publish = false
 repository = "https://github.com/stayhydated/shared"
 rust-version = "1.100"
-version = "0.1.1"
+version = "0.2.0"
 
 [workspace.dependencies]
 anyhow = "1.0.105"
@@ -40,19 +40,19 @@ path-slash = "0.2.1"
 pathdiff = "0.2.3"
 quick-xml = "0.42.0"
 ratzilla = "0.3.1"
-stayhydated-dioxus = { path = "crates/stayhydated-dioxus", version = "0.1.1" }
-stayhydated-dioxus-core = { path = "crates/stayhydated-dioxus-core", version = "0.1.1" }
-stayhydated-site = { path = "crates/stayhydated-site", version = "0.1.1" }
-stayhydated-xtask = { path = "crates/stayhydated-xtask", version = "0.1.1" }
+stayhydated-dioxus = { path = "crates/stayhydated-dioxus", version = "0.2.0" }
+stayhydated-dioxus-core = { path = "crates/stayhydated-dioxus-core", version = "0.2.0" }
+stayhydated-site = { path = "crates/stayhydated-site", version = "0.2.0" }
+stayhydated-xtask = { path = "crates/stayhydated-xtask", version = "0.2.0" }
 strum = "0.28.0"
-sum-numbers-ai-dummy = { path = "dummy/sum-numbers-ai-dummy", version = "0.1.1" }
+sum-numbers-ai-dummy = { path = "dummy/sum-numbers-ai-dummy", version = "0.2.0" }
 tempfile = "3.27.0"
 tracing = "0.1.44"
 trybuild = "1.0.125"
 ttf-inter = { default-features = false, features = [ "regular" ], version = "0.1.0" }
 walkdir = "2.5.1"
 wasm-bindgen = "0.2.130"
-web-dummy = { path = "dummy/web-dummy", version = "0.1.1" }
+web-dummy = { path = "dummy/web-dummy", version = "0.2.0" }
 web-sys = "0.3.107"
 wgpu = { default-features = false, version = "30.0.1" }
 
